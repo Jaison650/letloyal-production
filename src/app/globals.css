@@ -1,0 +1,344 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --primary: #0D9488;
+    --primary-dark: #134E4A;
+    --accent: #5EEAD4;
+    --brand-bg: #F8FAFC;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-tap-highlight-color: transparent;
+    overflow-x: hidden;
+    max-width: 100vw;
+  }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background-color: #F8FAFC;
+    color: #0F172A;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+    max-width: 100vw;
+  }
+
+  h1, h2, h3, h4 {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  input, textarea, select {
+    font-size: 16px !important; /* Prevent iOS zoom */
+  }
+}
+
+@layer components {
+  .card {
+    @apply bg-white rounded-xl p-4 sm:p-5 md:p-6 border border-brand-border shadow-card;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 bg-primary text-white font-bold rounded-lg px-9 py-3.5 text-base shadow-btn transition-all duration-200 hover:bg-accent-mid hover:-translate-y-0.5 hover:shadow-btn-hover active:translate-y-0 cursor-pointer min-h-[44px];
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 border-2 border-primary text-primary font-semibold rounded-lg px-8 py-3 text-base transition-all duration-200 hover:bg-primary hover:text-white cursor-pointer min-h-[44px];
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 text-primary font-semibold rounded-lg px-6 py-3 text-base transition-all duration-200 hover:bg-primary-light cursor-pointer min-h-[44px];
+  }
+
+  .form-input {
+    @apply w-full px-4 py-3.5 border-2 border-brand-border rounded-lg text-base font-sans transition-all duration-200
+           focus:border-primary focus:shadow-[0_0_0_4px_rgba(13,148,136,0.10)] focus:outline-none
+           placeholder:text-text-light;
+  }
+
+  .form-label {
+    @apply block text-sm font-semibold text-text-medium mb-1.5;
+  }
+
+  .badge-active {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-green-50 text-status-success;
+  }
+
+  .badge-paused {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-orange-50 text-status-warning;
+  }
+
+  .badge-ended {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-text-light;
+  }
+
+  .badge-unlocked {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-accent/15 text-primary;
+  }
+
+  .progress-track {
+    @apply bg-brand-border rounded-full overflow-hidden;
+    height: 10px;
+  }
+
+  .progress-fill {
+    @apply h-full rounded-full;
+    background: linear-gradient(90deg, #5EEAD4, #0D9488);
+    transition: width 800ms ease;
+  }
+
+  .skeleton {
+    @apply bg-gray-200 rounded animate-shimmer;
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+  }
+
+  .merchant-sidebar {
+    @apply fixed left-0 top-0 h-full w-64 bg-white border-r border-brand-border flex flex-col z-40;
+  }
+
+  .sidebar-link {
+    @apply flex items-center gap-3 px-4 py-3 rounded-xl text-text-medium font-medium transition-all duration-150 hover:bg-primary-light hover:text-primary cursor-pointer;
+  }
+
+  .sidebar-link.active {
+    @apply bg-primary-light text-primary font-semibold;
+  }
+
+  .stat-card {
+    @apply card flex flex-col gap-1;
+  }
+
+  .toast {
+    @apply fixed z-50 bottom-6 right-6 bg-white rounded-2xl shadow-card-hover border border-brand-border px-5 py-4 flex items-start gap-3 max-w-sm animate-slide-up;
+  }
+
+  .otp-display {
+    @apply text-5xl font-bold tracking-[0.35em] text-text-dark font-jakarta;
+  }
+}
+
+@layer utilities {
+  .text-gradient {
+    background: linear-gradient(135deg, #0D9488 0%, #5EEAD4 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .bg-gradient-brand {
+    background: linear-gradient(135deg, #0F172A 0%, #134E4A 60%, #0D9488 100%);
+  }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  .animate-shimmer {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+  }
+}
+
+/* Marquee animation for homepage */
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.animate-marquee {
+  animation: marquee 25s linear infinite;
+}
+
+/* QR scanner viewfinder */
+#qr-reader {
+  border: none !important;
+  width: 100% !important;
+}
+#qr-reader video {
+  border-radius: 16px;
+}
+#qr-reader__scan_region {
+  background: transparent !important;
+}
+#qr-reader__dashboard {
+  padding: 8px 0 0 !important;
+}
+#qr-reader__dashboard_section_csr button {
+  background: #0D9488 !important;
+  border: none !important;
+  border-radius: 50px !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  padding: 12px 24px !important;
+  cursor: pointer !important;
+}
+
+/* PWA meta hints */
+@media (display-mode: standalone) {
+  body { padding-top: env(safe-area-inset-top); }
+}
+
+/* ── Print system ────────────────────────────────────────────────────────────
+   QR Kit prints via window.open() into a self-contained popup (QRPanel.tsx).
+   This @media print block is a fallback for any other print triggers.
+────────────────────────────────────────────────────────────────────────── */
+@media print {
+
+  @page {
+    margin: 3mm 4mm;
+    size: 80mm auto;   /* 80mm wide, height auto = thermal roll */
+  }
+
+  /* ── Thermal layout ── */
+  .print-wrap {
+    width: 72mm;       /* 80mm - 4mm margins each side */
+    font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+    font-size: 10pt;
+    color: #111;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    text-align: center;
+  }
+
+  /* Shop header */
+  .print-header {
+    border-bottom: 2px solid;
+    padding-bottom: 6mm;
+    margin-bottom: 4mm;
+  }
+
+  .print-logo {
+    width: 14mm;
+    height: 14mm;
+    margin: 0 auto 2mm;
+    border-radius: 4mm;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .print-logo svg {
+    width: 10mm;
+    height: 10mm;
+  }
+
+  .print-shop-name {
+    font-size: 14pt;
+    font-weight: 800;
+    margin: 0 0 1mm;
+    line-height: 1.2;
+  }
+
+  .print-tag {
+    font-size: 7pt;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #666;
+    margin: 0;
+  }
+
+  /* Reward */
+  .print-reward {
+    font-size: 11pt;
+    font-weight: 700;
+    margin-bottom: 4mm;
+    line-height: 1.3;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* QR code — centred, large */
+  .print-qr-box {
+    border: 1.5px solid;
+    border-radius: 3mm;
+    padding: 2mm;
+    display: inline-block;
+    margin-bottom: 3mm;
+  }
+
+  .print-qr {
+    width: 52mm;
+    height: 52mm;
+    display: block;
+    border-radius: 2mm;
+  }
+
+  /* Earn line */
+  .print-earn {
+    font-size: 8.5pt;
+    font-weight: 600;
+    color: #333;
+    margin: 0 0 4mm;
+  }
+
+  /* Steps */
+  .print-steps {
+    text-align: left;
+    border-top: 1px dashed #ccc;
+    padding-top: 3mm;
+    margin-bottom: 3mm;
+    display: flex;
+    flex-direction: column;
+    gap: 2mm;
+  }
+
+  .print-step-row {
+    display: flex;
+    align-items: center;
+    gap: 2mm;
+    font-size: 8pt;
+    color: #333;
+    line-height: 1.4;
+  }
+
+  .print-step-dot {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 4mm;
+    height: 4mm;
+    border-radius: 50%;
+    font-size: 6pt;
+    font-weight: 800;
+    color: #fff;
+    flex-shrink: 0;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Footer */
+  .print-footer {
+    border-top: 1px dashed #ccc;
+    padding-top: 2mm;
+    margin-top: 1mm;
+  }
+
+  .print-url {
+    font-size: 7pt;
+    color: #555;
+    word-break: break-all;
+    margin: 0 0 1mm;
+  }
+
+  .print-powered {
+    font-size: 6.5pt;
+    color: #999;
+    margin: 0;
+  }
+}
