@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query, queryOne } from '@/lib/db';
-import { hashPassword } from '@/lib/auth';
+import { hashPassword, requireAdmin } from '@/lib/auth';
 
 interface MerchantListRow {
   id:             string;
@@ -14,8 +14,10 @@ interface MerchantListRow {
 }
 
 // ── GET /api/admin/merchants ──────────────────────────────────────────
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
+    requireAdmin(req);
+
     const merchants = await query<MerchantListRow>(
       `SELECT
          m.id, m.slug, m.business_name, m.email, m.status, m.created_at,
@@ -30,6 +32,7 @@ export async function GET() {
 
     return NextResponse.json({ ok: true, merchants });
   } catch (err) {
+    if (err instanceof Response) return err;
     console.error('[GET /api/admin/merchants]', err);
     return NextResponse.json({ error: 'Failed to load merchants.' }, { status: 500 });
   }
@@ -38,6 +41,8 @@ export async function GET() {
 // ── POST /api/admin/merchants  (create) ───────────────────────────────
 export async function POST(req: NextRequest) {
   try {
+    requireAdmin(req);
+
     const { slug, business_name, email, password } = await req.json();
 
     // ── Validate ──────────────────────────────────────────────────────
@@ -95,6 +100,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ ok: true, merchant: created }, { status: 201 });
   } catch (err) {
+    if (err instanceof Response) return err;
     console.error('[POST /api/admin/merchants]', err);
     return NextResponse.json({ error: 'Failed to create merchant.' }, { status: 500 });
   }

@@ -127,6 +127,20 @@ export function isAdmin(p: TokenPayload): p is AdminPayload {
   return p.type === 'admin';
 }
 
+// ── Admin guard (API route helper) ───────────────────────────────────
+// Use at the top of every /api/admin/* handler (except login/logout).
+// Runs in Node.js context — full JWT verification with real JWT_SECRET.
+export function requireAdmin(req: NextRequest): AdminPayload {
+  const payload = getAdminSessionFromRequest(req);
+  if (!payload) {
+    throw new Response(JSON.stringify({ error: 'Not authenticated.' }), {
+      status:  401,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+  return payload;
+}
+
 // ── Cross-tenant guard (API route helper) ─────────────────────────────
 // Use on every /api/merchant/[slug]/* route.
 // Returns MerchantPayload if logged-in merchant owns this slug.
