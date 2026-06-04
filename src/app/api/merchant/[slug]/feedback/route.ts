@@ -38,8 +38,8 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
        LEFT JOIN customers cu ON f.customer_id = cu.id
       WHERE f.merchant_id = ?
       ORDER BY f.created_at DESC
-      LIMIT ? OFFSET ?`,
-      [auth.sub, limit, offset],
+      LIMIT ${limit} OFFSET ${offset}`,
+      [auth.sub],
     );
 
     // Compute average rating
