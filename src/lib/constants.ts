@@ -13,3 +13,11 @@ export const CURRENCY_SYMBOL = '₹';
 
 // Reject duplicate scans for the same customer + campaign within this window.
 export const SCAN_IDEMPOTENCY_WINDOW_SECONDS = 60;
+
+// Image upload limits
+export const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const;
+export const MAX_LOGO_SIZE_MB    = 2;
+export const MAX_BANNER_SIZE_MB  = 4;
+
+// URL validation
+export const MAX_URL_LENGTH = 500;

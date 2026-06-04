@@ -50,7 +50,7 @@ export async function queryOne<T = Record<string, unknown>>(
 }
 
 // pg-compatible result shape used inside transactions
-type PgResult = { rows: Record<string, unknown>[]; insertId?: number };
+type PgResult = { rows: Record<string, unknown>[]; insertId?: number; affectedRows?: number };
 type PgClient = { query: (text: string, params?: any[]) => Promise<PgResult> };
 
 export async function withTransaction<T>(fn: (client: PgClient) => Promise<T>): Promise<T> {
@@ -63,9 +63,11 @@ export async function withTransaction<T>(fn: (client: PgClient) => Promise<T>): 
         if (Array.isArray(result)) {
           return { rows: result as Record<string, unknown>[] };
         }
+        const header = result as mysql.ResultSetHeader;
         return {
-          rows: [],
-          insertId: (result as mysql.ResultSetHeader).insertId,
+          rows:         [],
+          insertId:     header.insertId,
+          affectedRows: header.affectedRows,
         };
       },
     };
