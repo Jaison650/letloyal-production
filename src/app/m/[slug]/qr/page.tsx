@@ -13,7 +13,7 @@ interface Campaign {
 }
 
 interface MerchantData {
-  speed_dials: string | null;
+  speed_dials: number[] | string | null;
 }
 
 interface PageProps {
@@ -46,9 +46,12 @@ export default async function QRPage({ params }: PageProps) {
     [slug],
   );
 
-  const speedDials: number[] = merchant?.speed_dials
-    ? (JSON.parse(merchant.speed_dials) as number[])
-    : DEFAULT_SPEED_DIALS;
+  const rawDials = merchant?.speed_dials;
+  const speedDials: number[] = !rawDials
+    ? DEFAULT_SPEED_DIALS
+    : Array.isArray(rawDials)
+      ? (rawDials as number[])
+      : (JSON.parse(rawDials as string) as number[]);
 
   return (
     <div>

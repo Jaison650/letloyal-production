@@ -44,9 +44,11 @@ export default async function SettingsPage({ params }: PageProps) {
     gmaps_url:         merchant.gmaps_url,
     instagram_url:     merchant.instagram_url,
     google_review_url: merchant.google_review_url,
-    speed_dials:       merchant.speed_dials
-      ? (JSON.parse(merchant.speed_dials) as number[])
-      : DEFAULT_SPEED_DIALS,
+    speed_dials:       !merchant.speed_dials
+      ? DEFAULT_SPEED_DIALS
+      : Array.isArray(merchant.speed_dials)
+        ? (merchant.speed_dials as unknown as number[])
+        : (JSON.parse(merchant.speed_dials as unknown as string) as number[]),
   };
 
   return (

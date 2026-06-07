@@ -49,7 +49,11 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
 
     return NextResponse.json({
       ...merchant,
-      speed_dials: merchant.speed_dials ? JSON.parse(merchant.speed_dials) : [100, 200, 500, 1000],
+      speed_dials: !merchant.speed_dials
+        ? [100, 200, 500, 1000]
+        : Array.isArray(merchant.speed_dials)
+          ? merchant.speed_dials
+          : JSON.parse(merchant.speed_dials as unknown as string),
     });
   } catch (err) {
     if (err instanceof Response) return err;
