@@ -8,7 +8,7 @@ import {
   Megaphone,
   QrCode,
   Users,
-  Gift,
+  ShieldCheck,
   MessageSquare,
   Settings,
   LogOut,
@@ -40,7 +40,7 @@ export default function DashboardShell({ slug, businessName, children }: Dashboa
     { label: 'Campaign',   href: `/m/${slug}/campaign`,  icon: <Megaphone       size={18} /> },
     { label: 'QR Code',    href: `/m/${slug}/qr`,        icon: <QrCode          size={18} /> },
     { label: 'Customers',  href: `/m/${slug}/customers`, icon: <Users           size={18} /> },
-    { label: 'Redeem',     href: `/m/${slug}/redeem`,    icon: <Gift            size={18} /> },
+    { label: 'Validate',   href: `/m/${slug}/validate`,  icon: <ShieldCheck     size={18} /> },
     { label: 'Feedback',   href: `/m/${slug}/feedback`,  icon: <MessageSquare   size={18} /> },
     { label: 'Settings',   href: `/m/${slug}/settings`,  icon: <Settings        size={18} /> },
   ];

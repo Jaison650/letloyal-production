@@ -163,6 +163,7 @@ export default async function ScanPage({ params, searchParams }: PageProps) {
             merchantId={merchant.id}
             businessName={merchant.business_name}
             campaignType={campaign.campaign_type}
+            slug={merchant.slug}
           />
         )}
       </main>
