@@ -98,6 +98,16 @@ export default function MerchantLoginPage() {
           </div>
         </div>
 
+        {/* Customer link */}
+        <div className="mt-5 text-center">
+          <p className="text-sm text-text-medium">
+            Are you a customer?{' '}
+            <Link href="/my-rewards" className="text-primary font-semibold hover:underline">
+              View your rewards →
+            </Link>
+          </p>
+        </div>
+
         <p className="mt-6 text-center text-xs text-text-light">
           Powered by LetLoyal
         </p>

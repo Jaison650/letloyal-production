@@ -10,6 +10,7 @@ import {
   Bell,
   ArrowRight,
   Clock,
+  ShieldCheck,
 } from 'lucide-react';
 import LiveClock from '@/components/merchant/LiveClock';
 import { getMerchantFromCookies } from '@/lib/session';
@@ -196,6 +197,21 @@ export default async function MerchantDashboardPage({ params }: PageProps) {
         />
       </div>
 
+      {/* ── Generate QR — always-visible primary action ── */}
+      <Link
+        href={`/m/${slug}/qr`}
+        className="flex items-center gap-4 bg-primary hover:bg-primary/90 transition-colors text-white rounded-2xl px-5 py-4 shadow-md"
+      >
+        <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
+          <QrCode size={26} />
+        </div>
+        <div className="flex-1">
+          <p className="font-bold text-lg leading-tight">Generate QR Code</p>
+          <p className="text-white/80 text-sm">Show QR to customer to earn stamps</p>
+        </div>
+        <ArrowRight size={20} className="text-white/70 flex-shrink-0" />
+      </Link>
+
       {/* ── Middle Row: Campaign + Recent Transactions ── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
@@ -329,10 +345,10 @@ export default async function MerchantDashboardPage({ params }: PageProps) {
       {/* ── Quick Actions ── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: 'Show QR',      href: `/m/${slug}/qr`,        icon: <QrCode size={18} /> },
           { label: 'Customers',    href: `/m/${slug}/customers`,  icon: <Users size={18} /> },
-          { label: 'Redeem',       href: `/m/${slug}/redeem`,     icon: <Gift size={18} /> },
+          { label: 'Validate',     href: `/m/${slug}/validate`,   icon: <ShieldCheck size={18} /> },
           { label: 'Feedback',     href: `/m/${slug}/feedback`,   icon: <Star size={18} /> },
+          { label: 'Campaign',     href: `/m/${slug}/campaign`,   icon: <Gift size={18} /> },
         ].map(({ label, href, icon }) => (
           <Link
             key={href}

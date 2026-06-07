@@ -104,7 +104,7 @@ export default function DashboardShell({ slug, businessName, children }: Dashboa
       {/* Mobile overlay */}
       {open && (
         <div
-          className="fixed inset-0 bg-black/40 z-40 md:hidden"
+          className="fixed inset-0 bg-black/50 z-40 md:hidden backdrop-blur-sm"
           onClick={() => setOpen(false)}
         />
       )}
@@ -112,7 +112,7 @@ export default function DashboardShell({ slug, businessName, children }: Dashboa
       {/* Mobile drawer */}
       <aside
         className={clsx(
-          'fixed inset-y-0 left-0 w-64 bg-surface z-50 flex flex-col transition-transform duration-200 md:hidden',
+          'fixed inset-y-0 left-0 w-64 bg-white z-50 flex flex-col transition-transform duration-200 md:hidden shadow-2xl',
           open ? 'translate-x-0' : '-translate-x-full',
         )}
       >
