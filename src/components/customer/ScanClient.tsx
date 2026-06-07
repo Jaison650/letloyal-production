@@ -3,7 +3,13 @@
 import { useState, useEffect, FormEvent } from 'react';
 import MilestoneCard from '@/components/customer/MilestoneCard';
 import FeedbackForm from '@/components/customer/FeedbackForm';
-import { Phone, User, Gift, RefreshCw, Copy, Check } from 'lucide-react';
+import { Phone, User, Gift, RefreshCw, Copy, Check, LayoutDashboard } from 'lucide-react';
+import {
+  getCustomerSession,
+  saveCustomerSession,
+  touchCustomerSession,
+} from '@/lib/customerSession';
+import Link from 'next/link';
 
 interface ScanResult {
   ok:                 boolean;
@@ -44,10 +50,8 @@ function useCountdown(minutes: number) {
   return { expired: secs <= 0, display: `${m}:${String(s).padStart(2, '0')}`, secs };
 }
 
-// ── Redeem Code display ───────────────────────────────────────────────────────
-function RedeemCodeCard({
-  code, rewardDesc, expiresMinutes, onRefresh,
-}: {
+// ── Redeem Code Card ──────────────────────────────────────────────────────────
+function RedeemCodeCard({ code, rewardDesc, expiresMinutes, onRefresh }: {
   code: string; rewardDesc: string; expiresMinutes: number; onRefresh: () => void;
 }) {
   const [copied, setCopied] = useState(false);
@@ -65,41 +69,25 @@ function RedeemCodeCard({
       <div className="w-14 h-14 rounded-full bg-primary flex items-center justify-center mx-auto">
         <Gift size={26} className="text-white" />
       </div>
-
       <div>
         <p className="text-xs font-semibold text-primary uppercase tracking-widest mb-1">Your Reward Code</p>
         <p className="text-sm text-text-medium">{rewardDesc}</p>
       </div>
-
-      {/* Big 6-digit code */}
       <div className="flex items-center justify-center gap-1.5">
         {code.split('').map((d, i) => (
-          <span
-            key={i}
-            className="w-11 h-14 flex items-center justify-center text-3xl font-bold text-primary bg-white rounded-xl border-2 border-primary shadow-sm"
-          >
+          <span key={i} className="w-11 h-14 flex items-center justify-center text-3xl font-bold text-primary bg-white rounded-xl border-2 border-primary shadow-sm">
             {d}
           </span>
         ))}
       </div>
-
-      {/* Copy button */}
-      <button
-        onClick={copyCode}
-        className="flex items-center gap-1.5 mx-auto text-sm font-medium text-primary hover:text-primary/70 transition-colors"
-      >
+      <button onClick={copyCode} className="flex items-center gap-1.5 mx-auto text-sm font-medium text-primary hover:text-primary/70 transition-colors">
         {copied ? <Check size={14} /> : <Copy size={14} />}
         {copied ? 'Copied!' : 'Copy code'}
       </button>
-
-      {/* Timer */}
       {expired ? (
         <div className="space-y-2">
           <p className="text-sm font-semibold text-status-error">Code expired</p>
-          <button
-            onClick={onRefresh}
-            className="flex items-center gap-1.5 mx-auto text-sm font-medium text-primary hover:underline"
-          >
+          <button onClick={onRefresh} className="flex items-center gap-1.5 mx-auto text-sm font-medium text-primary hover:underline">
             <RefreshCw size={14} /> Generate new code
           </button>
         </div>
@@ -108,7 +96,6 @@ function RedeemCodeCard({
           Expires in {display}
         </p>
       )}
-
       <p className="text-xs text-text-light">Show this code to the merchant to claim your reward</p>
     </div>
   );
@@ -119,6 +106,7 @@ export default function ScanClient({ token, merchantId, businessName, campaignTy
   const [phone,        setPhone]        = useState('');
   const [name,         setName]         = useState('');
   const [loading,      setLoading]      = useState(false);
+  const [submitting,   setSubmitting]   = useState(false); // auto-submit in progress
   const [error,        setError]        = useState('');
   const [result,       setResult]       = useState<ScanResult | null>(null);
   const [showName,     setShowName]     = useState(false);
@@ -126,16 +114,28 @@ export default function ScanClient({ token, merchantId, businessName, campaignTy
   const [redeemCode,   setRedeemCode]   = useState<RedeemCode | null>(null);
   const [codeLoading,  setCodeLoading]  = useState(false);
   const [codeError,    setCodeError]    = useState('');
+  const [sessionPhone, setSessionPhone] = useState<string | null>(null);
 
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault();
+  // ── On mount: check stored session ───────────────────────────────────────
+  useEffect(() => {
+    const session = getCustomerSession();
+    if (session) {
+      setPhone(session.phone);
+      setName(session.name ?? '');
+      setSessionPhone(session.phone);
+      // Auto-submit scan
+      setSubmitting(true);
+      doScan(session.phone, session.name ?? '');
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function doScan(phoneDigits: string, nameVal: string) {
     setError('');
-    const digits = phone.replace(/\D/g, '');
-    if (digits.length !== 10) { setError('Please enter a valid 10-digit mobile number.'); return; }
     setLoading(true);
     try {
-      const body: Record<string, string> = { token, phone_number: digits };
-      if (name.trim()) body.name = name.trim();
+      const body: Record<string, string> = { token, phone_number: phoneDigits };
+      if (nameVal.trim()) body.name = nameVal.trim();
       const res  = await fetch('/api/scan', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
       const data = await res.json();
       if (!res.ok) {
@@ -145,11 +145,23 @@ export default function ScanClient({ token, merchantId, businessName, campaignTy
       }
       setResult(data);
       if (data.is_first_visit) setShowName(true);
+      // Update session name if first visit
+      saveCustomerSession(phoneDigits, nameVal || data.customer_name || null);
+      touchCustomerSession();
     } catch {
       setError('Connection error. Please try again.');
     } finally {
       setLoading(false);
+      setSubmitting(false);
     }
+  }
+
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    const digits = phone.replace(/\D/g, '');
+    if (digits.length !== 10) { setError('Please enter a valid 10-digit mobile number.'); return; }
+    saveCustomerSession(digits, name || null);
+    await doScan(digits, name);
   }
 
   async function generateRedeemCode() {
@@ -171,6 +183,19 @@ export default function ScanClient({ token, merchantId, businessName, campaignTy
     }
   }
 
+  // ── Auto-submitting spinner ───────────────────────────────────────────────
+  if (submitting) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 gap-4">
+        <svg className="animate-spin h-10 w-10 text-primary" viewBox="0 0 24 24" fill="none">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+        </svg>
+        <p className="text-text-medium text-sm">Claiming your stamp…</p>
+      </div>
+    );
+  }
+
   // ── Show redeem code ──────────────────────────────────────────────────────
   if (redeemCode) {
     return (
@@ -181,9 +206,7 @@ export default function ScanClient({ token, merchantId, businessName, campaignTy
           expiresMinutes={redeemCode.expiresMinutes}
           onRefresh={() => { setRedeemCode(null); generateRedeemCode(); }}
         />
-        {showFeedback && (
-          <FeedbackForm merchantId={merchantId} phoneNumber={phone} onDismiss={() => setShowFeedback(false)} />
-        )}
+        {showFeedback && <FeedbackForm merchantId={merchantId} phoneNumber={phone} onDismiss={() => setShowFeedback(false)} />}
       </div>
     );
   }
@@ -202,7 +225,6 @@ export default function ScanClient({ token, merchantId, businessName, campaignTy
           campaignType={result.campaign_type}
         />
 
-        {/* Redeem Now button — shown when reward unlocked */}
         {result.reward_unlocked && (
           <div className="space-y-2">
             <button
@@ -211,18 +233,9 @@ export default function ScanClient({ token, merchantId, businessName, campaignTy
               className="btn-primary w-full flex items-center justify-center gap-2 text-base py-4"
             >
               {codeLoading ? (
-                <>
-                  <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                  </svg>
-                  Generating…
-                </>
+                <><svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>Generating…</>
               ) : (
-                <>
-                  <Gift size={20} />
-                  Redeem Now
-                </>
+                <><Gift size={20} />Redeem Now</>
               )}
             </button>
             {codeError && <p className="text-sm text-status-error text-center">{codeError}</p>}
@@ -235,9 +248,17 @@ export default function ScanClient({ token, merchantId, businessName, campaignTy
           </p>
         )}
 
-        {showFeedback && (
-          <FeedbackForm merchantId={merchantId} phoneNumber={phone} onDismiss={() => setShowFeedback(false)} />
+        {/* Link to customer dashboard */}
+        {sessionPhone && (
+          <Link
+            href="/my-rewards"
+            className="flex items-center justify-center gap-2 text-sm text-primary font-medium hover:underline pt-1"
+          >
+            <LayoutDashboard size={14} /> View all my rewards
+          </Link>
         )}
+
+        {showFeedback && <FeedbackForm merchantId={merchantId} phoneNumber={phone} onDismiss={() => setShowFeedback(false)} />}
       </div>
     );
   }
@@ -262,7 +283,7 @@ export default function ScanClient({ token, merchantId, businessName, campaignTy
               <input
                 type="tel"
                 value={phone}
-                onChange={(e) => setPhone(e.target.value.replace(/[^\d]/g, '').slice(0, 10))}
+                onChange={e => setPhone(e.target.value.replace(/[^\d]/g, '').slice(0, 10))}
                 placeholder="98765 43210"
                 className="form-input pl-9"
                 inputMode="numeric"
@@ -279,15 +300,7 @@ export default function ScanClient({ token, merchantId, businessName, campaignTy
             <label className="form-label">Your Name <span className="text-text-light font-normal">(optional)</span></label>
             <div className="relative">
               <User size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-light" />
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Enter your name"
-                className="form-input pl-9"
-                autoComplete="name"
-                maxLength={120}
-              />
+              <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Enter your name" className="form-input pl-9" autoComplete="name" maxLength={120} />
             </div>
           </div>
         )}
@@ -298,11 +311,7 @@ export default function ScanClient({ token, merchantId, businessName, campaignTy
           </div>
         )}
 
-        <button
-          type="submit"
-          disabled={loading || phone.replace(/\D/g, '').length !== 10}
-          className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
-        >
+        <button type="submit" disabled={loading || phone.replace(/\D/g, '').length !== 10} className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed">
           {loading ? (
             <span className="flex items-center justify-center gap-2">
               <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
@@ -314,6 +323,10 @@ export default function ScanClient({ token, merchantId, businessName, campaignTy
           ) : 'Claim My Stamp'}
         </button>
       </form>
+
+      <Link href="/my-rewards" className="flex items-center justify-center gap-1.5 text-sm text-primary font-medium hover:underline">
+        <LayoutDashboard size={14} /> View my rewards dashboard
+      </Link>
     </div>
   );
 }
