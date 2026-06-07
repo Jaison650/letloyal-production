@@ -79,7 +79,7 @@ export default async function MerchantDashboardPage({ params }: PageProps) {
           WHERE merchant_id = ?)                                          AS active_customers,
         (SELECT COUNT(*) FROM redemptions
           WHERE merchant_id = ?
-            AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY))            AS redeemed_week
+            AND redeemed_at >= DATE_SUB(NOW(), INTERVAL 7 DAY))           AS redeemed_week
     `, [merchantId, merchantId, merchantId]),
 
     queryOne<{
