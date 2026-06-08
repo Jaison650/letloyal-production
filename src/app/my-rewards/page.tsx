@@ -262,17 +262,33 @@ export default function MyRewardsPage() {
   const loadCards = useCallback(async (phoneDigits: string, cName: string | null = null) => {
     setFetching(true);
     try {
-      const [lookupRes, discoverRes] = await Promise.all([
+      const token = getCustomerToken();
+      const authHdr: Record<string, string> = token ? { 'Authorization': `Bearer ${token}` } : {};
+
+      const [lookupRes, discoverRes, profileRes] = await Promise.all([
         fetch('/api/customer/lookup', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ phone_number: phoneDigits }),
         }),
         fetch(`/api/customer/discover?phone=${phoneDigits}`),
+        token
+          ? fetch('/api/customer/profile', { headers: { 'Content-Type': 'application/json', ...authHdr } })
+          : Promise.resolve(null),
       ]);
+
       const lookupData   = await lookupRes.json();
       const discoverData = await discoverRes.json();
+      const profileData  = profileRes ? await profileRes.json() : null;
+
       if (!lookupRes.ok) { setError(lookupData.error || 'Lookup failed.'); setPhase('login'); return; }
-      setCustomer(lookupData.customer ?? { name: cName, phone: phoneDigits, email: null, birthday: null, gender: null });
+
+      // Use full profile if available (has email/birthday/gender), otherwise fallback
+      if (profileData?.ok && profileData.customer) {
+        setCustomer(profileData.customer);
+      } else {
+        setCustomer(lookupData.customer ?? { name: cName, phone: phoneDigits, email: null, birthday: null, gender: null });
+      }
+
       setCards(lookupData.cards ?? []);
       setStores(discoverData.stores ?? []);
       setPhase('dashboard');
@@ -391,18 +407,17 @@ export default function MyRewardsPage() {
     return (
       <main className="min-h-screen bg-bg-muted flex flex-col items-center justify-center px-4 py-12">
         <div className="w-full max-w-sm space-y-5">
-          <div className="text-center space-y-2">
-            <div className="w-14 h-14 rounded-2xl bg-primary flex items-center justify-center mx-auto shadow-lg">
-              <span className="text-2xl">⭐</span>
+          {/* Branded top section on login */}
+          <div className="text-center space-y-3">
+            <div className="mx-auto w-20 h-20 rounded-3xl bg-primary flex items-center justify-center shadow-2xl border-4 border-primary/20">
+              <span className="text-4xl">⭐</span>
             </div>
-            <h1 className="text-2xl font-bold text-text-dark">
-              {authMode === 'login' ? 'Welcome back' : authMode === 'register' ? 'Create account' : 'Reset password'}
-            </h1>
-            <p className="text-text-medium text-sm">
-              {authMode === 'login' ? 'Sign in to your rewards account'
-                : authMode === 'register' ? 'Join LetLoyal to earn rewards'
-                : 'Enter your email to receive a reset link'}
-            </p>
+            <div>
+              <h1 className="text-3xl font-black text-text-dark tracking-tight">LetLoyal</h1>
+              <p className="text-text-medium text-sm">
+                {authMode === 'login' ? 'Sign in to your rewards' : authMode === 'register' ? 'Create your rewards account' : 'Reset your password'}
+              </p>
+            </div>
           </div>
 
           <div className="bg-white rounded-2xl border border-border-light p-5 shadow-sm">
@@ -549,11 +564,29 @@ export default function MyRewardsPage() {
   return (
     <main className="min-h-screen bg-bg-muted flex flex-col">
       {/* Header */}
-      <header className="bg-white border-b border-border-light px-4 pt-5 pb-4 sticky top-0 z-10">
-        <div className="max-w-lg mx-auto">
-          {tab === 'cards'   && <><p className="text-xl font-bold text-text-dark">{displayName ? `Hi, ${displayName}! 👋` : 'My Rewards 👋'}</p><p className="text-sm text-text-light mt-0.5">{cards.length === 0 ? 'No loyalty cards yet' : `You have ${cards.length} loyalty card${cards.length > 1 ? 's' : ''}.`}</p></>}
-          {tab === 'scan'    && <p className="text-xl font-bold text-text-dark">Scan a QR Code</p>}
-          {tab === 'account' && <p className="text-xl font-bold text-text-dark">My Account</p>}
+      <header className="bg-primary sticky top-0 z-10 shadow-sm">
+        <div className="max-w-lg mx-auto px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-xl">⭐</span>
+            <span className="font-black text-white text-lg tracking-tight">LetLoyal</span>
+          </div>
+          {tab === 'cards' && cards.length > 0 && (
+            <button onClick={() => loadCards(phone, customer?.name ?? null)} disabled={fetching}
+              className="flex items-center gap-1 text-xs text-white/80 font-medium">
+              <RefreshCw size={13} className={fetching ? 'animate-spin' : ''} /> Refresh
+            </button>
+          )}
+        </div>
+        {/* Sub-header with tab context */}
+        <div className="max-w-lg mx-auto px-4 pb-3">
+          {tab === 'cards' && (
+            <div>
+              <p className="text-white font-bold text-lg">{displayName ? `Hi, ${displayName}! 👋` : 'My Rewards 👋'}</p>
+              <p className="text-white/70 text-xs mt-0.5">{cards.length === 0 ? 'No loyalty cards yet' : `${cards.length} loyalty card${cards.length > 1 ? 's' : ''}`}</p>
+            </div>
+          )}
+          {tab === 'scan' && <p className="text-white font-bold text-lg">Scan a QR Code</p>}
+          {tab === 'account' && <p className="text-white font-bold text-lg">My Account</p>}
         </div>
       </header>
 
@@ -564,13 +597,6 @@ export default function MyRewardsPage() {
           {/* ── Cards tab ── */}
           {tab === 'cards' && (
             <>
-              <div className="flex items-center justify-between">
-                <h2 className="text-xs font-semibold text-text-medium uppercase tracking-wide">My Loyalty Cards</h2>
-                <button onClick={() => loadCards(phone, customer?.name ?? null)} disabled={fetching}
-                  className="flex items-center gap-1 text-xs text-primary font-medium hover:underline">
-                  <RefreshCw size={12} className={fetching ? 'animate-spin' : ''} /> Refresh
-                </button>
-              </div>
               {cards.length === 0 ? (
                 <div className="bg-white rounded-2xl border border-border-light p-10 text-center space-y-3">
                   <CreditCard size={40} className="text-text-light mx-auto opacity-30" />
@@ -708,6 +734,11 @@ export default function MyRewardsPage() {
                   </div>
                 )}
               </div>
+
+              <button onClick={() => setTab('cards')}
+                className="w-full flex items-center justify-center gap-1.5 py-2.5 rounded-2xl border border-border-light text-text-medium font-medium text-sm hover:bg-bg-muted transition-colors">
+                ← Back to My Cards
+              </button>
 
               <button onClick={handleLogout}
                 className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border-2 border-red-200 text-status-error font-semibold hover:bg-red-50 transition-colors">
