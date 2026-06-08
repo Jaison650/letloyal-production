@@ -34,14 +34,13 @@ interface MerchantRow {
 }
 
 // ── Phone normalisation (India) ───────────────────────────────────────
-// Accepts: 10-digit, +91XXXXXXXXXX, 91XXXXXXXXXX
-// Returns: 10-digit string or null if invalid
+// Accepts: 10-digit, +91XXXXXXXXXX, 91XXXXXXXXXX, 091XXXXXXXXXX
+// Returns: +91XXXXXXXXXX (E.164) or null if invalid
+// MUST match the format used by customer auth (normalizePhone in utils.ts)
 function normalisePhone(raw: string): string | null {
-  const digits = raw.replace(/\D/g, '');
-  if (digits.length === 10) return digits;
-  if (digits.length === 12 && digits.startsWith('91')) return digits.slice(2);
-  if (digits.length === 13 && digits.startsWith('091')) return digits.slice(3);
-  return null;
+  const digits = raw.replace(/\D/g, '').replace(/^(91|0)/, '');
+  if (digits.length !== 10) return null;
+  return `+91${digits}`;
 }
 
 // ── POST /api/scan ────────────────────────────────────────────────────
