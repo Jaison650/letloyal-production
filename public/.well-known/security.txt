@@ -1,0 +1,3 @@
+Contact: mailto:security@letloyal.com
+Preferred-Languages: en
+Policy: https://pilot.letloyal.com/privacy-policy

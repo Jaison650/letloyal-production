@@ -26,6 +26,21 @@ const MERCHANT_AUTH_WHITELIST = [
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
+  // ── Admin IP allowlist ────────────────────────────────────────────
+  if (pathname.startsWith('/admin') || pathname.startsWith('/api/admin')) {
+    const allowedIPs = process.env.ADMIN_ALLOWED_IPS;
+    if (allowedIPs && allowedIPs.trim()) {
+      const allowed = allowedIPs.split(',').map(ip => ip.trim()).filter(Boolean);
+      const clientIP =
+        req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ??
+        req.headers.get('x-real-ip') ??
+        'unknown';
+      if (!allowed.includes(clientIP)) {
+        return new NextResponse('Not Found', { status: 404 }); // 404 not 403 — don't reveal admin exists
+      }
+    }
+  }
+
   // ── Guard: /api/merchant/* (except auth) ──────────────────────────
   if (pathname.startsWith('/api/merchant/') && !MERCHANT_AUTH_WHITELIST.includes(pathname)) {
     const hasCookie = !!req.cookies.get(MERCHANT_COOKIE_NAME)?.value;

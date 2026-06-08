@@ -42,6 +42,26 @@ export default function PrivacyPolicy() {
             <h2 className="font-jakarta font-bold text-xl text-text-dark mb-3">6. Contact</h2>
             <p>For privacy-related questions, email <a href="mailto:privacy@letloyal.com" className="text-primary hover:underline">privacy@letloyal.com</a>.</p>
           </section>
+          <section>
+            <h2 className="font-jakarta font-bold text-xl text-text-dark mb-3">7. Data Breach Notification</h2>
+            <p>In the event of a personal data breach likely to result in risk to your rights or freedoms, LetLoyal will notify affected users and the Data Protection Board of India within the timeframe prescribed under the DPDP Act 2023. Notifications will be sent to the email address registered on your account.</p>
+          </section>
+          <section>
+            <h2 className="font-jakarta font-bold text-xl text-text-dark mb-3">8. Data Storage & Localisation</h2>
+            <p>All personal data collected by LetLoyal is stored on servers located in India. We do not transfer personal data outside India except as required by law or with your explicit consent. All cross-border transfers, if any, are conducted consistent with the DPDP Act 2023.</p>
+          </section>
+          <section>
+            <h2 className="font-jakarta font-bold text-xl text-text-dark mb-3">9. Your Rights Under DPDP Act 2023</h2>
+            <p>Under the Digital Personal Data Protection Act 2023, you have the right to: (a) access information about your personal data processed by us; (b) correction and erasure of inaccurate or incomplete data; (c) grievance redressal; (d) nominate a representative. To exercise these rights, use the &ldquo;Delete My Account&rdquo; option in the My Rewards app or contact us at privacy@letloyal.com.</p>
+          </section>
+          <section>
+            <h2 className="font-jakarta font-bold text-xl text-text-dark mb-3">10. Grievance Officer</h2>
+            <p><strong>Name:</strong> [To be updated — Grievance Officer]<br />
+            <strong>Designation:</strong> Data Protection &amp; Grievance Officer<br />
+            <strong>Email:</strong> <a href="mailto:privacy@letloyal.com" className="text-primary hover:underline">privacy@letloyal.com</a><br />
+            <strong>Address:</strong> [Registered business address, Kerala, India]<br />
+            Grievances will be acknowledged within 48 hours and resolved within 30 days.</p>
+          </section>
         </div>
       </main>
     </div>

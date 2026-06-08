@@ -542,6 +542,19 @@ export default function MyRewardsPage() {
                   </div>
                 </div>
                 {error && <p className="text-sm text-status-error">{error}</p>}
+                {/* Consent checkbox — required for DPDP 2023 compliance */}
+                <label className="flex items-start gap-2 text-xs text-text-medium cursor-pointer">
+                  <input
+                    type="checkbox"
+                    required
+                    className="mt-0.5 h-4 w-4 rounded border-brand-border text-primary focus:ring-primary shrink-0"
+                  />
+                  <span>
+                    I agree to LetLoyal collecting my name, phone number, and optional date of birth and gender
+                    to operate my loyalty account, as described in the{' '}
+                    <a href="/privacy-policy" target="_blank" className="text-primary underline">Privacy Policy</a>.
+                  </span>
+                </label>
                 <button type="submit" disabled={fetching}
                   className="w-full bg-primary hover:bg-primary/90 disabled:opacity-50 text-white font-semibold py-3 rounded-xl transition-colors mt-1">
                   {fetching ? <span className="flex items-center justify-center gap-2"><Spinner sm />Creating…</span> : 'Create Account'}
@@ -685,9 +698,9 @@ export default function MyRewardsPage() {
                   onSave={v => saveField('name', v)} />
                 <ProfileField label="Email Address" value={customer.email} icon={<Mail size={15} />}
                   type="email" onSave={v => saveField('email', v)} />
-                <ProfileField label="Birthday" value={customer.birthday ? new Date(customer.birthday).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' }) : null} icon={<Calendar size={15} />}
+                <ProfileField label="Birthday (optional)" value={customer.birthday ? new Date(customer.birthday).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' }) : null} icon={<Calendar size={15} />}
                   type="date" onSave={v => saveField('birthday', v)} />
-                <ProfileField label="Gender" value={customer.gender} icon={<Users size={15} />}
+                <ProfileField label="Gender (optional)" value={customer.gender} icon={<Users size={15} />}
                   options={[
                     { value: 'male',              label: 'Male' },
                     { value: 'female',            label: 'Female' },
@@ -748,6 +761,45 @@ export default function MyRewardsPage() {
                 className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border-2 border-red-200 text-status-error font-semibold hover:bg-red-50 transition-colors">
                 <LogOut size={18} /> Sign Out
               </button>
+
+              {/* Data & Privacy section */}
+              <div className="mt-4 pt-4 border-t border-brand-border">
+                <p className="text-xs font-semibold text-text-medium uppercase tracking-wide mb-3">Data & Privacy</p>
+                <div className="bg-white border border-brand-border rounded-xl overflow-hidden">
+                  <a href="/privacy-policy" target="_blank"
+                    className="flex items-center justify-between px-4 py-3 border-b border-brand-border hover:bg-brand-bg transition-colors">
+                    <span className="text-sm text-text-dark">Privacy Policy</span>
+                    <span className="text-xs text-text-light">→</span>
+                  </a>
+                  <button
+                    onClick={async () => {
+                      if (!confirm('Are you sure you want to permanently delete your account and all your loyalty data? This cannot be undone.')) return;
+                      const token = getCustomerToken();
+                      const res = await fetch('/api/customer/account', {
+                        method: 'DELETE',
+                        headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+                      });
+                      if (res.ok) {
+                        clearCustomerSession();
+                        setPhase('login');
+                        setCustomer(null);
+                        setCards([]);
+                        alert('Your account has been deleted.');
+                      } else {
+                        alert('Failed to delete account. Please contact privacy@letloyal.com');
+                      }
+                    }}
+                    className="w-full flex items-center justify-between px-4 py-3 hover:bg-red-50 transition-colors text-left"
+                  >
+                    <span className="text-sm text-red-600 font-medium">Delete My Account & Data</span>
+                    <span className="text-xs text-red-400">→</span>
+                  </button>
+                </div>
+                <p className="text-xs text-text-light mt-2 px-1">
+                  To request data correction or export, email{' '}
+                  <a href="mailto:privacy@letloyal.com" className="text-primary">privacy@letloyal.com</a>
+                </p>
+              </div>
 
               <p className="text-center text-xs text-text-light pb-2">Powered by LetLoyal</p>
             </div>

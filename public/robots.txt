@@ -1,0 +1,7 @@
+User-agent: *
+Disallow: /admin/
+Disallow: /api/
+Disallow: /merchant/forgot
+Allow: /
+
+Sitemap: https://pilot.letloyal.com/sitemap.xml

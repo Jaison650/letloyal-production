@@ -3,6 +3,21 @@ import { queryOne } from '@/lib/db';
 import { comparePassword, signAdminToken, ADMIN_COOKIE_NAME } from '@/lib/auth';
 import { ADMIN_SESSION_MAX_AGE } from '@/lib/constants';
 
+// ── In-memory rate limiter ─────────────────────────────────────────────────────
+const adminLoginAttempts = new Map<string, { count: number; resetAt: number }>();
+
+function isRateLimited(ip: string): boolean {
+  const now = Date.now();
+  const entry = adminLoginAttempts.get(ip);
+  if (!entry || now > entry.resetAt) {
+    adminLoginAttempts.set(ip, { count: 1, resetAt: now + 15 * 60 * 1000 });
+    return false;
+  }
+  if (entry.count >= 5) return true;
+  entry.count++;
+  return false;
+}
+
 interface AdminRow {
   id:            string;
   email:         string;
@@ -13,6 +28,11 @@ interface AdminRow {
 
 export async function POST(req: NextRequest) {
   try {
+    const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
+    if (isRateLimited(ip)) {
+      return NextResponse.json({ error: 'Too many attempts. Try again in 15 minutes.' }, { status: 429 });
+    }
+
     const { email, password } = await req.json();
 
     if (!email || !password) {
