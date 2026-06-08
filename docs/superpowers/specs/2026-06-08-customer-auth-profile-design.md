@@ -133,25 +133,67 @@ The `maskPhone()` helper already exists in the dashboard page — extract to `sr
 
 ---
 
-## 7. Out of Scope (this phase)
+## 7. Merchant Analytics Page
+
+### Location
+New page: `/m/[slug]/analytics` — added to sidebar nav between Customers and Validate.
+
+### Sections
+
+#### Gender Split
+Horizontal bar chart showing % male / female / other / not shared among the merchant's customers who provided gender. Shows count of customers the data is based on.
+
+#### Age Groups
+Horizontal bar chart: 18–24 / 25–34 / 35–44 / 45+ — computed from birthday (year). Shows count of customers the data is based on. Customers with no birthday are excluded and a "not shared" count shown.
+
+#### Upcoming Birthdays (next 30 days)
+List of customers whose birthday (month + day) falls within the next 30 days. Each row shows:
+- First name only
+- Masked phone (98••••666)
+- Days until birthday ("Tomorrow" / "In X days")
+- WhatsApp button (dummy — clicking shows "Not available in this plan" toast/modal)
+
+**Privacy rules enforced:**
+- Full DOB never shown — only relative days
+- No email, gender, or full phone exposed
+- Year of birth never shown to merchant
+
+### API Route
+`GET /api/merchant/[slug]/analytics`  
+Returns: `{ gender_stats, age_groups, upcoming_birthdays }`
+
+### WhatsApp / Push Notification
+Buttons are rendered but non-functional. Clicking either shows an inline message:
+> "WhatsApp & push notifications are not available in this plan. Contact support to upgrade."
+
+This is a UI-only placeholder — no backend work needed for notifications.
+
+---
+
+## 8. Out of Scope (this phase)
 
 - SMS OTP verification
 - Profile photo upload
 - Email verification on signup (just save the email, no verify step)
 - Social login (Google/Apple)
+- WhatsApp Business API integration
+- Push notification service
 
 ---
 
-## 8. Files to Create / Modify
+## 9. Files to Create / Modify
 
 **New files:**
 - `src/app/api/customer/auth/register/route.ts`
 - `src/app/api/customer/auth/login/route.ts`
 - `src/app/api/customer/auth/forgot/route.ts`
 - `src/app/api/customer/auth/reset/route.ts`
+- `src/app/customer/reset-password/page.tsx` — reset password landing page
 - `src/app/api/customer/profile/route.ts` (GET + PUT)
 - `src/app/api/customer/profile/password/route.ts` (PUT)
 - `src/lib/customerAuth.ts` — JWT helpers for customer tokens
+- `src/app/api/merchant/[slug]/analytics/route.ts`
+- `src/app/m/[slug]/analytics/page.tsx`
 
 **Modified files:**
 - `src/app/my-rewards/page.tsx` — login/register toggle, account tab, profile editing
@@ -160,6 +202,7 @@ The `maskPhone()` helper already exists in the dashboard page — extract to `sr
 - `src/app/m/[slug]/page.tsx` — use shared `maskPhone()`
 - `src/app/m/[slug]/customers/page.tsx` — mask phone
 - `src/app/m/[slug]/validate/page.tsx` — mask phone
+- `src/components/merchant/DashboardShell.tsx` — add Analytics nav item
 - All merchant API routes that return phone numbers
 
 **DB migration:** Run ALTER TABLE + CREATE TABLE on VPS MySQL.
