@@ -55,14 +55,17 @@ CREATE TABLE IF NOT EXISTS campaigns (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ─────────────────────────────────────────────────────────────────────────────
--- 3. CUSTOMERS — phone-number identity, NO password, NO login
+-- 3. CUSTOMERS — phone-number identity + optional password for login
 -- ─────────────────────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS customers (
   id           VARCHAR(36)  NOT NULL PRIMARY KEY DEFAULT (UUID()),
   phone_number VARCHAR(20)  NOT NULL UNIQUE,
   name         VARCHAR(120) NULL,                    -- optional, captured on first scan
+  email        VARCHAR(255) NULL UNIQUE,             -- optional, for password reset
+  password_hash VARCHAR(255) NULL,                   -- optional, for password-based login
   created_at   TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  INDEX idx_customers_phone (phone_number)
+  INDEX idx_customers_phone (phone_number),
+  INDEX idx_customers_email (email)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ─────────────────────────────────────────────────────────────────────────────
@@ -177,7 +180,21 @@ CREATE TABLE IF NOT EXISTS qr_tokens (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ─────────────────────────────────────────────────────────────────────────────
--- 10. ADMIN_USERS — platform admins only (no self-signup)
+-- 10. CUSTOMER_RESET_TOKENS — customer password reset via emailed link (1-hour TTL)
+-- ─────────────────────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS customer_reset_tokens (
+  id            VARCHAR(36)  NOT NULL PRIMARY KEY DEFAULT (UUID()),
+  customer_id   VARCHAR(36)  NOT NULL,
+  token_hash    VARCHAR(255) NOT NULL UNIQUE,          -- sha256 of emailed token
+  expires_at    TIMESTAMP    NOT NULL,
+  used_at       TIMESTAMP    NULL,
+  created_at    TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE,
+  INDEX idx_customer_reset_token (token_hash)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- 11. ADMIN_USERS — platform admins only (no self-signup)
 -- ─────────────────────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS admin_users (
   id            VARCHAR(36)                      NOT NULL PRIMARY KEY DEFAULT (UUID()),
