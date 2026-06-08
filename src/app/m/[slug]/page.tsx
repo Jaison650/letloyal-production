@@ -15,6 +15,7 @@ import {
 import LiveClock from '@/components/merchant/LiveClock';
 import { getMerchantFromCookies } from '@/lib/session';
 import { query, queryOne } from '@/lib/db';
+import { maskPhone } from '@/lib/utils';
 
 type PageProps = { params: Promise<{ slug: string }> };
 
@@ -28,11 +29,6 @@ function timeAgo(dateStr: string): string {
   if (mins < 60)  return `${mins}m ago`;
   if (hrs  < 24)  return `${hrs}h ago`;
   return `${days}d ago`;
-}
-
-function maskPhone(phone: string) {
-  if (phone.length >= 10) return `${phone.slice(0, 3)}••••${phone.slice(-3)}`;
-  return phone;
 }
 
 // ── StatCard ─────────────────────────────────────────────────────────────────
