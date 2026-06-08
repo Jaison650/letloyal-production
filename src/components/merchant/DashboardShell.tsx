@@ -14,6 +14,7 @@ import {
   LogOut,
   Menu,
   X,
+  BarChart2,
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import Logo from '@/components/ui/Logo';
@@ -40,6 +41,7 @@ export default function DashboardShell({ slug, businessName, children }: Dashboa
     { label: 'Campaign',   href: `/m/${slug}/campaign`,  icon: <Megaphone       size={18} /> },
     { label: 'QR Code',    href: `/m/${slug}/qr`,        icon: <QrCode          size={18} /> },
     { label: 'Customers',  href: `/m/${slug}/customers`, icon: <Users           size={18} /> },
+    { label: 'Analytics',  href: `/m/${slug}/analytics`, icon: <BarChart2       size={18} /> },
     { label: 'Validate',   href: `/m/${slug}/validate`,  icon: <ShieldCheck     size={18} /> },
     { label: 'Feedback',   href: `/m/${slug}/feedback`,  icon: <MessageSquare   size={18} /> },
     { label: 'Settings',   href: `/m/${slug}/settings`,  icon: <Settings        size={18} /> },
