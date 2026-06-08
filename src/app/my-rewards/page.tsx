@@ -786,7 +786,7 @@ export default function MyRewardsPage() {
                         setCards([]);
                         alert('Your account has been deleted.');
                       } else {
-                        alert('Failed to delete account. Please contact privacy@letloyal.com');
+                        alert('Failed to delete account. Please contact hello@letloyal.com');
                       }
                     }}
                     className="w-full flex items-center justify-between px-4 py-3 hover:bg-red-50 transition-colors text-left"
@@ -797,7 +797,7 @@ export default function MyRewardsPage() {
                 </div>
                 <p className="text-xs text-text-light mt-2 px-1">
                   To request data correction or export, email{' '}
-                  <a href="mailto:privacy@letloyal.com" className="text-primary">privacy@letloyal.com</a>
+                  <a href="mailto:hello@letloyal.com" className="text-primary">hello@letloyal.com</a>
                 </p>
               </div>
 
