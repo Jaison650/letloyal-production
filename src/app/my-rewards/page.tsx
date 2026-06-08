@@ -301,12 +301,6 @@ export default function MyRewardsPage() {
   }, []);
 
   useEffect(() => {
-    document.title = phase === 'dashboard'
-      ? 'My Rewards — LetLoyal'
-      : 'LetLoyal — Your Digital Loyalty Card';
-  }, [phase]);
-
-  useEffect(() => {
     const session = getCustomerSession();
     if (session) { setPhone(session.phone); loadCards(session.phone, session.name); }
     else setPhase('login');

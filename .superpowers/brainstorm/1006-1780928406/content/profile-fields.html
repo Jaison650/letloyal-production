@@ -1,0 +1,66 @@
+<h2>Customer Profile Settings</h2>
+<p class="subtitle">What should customers be able to see and edit in their Account tab? Select all that apply.</p>
+
+<div class="options" data-multiselect>
+
+  <div class="option selected" data-choice="name" onclick="toggleSelect(this)">
+    <div class="letter">✓</div>
+    <div class="content">
+      <h3>Full Name</h3>
+      <p>Editable. Already stored — used for greeting and merchant display.</p>
+    </div>
+  </div>
+
+  <div class="option selected" data-choice="phone" onclick="toggleSelect(this)">
+    <div class="letter">✓</div>
+    <div class="content">
+      <h3>Phone Number</h3>
+      <p>Change number (requires password confirmation for security). All loyalty history moves with the account.</p>
+    </div>
+  </div>
+
+  <div class="option selected" data-choice="email" onclick="toggleSelect(this)">
+    <div class="letter">✓</div>
+    <div class="content">
+      <h3>Email Address</h3>
+      <p>Collected at signup. Editable. Used for password reset emails.</p>
+    </div>
+  </div>
+
+  <div class="option selected" data-choice="password" onclick="toggleSelect(this)">
+    <div class="letter">✓</div>
+    <div class="content">
+      <h3>Change Password</h3>
+      <p>Current password → new password flow. Standard security practice.</p>
+    </div>
+  </div>
+
+  <div class="option selected" data-choice="birthday" onclick="toggleSelect(this)">
+    <div class="letter">✓</div>
+    <div class="content">
+      <h3>Birthday 🎂</h3>
+      <p>Date of birth (day + month, year optional). Merchants can send birthday offers in future.</p>
+    </div>
+  </div>
+
+  <div class="option selected" data-choice="gender" onclick="toggleSelect(this)">
+    <div class="letter">✓</div>
+    <div class="content">
+      <h3>Gender</h3>
+      <p>Male / Female / Other / Prefer not to say. Optional field.</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="avatar" onclick="toggleSelect(this)">
+    <div class="letter">?</div>
+    <div class="content">
+      <h3>Profile Photo</h3>
+      <p>Upload a photo. Shows in Account tab. Optional — adds complexity (storage, upload).</p>
+    </div>
+  </div>
+
+</div>
+
+<div style="margin-top:24px;padding:16px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:12px;">
+  <p style="font-size:13px;color:#0369a1;margin:0;"><strong>Note on merchant visibility:</strong> Merchants will only ever see a masked phone number (e.g. 98••••666) and first name. Email, birthday, gender, and password are <strong>never</strong> exposed to merchants.</p>
+</div>

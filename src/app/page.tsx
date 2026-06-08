@@ -273,7 +273,7 @@ export default function HomePage() {
         <div className="max-w-5xl mx-auto text-center text-white">
           <FadeUp>
             <h2 className="font-jakarta font-bold text-3xl sm:text-4xl mb-4">See It In Action</h2>
-            <p className="text-white/80 text-lg mb-12">Real merchants, real rewards. No signup required to explore.</p>
+            <p className="text-white/80 text-lg mb-12">Explore what LetLoyal looks like for your business — sign in to see the live dashboard.</p>
           </FadeUp>
           <motion.div variants={staggerContainer(0.07)} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-40px' }} className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-10">
             {DEMO_MERCHANTS.map((m) => (
@@ -289,7 +289,7 @@ export default function HomePage() {
             ))}
           </motion.div>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/merchant/login" className="btn-primary text-lg px-10 py-4">Try the Live Demo <ChevronRight size={18} /></Link>
+            <Link href="/merchant/login" className="btn-primary text-lg px-10 py-4">Merchant Login <ChevronRight size={18} /></Link>
             <Link href="/my-rewards" className="bg-white/15 hover:bg-white/25 border border-white/30 text-white font-bold rounded-full px-8 py-4 text-lg transition-all">View My Rewards</Link>
           </div>
         </div>
@@ -359,7 +359,6 @@ export default function HomePage() {
                 <p className="font-semibold text-white mb-3">For Customers</p>
                 <ul className="space-y-2">
                   <li><Link href="/my-rewards" className="hover:text-white transition-colors">My Rewards</Link></li>
-                  <li><Link href="/my-rewards" className="hover:text-white transition-colors">Register</Link></li>
                 </ul>
               </div>
               <div>

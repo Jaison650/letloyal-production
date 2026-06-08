@@ -1,0 +1,44 @@
+<h2>How should customers log in?</h2>
+<p class="subtitle">Pick the authentication approach for the India pilot. Each has a different friction level.</p>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>📱 Phone + Password <span style="background:#dcfce7;color:#16a34a;font-size:11px;padding:2px 8px;border-radius:20px;font-weight:700;margin-left:6px;">Recommended</span></h3>
+      <p>Customer registers with phone + password. Login = phone + password. Forgot password sends a reset link to their email (if they've added one) or shows a "contact support" fallback.</p>
+      <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
+        <span style="background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;padding:3px 10px;border-radius:20px;font-size:12px;">✓ Familiar UX</span>
+        <span style="background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;padding:3px 10px;border-radius:20px;font-size:12px;">✓ Secure</span>
+        <span style="background:#fef9c3;border:1px solid #fde047;color:#854d0e;padding:3px 10px;border-radius:20px;font-size:12px;">~ Requires email for reset</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>🔢 Phone + OTP (no password)</h3>
+      <p>Customer enters phone → gets a 6-digit OTP via SMS → logged in. No password needed. OTP is the auth. Needs an SMS gateway (Twilio / MSG91 / Fast2SMS).</p>
+      <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
+        <span style="background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;padding:3px 10px;border-radius:20px;font-size:12px;">✓ No passwords to forget</span>
+        <span style="background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;padding:3px 10px;border-radius:20px;font-size:12px;">✓ Very common in India</span>
+        <span style="background:#fee2e2;border:1px solid #fca5a5;color:#991b1b;padding:3px 10px;border-radius:20px;font-size:12px;">✗ Costs money per SMS</span>
+        <span style="background:#fee2e2;border:1px solid #fca5a5;color:#991b1b;padding:3px 10px;border-radius:20px;font-size:12px;">✗ Needs SMS integration now</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>🔓 Phone only (current — no password)</h3>
+      <p>Keep the existing system: phone number is the only identity. Anyone who knows a phone number can view that customer's rewards. Simple but not secure for a multi-merchant setup.</p>
+      <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
+        <span style="background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;padding:3px 10px;border-radius:20px;font-size:12px;">✓ Zero friction</span>
+        <span style="background:#fee2e2;border:1px solid #fca5a5;color:#991b1b;padding:3px 10px;border-radius:20px;font-size:12px;">✗ No security</span>
+        <span style="background:#fee2e2;border:1px solid #fca5a5;color:#991b1b;padding:3px 10px;border-radius:20px;font-size:12px;">✗ Can't have a profile</span>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,7 +1,10 @@
 import Link from 'next/link';
 import Logo from '@/components/ui/Logo';
 
-export const metadata = { title: 'Terms of Service — LetLoyal' };
+export const metadata = {
+  title: 'Terms of Service — LetLoyal',
+  description: 'LetLoyal Terms of Service for the India Pilot. Governs use of the QR loyalty platform.',
+};
 
 export default function TermsOfService() {
   return (

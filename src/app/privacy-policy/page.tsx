@@ -1,7 +1,10 @@
 import Link from 'next/link';
 import Logo from '@/components/ui/Logo';
 
-export const metadata = { title: 'Privacy Policy — LetLoyal' };
+export const metadata = {
+  title: 'Privacy Policy — LetLoyal',
+  description: 'LetLoyal Privacy Policy — how we collect, use, and protect your personal data under the DPDP Act 2023.',
+};
 
 export default function PrivacyPolicy() {
   return (
