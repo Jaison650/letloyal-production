@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import {
   TrendingUp, Settings2, BarChart3, Star, Smartphone, Scan,
-  Target, ShieldCheck, MapPin, CheckCircle2,
+  Target, ShieldCheck, MapPin,
   Coffee, Scissors, Dumbbell, ShoppingBag, Pizza, Sparkles,
   ArrowRight, Users, ChevronRight, RotateCcw, Gift,
 } from 'lucide-react';
@@ -57,23 +57,6 @@ const TESTIMONIALS = [
   { name: 'Arjun P.',  role: 'Gym Owner, Hyderabad',    quote: 'The dashboard shows me exactly who is close to a reward. I can push them over the line with a personal message. Brilliant.' },
 ];
 
-const PRICING = [
-  {
-    name: 'Free', price: '₹0', period: '/month', highlight: false,
-    cta: 'Get Started Free', href: '/merchant/login',
-    features: ['2 active campaigns', 'Up to 500 customers', 'Basic analytics', 'QR code generator'],
-  },
-  {
-    name: 'Starter ⭐', price: '₹999', period: '/month', highlight: true,
-    cta: 'Start Starter Plan', href: '/merchant/login',
-    features: ['5 active campaigns', 'Up to 1,000 customers', 'Full analytics', 'Email support', 'CSV exports'],
-  },
-  {
-    name: 'Professional', price: '₹2499', period: '/month', highlight: false,
-    cta: 'Go Professional', href: '/merchant/login',
-    features: ['Unlimited campaigns', 'Up to 5,000 customers', 'Multi-location', 'Priority support', 'Advanced analytics', 'API access'],
-  },
-];
 
 export default function HomePage() {
   return (
@@ -309,43 +292,6 @@ export default function HomePage() {
             <Link href="/merchant/login" className="btn-primary text-lg px-10 py-4">Try the Live Demo <ChevronRight size={18} /></Link>
             <Link href="/my-rewards" className="bg-white/15 hover:bg-white/25 border border-white/30 text-white font-bold rounded-full px-8 py-4 text-lg transition-all">View My Rewards</Link>
           </div>
-        </div>
-      </section>
-
-      {/* PRICING */}
-      <section id="pricing" className="py-24 px-4">
-        <div className="max-w-5xl mx-auto text-center">
-          <FadeUp>
-            <h2 className="font-jakarta font-bold text-3xl sm:text-4xl mb-3">Simple, Transparent Pricing</h2>
-            <p className="text-text-medium text-lg mb-14">Start free. Upgrade when you grow.</p>
-          </FadeUp>
-          <motion.div variants={staggerContainer(0.12)} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-40px' }} className="grid md:grid-cols-3 gap-6">
-            {PRICING.map((plan) => (
-              <motion.div key={plan.name} variants={fadeUp} className={`card flex flex-col ${plan.highlight ? 'border-2 border-accent shadow-btn relative' : ''}`}>
-                {plan.highlight && (
-                  <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-accent text-text-dark text-xs font-bold px-4 py-1.5 rounded-full flex items-center gap-1 whitespace-nowrap">
-                    <Star size={12} fill="currentColor" /> Most Popular
-                  </div>
-                )}
-                <div className="mb-6">
-                  <p className="font-jakarta font-bold text-lg mb-1">{plan.name}</p>
-                  <div className="flex items-end gap-1">
-                    <span className="text-4xl font-jakarta font-extrabold">{plan.price}</span>
-                    <span className="text-text-light text-sm mb-1">{plan.period}</span>
-                  </div>
-                </div>
-                <ul className="space-y-3 flex-1 mb-8">
-                  {plan.features.map((f) => (
-                    <li key={f} className="flex items-center gap-2.5 text-sm text-text-medium">
-                      <CheckCircle2 size={16} className="text-accent shrink-0" />{f}
-                    </li>
-                  ))}
-                </ul>
-                <Link href={plan.href} className={plan.highlight ? 'btn-primary text-center' : 'btn-secondary text-center'}>{plan.cta}</Link>
-              </motion.div>
-            ))}
-          </motion.div>
-          <p className="mt-8 text-sm text-text-light">All plans include: No hardware · No POS integration · QR code ready instantly</p>
         </div>
       </section>
 
