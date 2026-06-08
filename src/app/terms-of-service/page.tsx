@@ -43,7 +43,16 @@ export default function TermsOfService() {
             <p>These Terms are governed by the laws of India. Disputes are subject to the exclusive jurisdiction of courts in Kerala, India.</p>
           </section>
           <section>
-            <h2 className="font-jakarta font-bold text-xl text-text-dark mb-3">7. Contact</h2>
+            <h2 className="font-jakarta font-bold text-xl text-text-dark mb-3">7. Pilot Phase Disclaimer</h2>
+            <p>
+              LetLoyal is currently operating as an invite-only beta pilot. The service is provided for testing and evaluation purposes.
+              LetLoyal is in the process of formal business incorporation in India. Legal entity name, CIN, and registered address
+              will be published on this page and the Privacy Policy upon incorporation. Until then, all legal correspondence
+              should be directed to <a href="mailto:legal@letloyal.com" className="text-primary hover:underline">legal@letloyal.com</a>.
+            </p>
+          </section>
+          <section>
+            <h2 className="font-jakarta font-bold text-xl text-text-dark mb-3">8. Contact</h2>
             <p>Questions: <a href="mailto:legal@letloyal.com" className="text-primary hover:underline">legal@letloyal.com</a></p>
           </section>
         </div>

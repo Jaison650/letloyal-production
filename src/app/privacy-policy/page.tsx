@@ -55,12 +55,17 @@ export default function PrivacyPolicy() {
             <p>Under the Digital Personal Data Protection Act 2023, you have the right to: (a) access information about your personal data processed by us; (b) correction and erasure of inaccurate or incomplete data; (c) grievance redressal; (d) nominate a representative. To exercise these rights, use the &ldquo;Delete My Account&rdquo; option in the My Rewards app or contact us at privacy@letloyal.com.</p>
           </section>
           <section>
-            <h2 className="font-jakarta font-bold text-xl text-text-dark mb-3">10. Grievance Officer</h2>
-            <p><strong>Name:</strong> [To be updated — Grievance Officer]<br />
-            <strong>Designation:</strong> Data Protection &amp; Grievance Officer<br />
-            <strong>Email:</strong> <a href="mailto:privacy@letloyal.com" className="text-primary hover:underline">privacy@letloyal.com</a><br />
-            <strong>Address:</strong> [Registered business address, Kerala, India]<br />
-            Grievances will be acknowledged within 48 hours and resolved within 30 days.</p>
+            <h2 className="font-jakarta font-bold text-xl text-text-dark mb-3">10. Grievance Contact</h2>
+            <p>
+              LetLoyal is currently operating as an invite-only beta pilot and is in the process of formal incorporation.
+              During this period, all data-related grievances, requests, and concerns are handled directly by the founding team.
+            </p>
+            <p className="mt-3">
+              <strong>Email:</strong>{' '}
+              <a href="mailto:privacy@letloyal.com" className="text-primary hover:underline">privacy@letloyal.com</a><br />
+              <strong>Response time:</strong> Grievances will be acknowledged within 48 hours and resolved within 30 days.<br />
+              <strong>Note:</strong> Legal entity name, CIN, and registered address will be updated on this page upon incorporation.
+            </p>
           </section>
         </div>
       </main>
