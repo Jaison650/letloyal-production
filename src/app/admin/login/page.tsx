@@ -40,7 +40,7 @@ function AdminLoginForm() {
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error || 'Login failed.'); return; }
-      router.push(getSafeRedirect(redirectTo, '/admin/dashboard'));
+      router.push(getSafeRedirect(redirectTo, '/admin'));
     } catch {
       setError('Something went wrong. Please try again.');
     } finally {

@@ -32,7 +32,7 @@ export default function PrivacyPolicy() {
           </section>
           <section>
             <h2 className="font-jakarta font-bold text-xl text-text-dark mb-3">4. Your Rights</h2>
-            <p>Under the Digital Personal Data Protection Act 2023 (DPDP Act), you have the right to access, correct, and delete your personal data. To exercise these rights, contact us at hello@letloyal.com.</p>
+            <p>Under the Digital Personal Data Protection Act 2023 (DPDP Act), you have the right to access, correct, and delete your personal data. You may also request deletion of your account and all associated personal data by visiting your Account settings or by contacting us. To exercise these rights, contact us at hello@letloyal.com.</p>
           </section>
           <section>
             <h2 className="font-jakarta font-bold text-xl text-text-dark mb-3">5. Cookies</h2>
