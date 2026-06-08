@@ -5,7 +5,7 @@ import Image from 'next/image';
 import {
   Phone, Mail, User, Lock, Eye, EyeOff, Gift, LogOut, RefreshCw,
   CreditCard, ScanLine, ArrowRight, Copy, Check, MapPin,
-  ChevronDown, ChevronUp, Calendar, Venus,
+  ChevronDown, ChevronUp, Calendar, Users,
 } from 'lucide-react';
 import {
   getCustomerSession, saveCustomerSession,
@@ -657,7 +657,7 @@ export default function MyRewardsPage() {
                   type="email" onSave={v => saveField('email', v)} />
                 <ProfileField label="Birthday" value={customer.birthday} icon={<Calendar size={15} />}
                   type="date" onSave={v => saveField('birthday', v)} />
-                <ProfileField label="Gender" value={customer.gender} icon={<Venus size={15} />}
+                <ProfileField label="Gender" value={customer.gender} icon={<Users size={15} />}
                   options={[
                     { value: 'male',              label: 'Male' },
                     { value: 'female',            label: 'Female' },
