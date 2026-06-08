@@ -82,7 +82,7 @@ export default function HomePage() {
             No app. No hardware. Live in 10 minutes.
           </motion.p>
           <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45, delay: 0.26 }} className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <Link href="/my-rewards" className="btn-primary text-lg px-10 py-4">Start for Free <ArrowRight size={18} /></Link>
+            <Link href="/merchant/login" className="btn-primary text-lg px-10 py-4">Start for Free <ArrowRight size={18} /></Link>
             <a href="#how-it-works" className="btn-ghost text-lg px-8 py-4">See How It Works</a>
           </motion.div>
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5, delay: 0.38 }} className="mt-12 flex flex-wrap items-center justify-center gap-5 text-sm text-text-light font-medium">
@@ -352,7 +352,6 @@ export default function HomePage() {
                 <p className="font-semibold text-white mb-3">Product</p>
                 <ul className="space-y-2">
                   <li><a href="#how-it-works" className="hover:text-white transition-colors">How It Works</a></li>
-                  <li><a href="#pricing"       className="hover:text-white transition-colors">Pricing</a></li>
                   <li><a href="#faq"           className="hover:text-white transition-colors">FAQ</a></li>
                 </ul>
               </div>
@@ -367,8 +366,8 @@ export default function HomePage() {
                 <p className="font-semibold text-white mb-3">Merchant</p>
                 <ul className="space-y-2">
                   <li><Link href="/merchant/login" className="hover:text-white transition-colors">Merchant Login</Link></li>
-                  <li><span className="cursor-not-allowed opacity-40">Privacy Policy</span></li>
-                  <li><span className="cursor-not-allowed opacity-40">Terms of Service</span></li>
+                  <li><Link href="/privacy-policy" className="hover:text-white transition-colors">Privacy Policy</Link></li>
+                  <li><Link href="/terms-of-service" className="hover:text-white transition-colors">Terms of Service</Link></li>
                 </ul>
               </div>
             </div>

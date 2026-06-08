@@ -1,12 +1,20 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
+import { requireCustomer } from '@/lib/customerAuth';
 
-// GET /api/customer/discover?phone=9876543210
+// POST /api/customer/discover
+// Body: { phone_number: string }
 // Returns active merchants the customer has NOT joined yet
-export async function GET(req: NextRequest) {
+export async function POST(req: Request) {
   try {
-    const phone = req.nextUrl.searchParams.get('phone');
-    const digits = phone ? String(phone).replace(/\D/g, '').replace(/^(91|0)/, '') : '';
+    requireCustomer(req); // throws 401 if no valid token
+  } catch {
+    return NextResponse.json({ ok: false, error: 'Unauthorised' }, { status: 401 });
+  }
+
+  try {
+    const { phone_number } = await req.json();
+    const digits = phone_number ? String(phone_number).replace(/\D/g, '').replace(/^(91|0)/, '') : '';
 
     const normPhone = digits.length === 10 ? `+91${digits}` : null;
 
@@ -41,7 +49,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ ok: true, stores: rows });
   } catch (err) {
-    console.error('[GET /api/customer/discover]', err);
+    console.error('[POST /api/customer/discover]', err);
     return NextResponse.json({ error: 'Failed to load stores.' }, { status: 500 });
   }
 }

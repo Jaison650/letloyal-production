@@ -37,7 +37,7 @@ export default function HomeNav() {
         </nav>
         <div className="hidden sm:flex items-center gap-2">
           <Link href="/merchant/login" className="btn-secondary py-2 px-5 text-sm">Merchant Login</Link>
-          <Link href="/my-rewards" className="btn-primary py-2 px-5 text-sm">Get Started Free</Link>
+          <Link href="/merchant/login" className="btn-primary py-2 px-5 text-sm">Get Started Free</Link>
         </div>
         <button className="md:hidden p-2 text-text-medium" onClick={() => setMobileOpen((o) => !o)} aria-label={mobileOpen ? 'Close menu' : 'Open menu'}>
           {mobileOpen ? <X size={22} /> : <Menu size={22} />}
@@ -53,7 +53,7 @@ export default function HomeNav() {
               <Link href="/my-rewards" onClick={() => setMobileOpen(false)} className="py-3 px-3 text-sm font-semibold text-text-medium hover:text-primary hover:bg-primary-light rounded-xl transition-colors">For Customers</Link>
               <div className="flex flex-col gap-2 pt-3 mt-2 border-t border-brand-border">
                 <Link href="/merchant/login" className="btn-secondary text-center py-2.5">Merchant Login</Link>
-                <Link href="/my-rewards" className="btn-primary text-center py-2.5">Get Started Free</Link>
+                <Link href="/merchant/login" className="btn-primary text-center py-2.5">Get Started Free</Link>
               </div>
             </nav>
           </motion.div>

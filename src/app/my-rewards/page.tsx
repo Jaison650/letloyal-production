@@ -270,7 +270,11 @@ export default function MyRewardsPage() {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ phone_number: phoneDigits }),
         }),
-        fetch(`/api/customer/discover?phone=${phoneDigits}`),
+        fetch('/api/customer/discover', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...(token ? { 'Authorization': `Bearer ${token}` } : {}) },
+          body: JSON.stringify({ phone_number: phoneDigits }),
+        }),
         token
           ? fetch('/api/customer/profile', { headers: { 'Content-Type': 'application/json', ...authHdr } })
           : Promise.resolve(null),
@@ -295,6 +299,12 @@ export default function MyRewardsPage() {
     } catch { setError('Connection error.'); setPhase('login'); }
     finally { setFetching(false); }
   }, []);
+
+  useEffect(() => {
+    document.title = phase === 'dashboard'
+      ? 'My Rewards — LetLoyal'
+      : 'LetLoyal — Your Digital Loyalty Card';
+  }, [phase]);
 
   useEffect(() => {
     const session = getCustomerSession();
@@ -681,7 +691,7 @@ export default function MyRewardsPage() {
                   onSave={v => saveField('name', v)} />
                 <ProfileField label="Email Address" value={customer.email} icon={<Mail size={15} />}
                   type="email" onSave={v => saveField('email', v)} />
-                <ProfileField label="Birthday" value={customer.birthday} icon={<Calendar size={15} />}
+                <ProfileField label="Birthday" value={customer.birthday ? new Date(customer.birthday).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' }) : null} icon={<Calendar size={15} />}
                   type="date" onSave={v => saveField('birthday', v)} />
                 <ProfileField label="Gender" value={customer.gender} icon={<Users size={15} />}
                   options={[
