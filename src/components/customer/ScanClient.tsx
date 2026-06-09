@@ -56,14 +56,44 @@ function useCountdown(minutes: number) {
 function RedeemCodeCard({ code, rewardDesc, expiresMinutes, onRefresh }: {
   code: string; rewardDesc: string; expiresMinutes: number; onRefresh: () => void;
 }) {
-  const [copied, setCopied] = useState(false);
+  const [copied,    setCopied]    = useState(false);
+  const [confirmed, setConfirmed] = useState(false);
   const { expired, display, secs } = useCountdown(expiresMinutes);
   const urgency = secs < 120;
+
+  // ── Poll every 3s to detect merchant confirmation ──────────────────
+  useEffect(() => {
+    if (confirmed || expired) return;
+    const id = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/public/redeem-code?code=${code}`);
+        const data = await res.json();
+        if (data.status === 'used') setConfirmed(true);
+      } catch { /* ignore */ }
+    }, 3000);
+    return () => clearInterval(id);
+  }, [code, confirmed, expired]);
 
   function copyCode() {
     navigator.clipboard.writeText(code).catch(() => {});
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  }
+
+  // ── Success state: merchant confirmed ─────────────────────────────
+  if (confirmed) {
+    return (
+      <div className="rounded-2xl border-2 border-green-400 bg-green-50 p-6 text-center space-y-3">
+        <div className="w-16 h-16 rounded-full bg-green-500 flex items-center justify-center mx-auto">
+          <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-8 h-8">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+        </div>
+        <p className="text-lg font-bold text-green-800">Reward Claimed! 🎉</p>
+        <p className="text-sm text-green-700 font-medium">{rewardDesc}</p>
+        <p className="text-xs text-green-600">Enjoy your reward. Keep visiting to earn more!</p>
+      </div>
+    );
   }
 
   return (
@@ -99,6 +129,10 @@ function RedeemCodeCard({ code, rewardDesc, expiresMinutes, onRefresh }: {
         </p>
       )}
       <p className="text-xs text-text-light">Show this code to the merchant to claim your reward</p>
+      <p className="text-xs text-text-light/60 flex items-center justify-center gap-1">
+        <span className="inline-block w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+        Waiting for merchant confirmation…
+      </p>
     </div>
   );
 }

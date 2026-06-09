@@ -2,6 +2,27 @@ import { NextRequest, NextResponse } from 'next/server';
 import { query, queryOne } from '@/lib/db';
 import crypto from 'crypto';
 
+// GET /api/public/redeem-code?code=XXXXXX
+// Polls whether a redemption code has been confirmed by the merchant.
+export async function GET(req: NextRequest) {
+  const code = req.nextUrl.searchParams.get('code');
+  if (!code || code.length !== 6) {
+    return NextResponse.json({ error: 'Invalid code.' }, { status: 400 });
+  }
+  const row = await queryOne<{ status: string; reward_description: string }>(
+    `SELECT rc.status, c.reward_description
+       FROM redeem_codes rc
+       JOIN customer_merchant cm ON cm.id = rc.customer_merchant_id
+       JOIN campaigns c ON c.id = cm.campaign_id
+      WHERE rc.code = ?
+      ORDER BY rc.created_at DESC
+      LIMIT 1`,
+    [code],
+  );
+  if (!row) return NextResponse.json({ status: 'not_found' });
+  return NextResponse.json({ status: row.status, reward_description: row.reward_description });
+}
+
 // POST /api/public/redeem-code
 // Customer (no auth) generates a 6-digit redemption code after reward unlocks.
 // Body: { phone_number, slug }
