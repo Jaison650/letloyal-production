@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query, queryOne } from '@/lib/db';
 import { hashPassword, requireAdmin } from '@/lib/auth';
+import { sendMerchantWelcome } from '@/lib/mail';
 
 interface MerchantListRow {
   id:             string;
@@ -97,6 +98,17 @@ export async function POST(req: NextRequest) {
       'SELECT id, slug FROM merchants WHERE slug = ?',
       [slugClean],
     );
+
+    // Fire-and-forget welcome email with login credentials
+    if (created) {
+      sendMerchantWelcome(
+        email.toLowerCase().trim(),
+        business_name.trim(),
+        email.toLowerCase().trim(),
+        password,
+        created.slug,
+      ).catch(() => {});
+    }
 
     return NextResponse.json({ ok: true, merchant: created }, { status: 201 });
   } catch (err) {

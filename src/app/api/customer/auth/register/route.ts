@@ -3,6 +3,7 @@ import { hashPassword } from '@/lib/auth';
 import { signCustomerToken } from '@/lib/customerAuth';
 import { query, queryOne } from '@/lib/db';
 import { normalizePhone } from '@/lib/utils';
+import { sendCustomerWelcome } from '@/lib/mail';
 
 export async function POST(req: NextRequest) {
   try {
@@ -49,6 +50,9 @@ export async function POST(req: NextRequest) {
 
     const token = signCustomerToken({ sub: customer.id, phone: normPhone });
     const digits = normPhone.replace('+91', '');
+
+    // Fire-and-forget welcome email
+    sendCustomerWelcome(normEmail, name.trim()).catch(() => {});
 
     return NextResponse.json({
       ok: true,
