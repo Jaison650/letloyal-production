@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { queryOne, query } from '@/lib/db';
-import { sendMail } from '@/lib/mail';
+import { sendMerchantResetPassword } from '@/lib/mail';
 
 const RESET_TTL_MINUTES = 15;
 
@@ -40,26 +40,7 @@ export async function POST(req: NextRequest) {
 
       const resetUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/merchant/reset?token=${rawToken}`;
 
-      await sendMail({
-        to:      email,
-        subject: 'Reset your LetLoyal password',
-        html: `
-          <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px 16px">
-            <h2 style="color:#0d9488;margin-bottom:8px">Reset your password</h2>
-            <p style="color:#374151">Hi ${merchant.business_name},</p>
-            <p style="color:#374151">Click the button below to reset your LetLoyal merchant password.
-               This link expires in ${RESET_TTL_MINUTES} minutes.</p>
-            <a href="${resetUrl}"
-               style="display:inline-block;margin:24px 0;padding:12px 28px;background:#0d9488;color:#fff;border-radius:9999px;text-decoration:none;font-weight:700">
-              Reset Password
-            </a>
-            <p style="color:#6b7280;font-size:13px">
-              If you didn't request this, you can safely ignore this email.<br>
-              Link: ${resetUrl}
-            </p>
-          </div>
-        `,
-      });
+      await sendMerchantResetPassword(email, merchant.business_name, resetUrl, RESET_TTL_MINUTES);
     }
 
     // Always return the same response

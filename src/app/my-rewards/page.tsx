@@ -11,6 +11,7 @@ import {
   getCustomerSession, saveCustomerSession,
   clearCustomerSession, getCustomerToken,
 } from '@/lib/customerSession';
+import Logo, { LogoIcon } from '@/components/ui/Logo';
 import type { ReactNode } from 'react';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -413,11 +414,12 @@ export default function MyRewardsPage() {
         <div className="w-full max-w-sm space-y-5">
           {/* Branded top section on login */}
           <div className="text-center space-y-3">
-            <div className="mx-auto w-20 h-20">
-              <img src="/favicon.svg" alt="LetLoyal" className="w-full h-full" />
+            <div className="mx-auto">
+              <LogoIcon size={72} />
             </div>
             <div>
-              <h1 className="text-3xl font-black text-text-dark tracking-tight">LetLoyal</h1>
+              <Logo size={28} className="justify-center" />
+              <p className="sr-only">LetLoyal</p>
               <p className="text-text-medium text-sm">
                 {authMode === 'login' ? 'Sign in to your rewards' : authMode === 'register' ? 'Create your rewards account' : 'Reset your password'}
               </p>
@@ -584,8 +586,7 @@ export default function MyRewardsPage() {
       <header className="bg-primary sticky top-0 z-10 shadow-sm">
         <div className="max-w-lg mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <img src="/favicon.svg" alt="LetLoyal" className="w-7 h-7" />
-            <span className="font-black text-white text-lg tracking-tight">LetLoyal</span>
+            <Logo variant="dark" size={22} />
           </div>
           {tab === 'cards' && cards.length > 0 && (
             <button onClick={() => loadCards(phone, customer?.name ?? null)} disabled={fetching}

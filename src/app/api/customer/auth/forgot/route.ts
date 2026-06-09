@@ -1,7 +1,7 @@
 // src/app/api/customer/auth/forgot/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { queryOne, query } from '@/lib/db';
-import { sendMail } from '@/lib/mail';
+import { sendCustomerResetPassword } from '@/lib/mail';
 import crypto from 'crypto';
 
 export async function POST(req: NextRequest) {
@@ -35,24 +35,9 @@ export async function POST(req: NextRequest) {
 
       const base     = process.env.NEXT_PUBLIC_BASE_URL || 'https://pilot.letloyal.com';
       const resetUrl = `${base}/customer/reset-password?token=${rawToken}`;
-      const name     = customer.name?.split(' ')[0] ?? 'there';
+      const name     = customer.name ?? 'there';
 
-      await sendMail({
-        to:      normEmail,
-        subject: 'Reset your LetLoyal password',
-        html: `
-          <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:24px;">
-            <h2 style="color:#0d9488;">Reset your password</h2>
-            <p>Hi ${name},</p>
-            <p>We received a request to reset your LetLoyal account password.</p>
-            <a href="${resetUrl}"
-               style="display:inline-block;background:#0d9488;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:700;margin:16px 0;">
-              Reset Password
-            </a>
-            <p style="color:#6b7280;font-size:13px;">This link expires in 1 hour. If you didn't request this, ignore this email.</p>
-          </div>
-        `,
-      });
+      await sendCustomerResetPassword(normEmail, name, resetUrl);
     }
 
     return NextResponse.json({ ok: true, message: 'If an account exists with that email, a reset link has been sent.' });
