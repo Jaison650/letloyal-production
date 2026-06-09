@@ -195,10 +195,8 @@ export async function POST(req: NextRequest) {
         cm = cmRows.rows[0] as unknown as CustomerMerchantRow;
       }
 
-      // ── 6d. Block if reward already unlocked ─────────────────────────
-      if (cm.reward_status === 'unlocked') {
-        throw Object.assign(new Error('REWARD_PENDING'), { code: 'REWARD_PENDING' });
-      }
+      // ── 6d. Note if reward was already waiting (no longer a hard block) ─
+      const rewardAlreadyWaiting = cm.reward_status === 'unlocked';
 
       // ── 6e. Compute points_added ──────────────────────────────────────
       let pointsAdded: number;
@@ -215,9 +213,11 @@ export async function POST(req: NextRequest) {
       }
 
       // ── 6f. Update progress ───────────────────────────────────────────
-      const newProgress     = cm.progress + pointsAdded;
-      const rewardUnlocked  = newProgress >= campaign.reward_threshold;
-      const newRewardStatus = rewardUnlocked ? 'unlocked' : 'in_progress';
+      const newProgress = cm.progress + pointsAdded;
+      // If reward was already waiting, keep it unlocked.
+      // If not, check if this scan just crossed the threshold.
+      const justUnlocked    = !rewardAlreadyWaiting && newProgress >= campaign.reward_threshold;
+      const newRewardStatus = (rewardAlreadyWaiting || justUnlocked) ? 'unlocked' : 'in_progress';
 
       await client.query(
         `UPDATE customer_merchant
@@ -242,26 +242,28 @@ export async function POST(req: NextRequest) {
       );
 
       return {
-        progress:          newProgress,
-        threshold:         campaign.reward_threshold,
-        reward_unlocked:   rewardUnlocked,
-        reward_description: campaign.reward_description,
-        points_added:      pointsAdded,
-        is_first_visit:    isFirstVisit,
-        campaign_type:     campaign.campaign_type,
+        progress:              newProgress,
+        threshold:             campaign.reward_threshold,
+        reward_unlocked:       justUnlocked,          // true only if just crossed threshold NOW
+        reward_already_waiting: rewardAlreadyWaiting, // true if reward was pending before this scan
+        reward_description:    campaign.reward_description,
+        points_added:          pointsAdded,
+        is_first_visit:        isFirstVisit,
+        campaign_type:         campaign.campaign_type,
       };
     });
 
     return NextResponse.json({
-      ok:                 true,
-      business_name:      merchant?.business_name ?? '',
-      progress:           result.progress,
-      threshold:          result.threshold,
-      reward_unlocked:    result.reward_unlocked,
-      reward_description: result.reward_description,
-      points_added:       result.points_added,
-      is_first_visit:     result.is_first_visit,
-      campaign_type:      result.campaign_type,
+      ok:                    true,
+      business_name:         merchant?.business_name ?? '',
+      progress:              result.progress,
+      threshold:             result.threshold,
+      reward_unlocked:       result.reward_unlocked,
+      reward_already_waiting: result.reward_already_waiting,
+      reward_description:    result.reward_description,
+      points_added:          result.points_added,
+      is_first_visit:        result.is_first_visit,
+      campaign_type:         result.campaign_type,
     });
 
   } catch (err: unknown) {
@@ -272,12 +274,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         { error: 'This QR code has already been scanned.' },
         { status: 409 },
-      );
-    }
-    if (code === 'REWARD_PENDING') {
-      return NextResponse.json(
-        { error: 'You already have a reward waiting! Show this to the staff to redeem it first.' },
-        { status: 422 },
       );
     }
     if (code === 'AMOUNT_TOO_SMALL') {

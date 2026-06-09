@@ -12,15 +12,16 @@ import {
 import Link from 'next/link';
 
 interface ScanResult {
-  ok:                 boolean;
-  business_name:      string;
-  progress:           number;
-  threshold:          number;
-  reward_unlocked:    boolean;
-  reward_description: string;
-  points_added:       number;
-  is_first_visit:     boolean;
-  campaign_type:      'visit_based' | 'spend_based';
+  ok:                    boolean;
+  business_name:         string;
+  progress:              number;
+  threshold:             number;
+  reward_unlocked:       boolean;       // just crossed threshold THIS scan
+  reward_already_waiting: boolean;      // had an unclaimed reward BEFORE this scan
+  reward_description:    string;
+  points_added:          number;
+  is_first_visit:        boolean;
+  campaign_type:         'visit_based' | 'spend_based';
 }
 
 interface RedeemCode {
@@ -225,6 +226,7 @@ export default function ScanClient({ token, merchantId, businessName, campaignTy
           campaignType={result.campaign_type}
         />
 
+        {/* Reward just unlocked this scan */}
         {result.reward_unlocked && (
           <div className="space-y-2">
             <button
@@ -242,7 +244,32 @@ export default function ScanClient({ token, merchantId, businessName, campaignTy
           </div>
         )}
 
-        {!result.reward_unlocked && (
+        {/* Reward was already waiting — stamp still added, gentle reminder */}
+        {result.reward_already_waiting && !result.reward_unlocked && (
+          <div className="rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 space-y-2">
+            <p className="text-sm font-semibold text-amber-800 flex items-center gap-1.5">
+              <Gift size={15} /> You have a reward ready to claim!
+            </p>
+            <p className="text-xs text-amber-700">
+              Your stamp was added. Claim your reward whenever you&apos;re ready — show it to the staff.
+            </p>
+            <button
+              onClick={generateRedeemCode}
+              disabled={codeLoading}
+              className="w-full mt-1 bg-amber-500 hover:bg-amber-600 text-white font-semibold py-2 rounded-lg flex items-center justify-center gap-2 text-sm transition-colors"
+            >
+              {codeLoading ? (
+                <><svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>Generating…</>
+              ) : (
+                <><Gift size={15} />Claim Reward</>
+              )}
+            </button>
+            {codeError && <p className="text-xs text-status-error text-center">{codeError}</p>}
+          </div>
+        )}
+
+        {/* No reward — keep earning */}
+        {!result.reward_unlocked && !result.reward_already_waiting && (
           <p className="text-center text-xs text-text-light pt-2">
             Come back again to keep earning {campaignType === 'visit_based' ? 'stamps' : 'points'}!
           </p>
