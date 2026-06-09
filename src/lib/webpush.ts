@@ -62,3 +62,20 @@ export async function countCustomerSubs(merchantId: string): Promise<number> {
   );
   return Number(rows[0]?.cnt ?? 0);
 }
+
+/** Push to a single customer who opted in while scanning a specific merchant. */
+export async function pushToCustomer(
+  phone: string,
+  merchantId: string,
+  title: string,
+  body: string,
+  url?: string,
+): Promise<number> {
+  const subs = await query<PushSub>(
+    `SELECT endpoint, p256dh, auth FROM push_subscriptions
+      WHERE owner_type = 'customer' AND owner_id = ? AND merchant_id = ?`,
+    [phone, merchantId],
+  );
+  if (!subs.length) return 0;
+  return sendToSubs(subs, { title, body, url: url ?? '/', tag: 'milestone-alert' });
+}

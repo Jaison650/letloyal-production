@@ -34,6 +34,7 @@ interface Props {
   topCustomers: TopCustomer[]; genderStats: GenderStat[]; ageGroups: AgeGroup[];
   noAgeCount: number; upcomingBirthdays: Birthday[]; customers: Customer[];
   blasts: Blast[]; customerSubCount: number;
+  blastsUsed: number; blastLimit: number;
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -206,6 +207,7 @@ export default function InsightsClient({
   stats, trend30, peakDays, segments,
   topCustomers, genderStats, ageGroups, noAgeCount, upcomingBirthdays,
   customers, blasts: initialBlasts, customerSubCount: initialSubCount,
+  blastsUsed: initialBlastsUsed, blastLimit,
 }: Props) {
   const [tab, setTab] = useState<'overview' | 'customers' | 'notifications'>('overview');
   const push = usePushManager(merchantId, vapidPublicKey);
@@ -218,6 +220,7 @@ export default function InsightsClient({
   const [blastSuccess, setBlastSuccess] = useState('');
   const [blasts,       setBlasts]       = useState(initialBlasts);
   const [subCount,     setSubCount]     = useState(initialSubCount);
+  const [blastsUsed,   setBlastsUsed]   = useState(initialBlastsUsed);
 
   // Customer push subscribe (for customer opt-in from merchant page — not used here, but reuses the same SW)
   async function sendBlast() {
@@ -231,10 +234,12 @@ export default function InsightsClient({
       const data = await res.json();
       if (!res.ok) { setBlastError(data.error || 'Failed.'); return; }
       setBlastSuccess(`Sent to ${data.sent} subscriber${data.sent !== 1 ? 's' : ''}!`);
+      if (data.blasts_used != null) setBlastsUsed(data.blasts_used);
       setBlastTitle(''); setBlastBody('');
       // Refresh blasts list
       const fresh = await fetch(`/api/merchant/${slug}/push`).then(r => r.json());
       if (fresh.blasts) { setBlasts(fresh.blasts); setSubCount(fresh.subscriber_count); }
+      if (fresh.blasts_used != null) setBlastsUsed(fresh.blasts_used);
     } finally { setBlasting(false); }
   }
 
@@ -529,16 +534,33 @@ export default function InsightsClient({
 
           {/* Send blast to customers */}
           <div className="card">
-            <div className="flex items-center gap-2 mb-1">
-              <Send size={16} className="text-primary" />
-              <h2 className="font-semibold text-text-dark">Send to Customers</h2>
+            <div className="flex items-start justify-between mb-1">
+              <div className="flex items-center gap-2">
+                <Send size={16} className="text-primary" />
+                <h2 className="font-semibold text-text-dark">Send to Customers</h2>
+              </div>
+              {/* Quota badge */}
+              <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                blastsUsed >= blastLimit
+                  ? 'bg-red-100 text-red-700'
+                  : blastsUsed >= blastLimit - 1
+                  ? 'bg-amber-100 text-amber-700'
+                  : 'bg-green-100 text-green-700'
+              }`}>
+                {blastsUsed}/{blastLimit} this month
+              </span>
             </div>
             <p className="text-xs text-text-light mb-4">
               Push a message to all customers who opted in when scanning.
               <span className="font-semibold text-text-dark"> {subCount} subscriber{subCount !== 1 ? 's' : ''}</span> currently opted in.
             </p>
 
-            {subCount === 0 ? (
+            {blastsUsed >= blastLimit ? (
+              <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3">
+                <p className="text-sm text-red-800 font-medium">Monthly blast limit reached</p>
+                <p className="text-xs text-red-700 mt-1">You&apos;ve used all {blastLimit} blasts for this rolling 30-day period. Available again as older blasts roll off.</p>
+              </div>
+            ) : subCount === 0 ? (
               <div className="rounded-xl bg-amber-50 border border-amber-200 px-4 py-3">
                 <p className="text-sm text-amber-800 font-medium">No customer subscribers yet</p>
                 <p className="text-xs text-amber-700 mt-1">Customers can opt in to notifications after scanning your QR code.</p>
@@ -563,7 +585,7 @@ export default function InsightsClient({
                     rows={3}
                     value={blastBody}
                     onChange={e => setBlastBody(e.target.value)}
-                    placeholder="e.g. Come visit us Sat–Sun and earn 2× loyalty points. Don't miss out!"
+                    placeholder="e.g. Come visit us Sat–Sun and earn 2× loyalty points. Don&apos;t miss out!"
                     maxLength={200}
                   />
                   <p className="text-xs text-text-light text-right mt-1">{blastBody.length}/200</p>
@@ -577,6 +599,7 @@ export default function InsightsClient({
                   <Send size={14} />
                   {blasting ? 'Sending…' : `Send to ${subCount} Customer${subCount !== 1 ? 's' : ''}`}
                 </button>
+                <p className="text-xs text-text-light text-center">{blastLimit - blastsUsed} blast{blastLimit - blastsUsed !== 1 ? 's' : ''} remaining this month</p>
               </div>
             )}
           </div>

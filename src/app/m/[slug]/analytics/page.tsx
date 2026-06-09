@@ -27,6 +27,7 @@ export default async function AnalyticsPage({ params }: PageProps) {
     customerList,
     blastData,
     subCountRow,
+    blastsUsedRow,
   ] = await Promise.all([
 
     // Overview counts
@@ -162,6 +163,12 @@ export default async function AnalyticsPage({ params }: PageProps) {
       SELECT COUNT(*) AS cnt FROM push_subscriptions
       WHERE owner_type = 'customer' AND merchant_id = ?
     `, [mid]),
+
+    // Blasts used in last 30 days
+    queryOne<{ cnt: number }>(`
+      SELECT COUNT(*) AS cnt FROM push_blasts
+      WHERE merchant_id = ? AND sent_at >= NOW() - INTERVAL 30 DAY
+    `, [mid]),
   ]);
 
   // ── Process gender ─────────────────────────────────────────────────────
@@ -246,6 +253,8 @@ export default async function AnalyticsPage({ params }: PageProps) {
       }))}
       blasts={blastData}
       customerSubCount={Number(subCountRow?.cnt ?? 0)}
+      blastsUsed={Number(blastsUsedRow?.cnt ?? 0)}
+      blastLimit={4}
     />
   );
 }

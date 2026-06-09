@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withTransaction, queryOne } from '@/lib/db';
-import { pushToMerchant } from '@/lib/webpush';
+import { pushToMerchant, pushToCustomer } from '@/lib/webpush';
 
 // ── Types ─────────────────────────────────────────────────────────────
 interface QRTokenRow {
@@ -351,6 +351,24 @@ export async function POST(req: NextRequest) {
         ? `🆕 New customer! ${result.points_added} ${result.campaign_type === 'visit_based' ? 'stamp' : 'point'}${result.points_added !== 1 ? 's' : ''} earned`
         : `🏆 Reward unlocked! A customer just earned: ${result.reward_description}`;
       pushToMerchant(qrToken.merchant_id, 'LetLoyal Alert', pushMsg).catch(() => {});
+    }
+
+    // Fire-and-forget proximity push to customer (milestone nudge)
+    // Fires once: when customer just crossed the "≤2 away" boundary this scan
+    if (!result.reward_unlocked && !result.reward_already_waiting) {
+      const remaining = result.threshold - result.progress;
+      const unit = result.campaign_type === 'visit_based' ? 'visit' : 'point';
+      const unitPlural = remaining === 1 ? unit : `${unit}s`;
+      // "≤2 away" for visit_based; "≤10% remaining" for spend_based
+      const nearMilestone = result.campaign_type === 'visit_based'
+        ? remaining <= 2
+        : result.progress / result.threshold >= 0.8;
+      if (nearMilestone) {
+        const nudgeMsg = remaining === 1
+          ? `Just 1 ${unit} away from ${result.reward_description} at ${merchant?.business_name ?? 'us'}! Come back soon 🎯`
+          : `Only ${remaining} ${unitPlural} away from your reward at ${merchant?.business_name ?? 'us'}! Keep it up 🔥`;
+        pushToCustomer(phone, qrToken.merchant_id, 'You\'re almost there!', nudgeMsg).catch(() => {});
+      }
     }
 
     return NextResponse.json({

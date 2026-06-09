@@ -1,17 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireMerchant } from '@/lib/auth';
-import { query } from '@/lib/db';
+import { query, queryOne } from '@/lib/db';
 import { pushBlastToCustomers, countCustomerSubs } from '@/lib/webpush';
 
 type RouteContext = { params: Promise<{ slug: string }> };
 
-// GET — returns subscriber count + recent blasts
+const BLAST_LIMIT = 4; // per rolling 30-day window
+
+async function blastsThisMonth(merchantId: string): Promise<number> {
+  const row = await queryOne<{ cnt: number }>(
+    `SELECT COUNT(*) AS cnt FROM push_blasts
+      WHERE merchant_id = ? AND sent_at >= NOW() - INTERVAL 30 DAY`,
+    [merchantId],
+  );
+  return Number(row?.cnt ?? 0);
+}
+
+// GET — returns subscriber count + blast quota + recent blasts
 export async function GET(req: NextRequest, { params }: RouteContext) {
   try {
     const { slug } = await params;
     const auth = requireMerchant(req, slug);
 
-    const [subCount, blasts] = await Promise.all([
+    const [subCount, blasts, used] = await Promise.all([
       countCustomerSubs(auth.sub),
       query<{ id: string; title: string; body: string; recipient_count: number; sent_at: string }>(
         `SELECT id, title, body, recipient_count, sent_at
@@ -19,9 +30,15 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
            ORDER BY sent_at DESC LIMIT 10`,
         [auth.sub],
       ),
+      blastsThisMonth(auth.sub),
     ]);
 
-    return NextResponse.json({ subscriber_count: subCount, blasts });
+    return NextResponse.json({
+      subscriber_count: subCount,
+      blasts,
+      blasts_used:  used,
+      blast_limit:  BLAST_LIMIT,
+    });
   } catch (err) {
     if (err instanceof Response) return err;
     console.error('[GET /api/merchant/[slug]/push]', err);
@@ -34,6 +51,15 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
   try {
     const { slug } = await params;
     const auth = requireMerchant(req, slug);
+
+    // Rate limit check
+    const used = await blastsThisMonth(auth.sub);
+    if (used >= BLAST_LIMIT) {
+      return NextResponse.json(
+        { error: `Monthly blast limit reached (${BLAST_LIMIT}/month). Available again as older blasts roll off.` },
+        { status: 429 },
+      );
+    }
 
     const { title, body } = await req.json();
     if (!title?.trim() || !body?.trim()) {
@@ -50,7 +76,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
       [auth.sub, title.trim(), body.trim(), sent],
     );
 
-    return NextResponse.json({ ok: true, sent });
+    return NextResponse.json({ ok: true, sent, blasts_used: used + 1, blast_limit: BLAST_LIMIT });
   } catch (err) {
     if (err instanceof Response) return err;
     console.error('[POST /api/merchant/[slug]/push]', err);
