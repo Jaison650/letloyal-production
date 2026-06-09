@@ -31,11 +31,12 @@ interface RedeemCode {
 }
 
 interface ScanClientProps {
-  token:        string;
-  merchantId:   string;
-  businessName: string;
-  campaignType: 'visit_based' | 'spend_based';
-  slug:         string;
+  token:           string;
+  merchantId:      string;
+  businessName:    string;
+  campaignType:    'visit_based' | 'spend_based';
+  slug:            string;
+  googleReviewUrl?: string;
 }
 
 // ── Countdown timer ───────────────────────────────────────────────────────────
@@ -103,7 +104,7 @@ function RedeemCodeCard({ code, rewardDesc, expiresMinutes, onRefresh }: {
 }
 
 // ── Main ScanClient ───────────────────────────────────────────────────────────
-export default function ScanClient({ token, merchantId, businessName, campaignType, slug }: ScanClientProps) {
+export default function ScanClient({ token, merchantId, businessName, campaignType, slug, googleReviewUrl }: ScanClientProps) {
   const [phone,        setPhone]        = useState('');
   const [name,         setName]         = useState('');
   const [loading,      setLoading]      = useState(false);
@@ -207,7 +208,14 @@ export default function ScanClient({ token, merchantId, businessName, campaignTy
           expiresMinutes={redeemCode.expiresMinutes}
           onRefresh={() => { setRedeemCode(null); generateRedeemCode(); }}
         />
-        {showFeedback && <FeedbackForm merchantId={merchantId} phoneNumber={phone} onDismiss={() => setShowFeedback(false)} />}
+        {showFeedback && (
+          <FeedbackForm
+            merchantId={merchantId}
+            phoneNumber={phone}
+            googleReviewUrl={googleReviewUrl}
+            onDismiss={() => setShowFeedback(false)}
+          />
+        )}
       </div>
     );
   }
@@ -285,7 +293,14 @@ export default function ScanClient({ token, merchantId, businessName, campaignTy
           </Link>
         )}
 
-        {showFeedback && <FeedbackForm merchantId={merchantId} phoneNumber={phone} onDismiss={() => setShowFeedback(false)} />}
+        {showFeedback && (
+          <FeedbackForm
+            merchantId={merchantId}
+            phoneNumber={phone}
+            googleReviewUrl={googleReviewUrl}
+            onDismiss={() => setShowFeedback(false)}
+          />
+        )}
       </div>
     );
   }

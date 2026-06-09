@@ -164,6 +164,7 @@ export default async function ScanPage({ params, searchParams }: PageProps) {
             businessName={merchant.business_name}
             campaignType={campaign.campaign_type}
             slug={merchant.slug}
+            googleReviewUrl={merchant.google_review_url ?? undefined}
           />
         )}
       </main>
