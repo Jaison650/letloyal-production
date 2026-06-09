@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withTransaction, queryOne } from '@/lib/db';
+import { pushToMerchant } from '@/lib/webpush';
 
 // ── Types ─────────────────────────────────────────────────────────────
 interface QRTokenRow {
@@ -343,6 +344,14 @@ export async function POST(req: NextRequest) {
         streak_period:      campaign.streak_period ?? 'day',
       };
     });
+
+    // Fire-and-forget push to merchant on notable events only
+    if (result.is_first_visit || result.reward_unlocked) {
+      const pushMsg = result.is_first_visit
+        ? `🆕 New customer! ${result.points_added} ${result.campaign_type === 'visit_based' ? 'stamp' : 'point'}${result.points_added !== 1 ? 's' : ''} earned`
+        : `🏆 Reward unlocked! A customer just earned: ${result.reward_description}`;
+      pushToMerchant(qrToken.merchant_id, 'LetLoyal Alert', pushMsg).catch(() => {});
+    }
 
     return NextResponse.json({
       ok:                     true,

@@ -1,236 +1,251 @@
-import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { getMerchantFromCookies } from '@/lib/session';
 import { query, queryOne } from '@/lib/db';
 import { maskPhone } from '@/lib/utils';
-import { Users, Gift, TrendingUp, BarChart2 } from 'lucide-react';
-import { WhatsAppButton } from '@/components/merchant/WhatsAppButton';
+import InsightsClient from '@/components/merchant/InsightsClient';
 
 type PageProps = { params: Promise<{ slug: string }> };
 
-interface GenderStat  { label: string; count: number; pct: number; }
-interface AgeGroup    { label: string; count: number; pct: number; }
-interface UpcomingBirthday { display_name: string; masked_phone: string; days_until: number; days_label: string; }
-
-// ── Bar row component ───────────────────────────────────────────────────────
-function BarRow({ label, pct, count, color }: { label: string; pct: number; count: number; color: string }) {
-  const displayLabel: Record<string, string> = {
-    male: 'Male', female: 'Female', other: 'Other',
-    not_shared: 'Not shared', prefer_not_to_say: 'Prefer not to say',
-    under_18: 'Under 18', '18-24': '18–24', '25-34': '25–34',
-    '35-44': '35–44', '45+': '45+',
-  };
-  return (
-    <div className="mb-3">
-      <div className="flex justify-between mb-1">
-        <span className="text-sm font-medium text-text-dark">{displayLabel[label] ?? label}</span>
-        <span className="text-sm font-bold text-text-dark">{pct}% <span className="text-xs text-text-light font-normal">({count})</span></span>
-      </div>
-      <div className="h-2 bg-bg-muted rounded-full overflow-hidden">
-        <div className={`h-full rounded-full transition-all ${color}`} style={{ width: `${pct}%` }} />
-      </div>
-    </div>
-  );
-}
-
 export default async function AnalyticsPage({ params }: PageProps) {
   const { slug } = await params;
-  await cookies();
-  const merchant = await getMerchantFromCookies();
+  const merchant  = await getMerchantFromCookies();
   if (!merchant || merchant.slug !== slug) redirect('/merchant/login');
+  const mid = merchant.id;
 
-  const merchantId = merchant.id;
+  // ── All data fetched in parallel ─────────────────────────────────────
+  const [
+    overviewRow,
+    redemptionRow,
+    trend30,
+    peakDays,
+    segmentRow,
+    topCustomers,
+    genderRows,
+    ageRows,
+    birthdayRows,
+    noAgeRow,
+    customerList,
+    blastData,
+    subCountRow,
+  ] = await Promise.all([
 
-  // ── Fetch all analytics data ─────────────────────────────────────────
-  const [genderRows, ageRows, birthdayRows, noAgeRow, totalCustomers] = await Promise.all([
+    // Overview counts
+    queryOne<{ total: number; this_week: number; this_month: number; total_visits: number }>(`
+      SELECT
+        COUNT(DISTINCT cm.customer_id)                                        AS total,
+        COUNT(DISTINCT CASE WHEN v.created_at >= NOW() - INTERVAL 7 DAY
+                            THEN v.customer_id END)                           AS this_week,
+        COUNT(DISTINCT CASE WHEN MONTH(v.created_at) = MONTH(NOW())
+                             AND YEAR(v.created_at)  = YEAR(NOW())
+                            THEN v.customer_id END)                           AS this_month,
+        COUNT(v.id)                                                           AS total_visits
+      FROM customer_merchant cm
+      LEFT JOIN visits v ON v.customer_id = cm.customer_id AND v.merchant_id = cm.merchant_id
+      WHERE cm.merchant_id = ?
+    `, [mid]),
 
+    // Redemptions
+    queryOne<{ cnt: number }>(
+      `SELECT COUNT(*) AS cnt FROM redeem_codes WHERE merchant_id = ? AND status = 'used'`,
+      [mid],
+    ),
+
+    // 30-day daily trend
+    query<{ visit_date: string; count: number }>(`
+      SELECT DATE(created_at) AS visit_date, COUNT(*) AS count
+      FROM visits
+      WHERE merchant_id = ? AND created_at >= NOW() - INTERVAL 30 DAY
+      GROUP BY DATE(created_at)
+      ORDER BY visit_date ASC
+    `, [mid]),
+
+    // Peak days of week
+    query<{ dow: number; day_name: string; count: number }>(`
+      SELECT DAYOFWEEK(created_at) AS dow, DAYNAME(created_at) AS day_name, COUNT(*) AS count
+      FROM visits WHERE merchant_id = ?
+      GROUP BY DAYOFWEEK(created_at), DAYNAME(created_at)
+      ORDER BY dow
+    `, [mid]),
+
+    // Frequency segments
+    queryOne<{ new_count: number; regular_count: number; loyal_count: number; at_risk_count: number }>(`
+      SELECT
+        SUM(CASE WHEN visit_count = 1 THEN 1 ELSE 0 END)                                    AS new_count,
+        SUM(CASE WHEN visit_count BETWEEN 2 AND 9 THEN 1 ELSE 0 END)                        AS regular_count,
+        SUM(CASE WHEN visit_count >= 10 THEN 1 ELSE 0 END)                                  AS loyal_count,
+        SUM(CASE WHEN last_visit < NOW() - INTERVAL 30 DAY AND visit_count > 1 THEN 1 ELSE 0 END) AS at_risk_count
+      FROM (
+        SELECT customer_id, COUNT(*) AS visit_count, MAX(created_at) AS last_visit
+        FROM visits WHERE merchant_id = ?
+        GROUP BY customer_id
+      ) t
+    `, [mid]),
+
+    // Top 5 customers
+    query<{ name: string | null; phone_number: string; visit_count: number; last_visit: string }>(`
+      SELECT c.name, c.phone_number, COUNT(v.id) AS visit_count, MAX(v.created_at) AS last_visit
+      FROM visits v JOIN customers c ON c.id = v.customer_id
+      WHERE v.merchant_id = ?
+      GROUP BY v.customer_id
+      ORDER BY visit_count DESC LIMIT 5
+    `, [mid]),
+
+    // Gender
     query<{ gender: string | null; cnt: number }>(`
       SELECT cu.gender, COUNT(*) AS cnt
-      FROM customer_merchant cm
-      JOIN customers cu ON cu.id = cm.customer_id
-      WHERE cm.merchant_id = ?
-      GROUP BY cu.gender
-    `, [merchantId]),
+      FROM customer_merchant cm JOIN customers cu ON cu.id = cm.customer_id
+      WHERE cm.merchant_id = ? GROUP BY cu.gender
+    `, [mid]),
 
+    // Age
     query<{ age_group: string; cnt: number }>(`
       SELECT
         CASE
-          WHEN YEAR(CURDATE()) - YEAR(cu.birthday) < 18 THEN 'under_18'
+          WHEN YEAR(CURDATE()) - YEAR(cu.birthday) < 18              THEN 'under_18'
           WHEN YEAR(CURDATE()) - YEAR(cu.birthday) BETWEEN 18 AND 24 THEN '18-24'
           WHEN YEAR(CURDATE()) - YEAR(cu.birthday) BETWEEN 25 AND 34 THEN '25-34'
           WHEN YEAR(CURDATE()) - YEAR(cu.birthday) BETWEEN 35 AND 44 THEN '35-44'
           ELSE '45+'
-        END AS age_group,
-        COUNT(*) AS cnt
-      FROM customer_merchant cm
-      JOIN customers cu ON cu.id = cm.customer_id
-      WHERE cm.merchant_id = ? AND cu.birthday IS NOT NULL
-      GROUP BY age_group
-    `, [merchantId]),
+        END AS age_group, COUNT(*) AS cnt
+      FROM customer_merchant cm JOIN customers cu ON cu.id = cm.customer_id
+      WHERE cm.merchant_id = ? AND cu.birthday IS NOT NULL GROUP BY age_group
+    `, [mid]),
 
+    // Upcoming birthdays (30 days)
     query<{ name: string | null; phone_number: string; days_until: number }>(`
       SELECT cu.name, cu.phone_number,
-        DATEDIFF(
-          DATE(CONCAT(
-            IF(DATE_FORMAT(CURDATE(),'%m-%d') <= DATE_FORMAT(cu.birthday,'%m-%d'),
-               YEAR(CURDATE()), YEAR(CURDATE()) + 1),
-            '-', DATE_FORMAT(cu.birthday,'%m-%d')
-          )),
-          CURDATE()
-        ) AS days_until
-      FROM customer_merchant cm
-      JOIN customers cu ON cu.id = cm.customer_id
+        DATEDIFF(DATE(CONCAT(
+          IF(DATE_FORMAT(CURDATE(),'%m-%d') <= DATE_FORMAT(cu.birthday,'%m-%d'),
+             YEAR(CURDATE()), YEAR(CURDATE()) + 1),
+          '-', DATE_FORMAT(cu.birthday,'%m-%d')
+        )), CURDATE()) AS days_until
+      FROM customer_merchant cm JOIN customers cu ON cu.id = cm.customer_id
       WHERE cm.merchant_id = ? AND cu.birthday IS NOT NULL
-      HAVING days_until BETWEEN 0 AND 30
-      ORDER BY days_until ASC
-    `, [merchantId]),
+      HAVING days_until BETWEEN 0 AND 30 ORDER BY days_until ASC
+    `, [mid]),
 
+    // No birthday count
     queryOne<{ cnt: number }>(`
       SELECT COUNT(*) AS cnt FROM customer_merchant cm
       JOIN customers cu ON cu.id = cm.customer_id
       WHERE cm.merchant_id = ? AND cu.birthday IS NULL
-    `, [merchantId]),
+    `, [mid]),
 
-    queryOne<{ cnt: number }>(
-      'SELECT COUNT(DISTINCT customer_id) AS cnt FROM customer_merchant WHERE merchant_id = ?',
-      [merchantId]
-    ),
+    // Full customer list
+    query<{
+      customer_id: string; name: string | null; phone_number: string;
+      progress: number; reward_threshold: number; reward_status: string;
+      total_visits: number; last_scan_at: string | null;
+      current_streak: number; streak_period: string; streak_enabled: number;
+    }>(`
+      SELECT c.id AS customer_id, c.name, c.phone_number,
+             cm.progress, ca.reward_threshold, cm.reward_status,
+             cm.last_scan_at, cm.current_streak, ca.streak_period, ca.streak_enabled,
+             (SELECT COUNT(*) FROM visits v WHERE v.customer_id = c.id AND v.merchant_id = m.id) AS total_visits
+      FROM customer_merchant cm
+      JOIN customers  c  ON c.id  = cm.customer_id
+      JOIN merchants  m  ON m.id  = cm.merchant_id
+      JOIN campaigns  ca ON ca.id = cm.campaign_id
+      WHERE m.slug = ?
+      ORDER BY cm.last_scan_at DESC
+    `, [slug]),
+
+    // Recent blasts
+    query<{ id: string; title: string; body: string; recipient_count: number; sent_at: string }>(`
+      SELECT id, title, body, recipient_count, sent_at
+      FROM push_blasts WHERE merchant_id = ?
+      ORDER BY sent_at DESC LIMIT 10
+    `, [mid]),
+
+    // Customer push subscriber count
+    queryOne<{ cnt: number }>(`
+      SELECT COUNT(*) AS cnt FROM push_subscriptions
+      WHERE owner_type = 'customer' AND merchant_id = ?
+    `, [mid]),
   ]);
 
-  // ── Process gender ───────────────────────────────────────────────────
+  // ── Process gender ─────────────────────────────────────────────────────
   const genderMap: Record<string, number> = { male: 0, female: 0, other: 0, prefer_not_to_say: 0, not_shared: 0 };
   let totalGender = 0;
-  for (const row of genderRows) {
-    const key = row.gender ?? 'not_shared';
-    genderMap[key] = (genderMap[key] ?? 0) + Number(row.cnt);
-    totalGender += Number(row.cnt);
+  for (const r of genderRows) {
+    const k = r.gender ?? 'not_shared';
+    genderMap[k] = (genderMap[k] ?? 0) + Number(r.cnt);
+    totalGender += Number(r.cnt);
   }
-  const genderStats: GenderStat[] = Object.entries(genderMap)
+  const genderStats = Object.entries(genderMap)
     .filter(([, c]) => c > 0)
-    .map(([label, count]) => ({ label, count, pct: totalGender > 0 ? Math.round((count / totalGender) * 100) : 0 }));
+    .map(([label, count]) => ({ label, count, pct: totalGender ? Math.round((count / totalGender) * 100) : 0 }));
 
-  // ── Process age groups ───────────────────────────────────────────────
+  // ── Process age ────────────────────────────────────────────────────────
   const ageOrder = ['under_18', '18-24', '25-34', '35-44', '45+'];
   const ageMap: Record<string, number> = {};
   let totalAge = 0;
-  for (const row of ageRows) { ageMap[row.age_group] = Number(row.cnt); totalAge += Number(row.cnt); }
-  const ageGroups: AgeGroup[] = ageOrder
-    .filter(g => (ageMap[g] ?? 0) > 0)
-    .map(g => ({ label: g, count: ageMap[g] ?? 0, pct: totalAge > 0 ? Math.round(((ageMap[g] ?? 0) / totalAge) * 100) : 0 }));
+  for (const r of ageRows) { ageMap[r.age_group] = Number(r.cnt); totalAge += Number(r.cnt); }
+  const ageGroups = ageOrder.filter(g => (ageMap[g] ?? 0) > 0)
+    .map(g => ({ label: g, count: ageMap[g] ?? 0, pct: totalAge ? Math.round(((ageMap[g] ?? 0) / totalAge) * 100) : 0 }));
 
-  // ── Process birthdays ────────────────────────────────────────────────
-  const upcomingBirthdays: UpcomingBirthday[] = birthdayRows.map(r => ({
+  // ── Process birthdays ──────────────────────────────────────────────────
+  const upcomingBirthdays = birthdayRows.map(r => ({
     display_name: r.name ? r.name.split(' ')[0] : 'Customer',
     masked_phone: maskPhone(r.phone_number),
     days_until:   Number(r.days_until),
-    days_label:   Number(r.days_until) === 0 ? 'Today! 🎂'
-                : Number(r.days_until) === 1 ? 'Tomorrow'
-                : `In ${r.days_until} days`,
+    days_label:   Number(r.days_until) === 0 ? 'Today! 🎂' : Number(r.days_until) === 1 ? 'Tomorrow' : `In ${r.days_until} days`,
   }));
 
-  const genderColors: Record<string, string> = {
-    male: 'bg-primary', female: 'bg-purple-400',
-    other: 'bg-amber-400', not_shared: 'bg-gray-300', prefer_not_to_say: 'bg-gray-300',
-  };
+  // ── Build 30-day grid (fill missing dates with 0) ─────────────────────
+  const trendMap: Record<string, number> = {};
+  for (const r of trend30) trendMap[r.visit_date] = Number(r.count);
+  const trend30Grid = Array.from({ length: 30 }, (_, i) => {
+    const d = new Date(); d.setDate(d.getDate() - (29 - i));
+    const key = d.toLocaleDateString('en-CA');
+    return { date: key, count: trendMap[key] ?? 0 };
+  });
+
+  const avgVisits = overviewRow?.total
+    ? Math.round(((overviewRow.total_visits ?? 0) / overviewRow.total) * 10) / 10
+    : 0;
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-text-dark flex items-center gap-2">
-          <BarChart2 size={24} className="text-primary" /> Customer Analytics
-        </h1>
-        <p className="text-text-light text-sm mt-1">
-          Based on {totalCustomers?.cnt ?? 0} total customers · Only customers who shared their details are included in breakdowns
-        </p>
-      </div>
-
-      {/* Gender + Age side by side */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-
-        {/* Gender */}
-        <div className="card">
-          <div className="flex items-center gap-2 mb-4">
-            <Users size={16} className="text-primary" />
-            <h2 className="font-semibold text-text-dark">Gender Split</h2>
-          </div>
-          {genderStats.length === 0 ? (
-            <p className="text-sm text-text-light py-4 text-center">No gender data yet — customers can add this in their profile.</p>
-          ) : (
-            <>
-              {genderStats.map(s => (
-                <BarRow key={s.label} label={s.label} pct={s.pct} count={s.count}
-                  color={genderColors[s.label] ?? 'bg-gray-300'} />
-              ))}
-              <p className="text-xs text-text-light mt-2">Based on {totalGender} customers who shared gender</p>
-            </>
-          )}
-        </div>
-
-        {/* Age */}
-        <div className="card">
-          <div className="flex items-center gap-2 mb-4">
-            <TrendingUp size={16} className="text-primary" />
-            <h2 className="font-semibold text-text-dark">Age Groups</h2>
-          </div>
-          {ageGroups.length === 0 ? (
-            <p className="text-sm text-text-light py-4 text-center">No age data yet — customers can add birthday in their profile.</p>
-          ) : (
-            <>
-              {ageGroups.map(g => (
-                <BarRow key={g.label} label={g.label} pct={g.pct} count={g.count} color="bg-amber-400" />
-              ))}
-              <p className="text-xs text-text-light mt-2">
-                Based on {totalAge} customers · {noAgeRow?.cnt ?? 0} have not shared birthday
-              </p>
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* Upcoming Birthdays */}
-      <div className="card">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <Gift size={16} className="text-primary" />
-            <h2 className="font-semibold text-text-dark">Upcoming Birthdays</h2>
-            <span className="text-xs font-semibold bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full">Next 30 days</span>
-          </div>
-          {upcomingBirthdays.length > 0 && (
-            <span className="text-sm text-text-light">{upcomingBirthdays.length} birthday{upcomingBirthdays.length > 1 ? 's' : ''}</span>
-          )}
-        </div>
-
-        {upcomingBirthdays.length === 0 ? (
-          <p className="text-sm text-text-light py-6 text-center">No upcoming birthdays in the next 30 days.</p>
-        ) : (
-          <div className="space-y-3">
-            {upcomingBirthdays.map((b, i) => (
-              <div key={i} className={`flex items-center justify-between p-3 rounded-xl border ${
-                b.days_until <= 1 ? 'bg-amber-50 border-amber-200' : 'bg-surface border-border-light'
-              }`}>
-                <div className="flex items-center gap-3">
-                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-lg flex-shrink-0 ${
-                    b.days_until <= 1 ? 'bg-amber-100' : 'bg-primary-light'
-                  }`}>🎂</div>
-                  <div>
-                    <p className="text-sm font-semibold text-text-dark">{b.display_name}</p>
-                    <p className="text-xs text-text-light">
-                      {b.masked_phone} · <strong className={b.days_until <= 1 ? 'text-amber-700' : 'text-text-medium'}>{b.days_label}</strong>
-                    </p>
-                  </div>
-                </div>
-                <WhatsAppButton />
-              </div>
-            ))}
-          </div>
-        )}
-
-        <div className="mt-4 p-3 bg-primary-light rounded-xl border border-primary/20">
-          <p className="text-xs text-primary">
-            📌 Only first name and masked phone are shown. Full date of birth is never displayed.
-          </p>
-        </div>
-      </div>
-    </div>
+    <InsightsClient
+      slug={slug}
+      merchantId={mid}
+      vapidPublicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? ''}
+      stats={{
+        totalCustomers:    overviewRow?.total ?? 0,
+        visitsThisWeek:    overviewRow?.this_week ?? 0,
+        visitsThisMonth:   overviewRow?.this_month ?? 0,
+        totalVisits:       overviewRow?.total_visits ?? 0,
+        redemptions:       redemptionRow?.cnt ?? 0,
+        avgVisitsPerCustomer: avgVisits,
+      }}
+      trend30={trend30Grid}
+      peakDays={peakDays.map(r => ({ day: r.day_name.slice(0, 3), count: Number(r.count) }))}
+      segments={{
+        new:     Number(segmentRow?.new_count     ?? 0),
+        regular: Number(segmentRow?.regular_count ?? 0),
+        loyal:   Number(segmentRow?.loyal_count   ?? 0),
+        atRisk:  Number(segmentRow?.at_risk_count ?? 0),
+      }}
+      topCustomers={topCustomers.map(r => ({
+        name:        r.name,
+        phone:       maskPhone(r.phone_number),
+        visit_count: Number(r.visit_count),
+        last_visit:  r.last_visit,
+      }))}
+      genderStats={genderStats}
+      ageGroups={ageGroups}
+      noAgeCount={noAgeRow?.cnt ?? 0}
+      upcomingBirthdays={upcomingBirthdays}
+      customers={customerList.map(c => ({
+        ...c,
+        progress:        Number(c.progress),
+        reward_threshold:Number(c.reward_threshold),
+        total_visits:    Number(c.total_visits),
+        current_streak:  Number(c.current_streak),
+        streak_enabled:  Number(c.streak_enabled),
+      }))}
+      blasts={blastData}
+      customerSubCount={Number(subCountRow?.cnt ?? 0)}
+    />
   );
 }

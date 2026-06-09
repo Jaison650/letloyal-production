@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireMerchant } from '@/lib/auth';
 import { withTransaction } from '@/lib/db';
+import { pushToMerchant } from '@/lib/webpush';
 
 type RouteContext = { params: Promise<{ slug: string }> };
 
@@ -101,6 +102,13 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
         threshold:          cm.reward_threshold,
       };
     });
+
+    // Fire-and-forget push to merchant
+    pushToMerchant(
+      auth.sub,
+      '🎁 Reward Redeemed',
+      `${result.customer_name ?? 'A customer'} just claimed: ${result.reward_description}`,
+    ).catch(() => {});
 
     return NextResponse.json({
       ok:                 true,

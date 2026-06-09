@@ -3,7 +3,7 @@
 import { useState, useEffect, FormEvent } from 'react';
 import MilestoneCard from '@/components/customer/MilestoneCard';
 import FeedbackForm from '@/components/customer/FeedbackForm';
-import { Phone, User, Gift, RefreshCw, Copy, Check, LayoutDashboard, Flame } from 'lucide-react';
+import { Phone, User, Gift, RefreshCw, Copy, Check, LayoutDashboard } from 'lucide-react';
 import {
   getCustomerSession,
   saveCustomerSession,
@@ -199,6 +199,8 @@ export default function ScanClient({ token, merchantId, businessName, campaignTy
   const [codeLoading,  setCodeLoading]  = useState(false);
   const [codeError,    setCodeError]    = useState('');
   const [sessionPhone, setSessionPhone] = useState<string | null>(null);
+  const [pushOffered,  setPushOffered]  = useState(false);
+  const [pushDone,     setPushDone]     = useState(false);
 
   // ── On mount: check stored session ───────────────────────────────────────
   useEffect(() => {
@@ -265,6 +267,35 @@ export default function ScanClient({ token, merchantId, businessName, campaignTy
     } finally {
       setCodeLoading(false);
     }
+  }
+
+  // ── Customer push opt-in ────────────────────────────────────────────────
+  async function subscribePush() {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) { setPushDone(true); return; }
+    try {
+      const perm = await Notification.requestPermission();
+      if (perm !== 'granted') { setPushDone(true); return; }
+      const reg = await navigator.serviceWorker.register('/sw.js');
+      await navigator.serviceWorker.ready;
+      const vapid = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? '';
+      if (!vapid) { setPushDone(true); return; }
+      const padding = '='.repeat((4 - vapid.length % 4) % 4);
+      const base64  = (vapid + padding).replace(/-/g, '+').replace(/_/g, '/');
+      const raw     = window.atob(base64);
+      const key     = new Uint8Array([...raw].map(c => c.charCodeAt(0)));
+      const sub     = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: key });
+      const p256dh  = btoa(String.fromCharCode(...new Uint8Array(sub.getKey('p256dh')!)));
+      const auth    = btoa(String.fromCharCode(...new Uint8Array(sub.getKey('auth')!)));
+      await fetch('/api/push/subscribe', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'customer', ownerId: phone.replace(/\D/g, ''),
+          merchantId,
+          subscription: { endpoint: sub.endpoint, keys: { p256dh, auth } },
+        }),
+      });
+    } catch { /* silent */ }
+    setPushDone(true);
   }
 
   // ── Auto-submitting spinner ───────────────────────────────────────────────
@@ -415,6 +446,22 @@ export default function ScanClient({ token, merchantId, businessName, campaignTy
           >
             <LayoutDashboard size={14} /> View all my rewards
           </Link>
+        )}
+
+        {/* Push notification opt-in */}
+        {!pushOffered && !pushDone && typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'default' && (
+          <div className="rounded-xl border border-border-light bg-white px-4 py-3 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <span className="text-lg flex-shrink-0">🔔</span>
+              <p className="text-xs text-text-medium">Get notified about offers from this store</p>
+            </div>
+            <div className="flex gap-2 flex-shrink-0">
+              <button onClick={() => { setPushOffered(true); setPushDone(true); }}
+                className="text-xs text-text-light hover:text-text-dark px-2 py-1">No</button>
+              <button onClick={() => { setPushOffered(true); subscribePush(); }}
+                className="text-xs bg-primary text-white px-3 py-1.5 rounded-lg font-medium">Yes</button>
+            </div>
+          </div>
         )}
 
         {showFeedback && (
