@@ -2,10 +2,9 @@ import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: 'Reset Password — LetLoyal',
-  description: 'Reset your LetLoyal merchant account password.',
   robots: { index: false, follow: false },
 };
 
-export default function MerchantForgotLayout({ children }: { children: React.ReactNode }) {
+export default function ResetPasswordLayout({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }

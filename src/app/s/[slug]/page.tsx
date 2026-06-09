@@ -1,9 +1,38 @@
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
+import type { Metadata } from 'next';
 import { queryOne } from '@/lib/db';
 import { PoweredBy } from '@/components/ui/Logo';
 import ScanClient from '@/components/customer/ScanClient';
 import { MapPin, Instagram, Star } from 'lucide-react';
+
+const BASE_URL = 'https://pilot.letloyal.com';
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  const merchant = await queryOne<{ business_name: string; address: string | null }>(
+    'SELECT business_name, address FROM merchants WHERE slug = ? AND status = ?',
+    [slug, 'active'],
+  );
+  if (!merchant) return {};
+
+  const name    = merchant.business_name;
+  const title   = `${name} — Loyalty Rewards`;
+  const desc    = `Earn loyalty rewards at ${name}${merchant.address ? `, ${merchant.address}` : ''}. Scan QR to join — no app needed.`;
+  const ogImage = `${BASE_URL}/api/og?merchant=${encodeURIComponent(name)}&sub=${encodeURIComponent(desc)}`;
+
+  return {
+    title,
+    description: desc,
+    alternates:  { canonical: `${BASE_URL}/s/${slug}` },
+    openGraph: {
+      title, description: desc,
+      url:    `${BASE_URL}/s/${slug}`,
+      images: [{ url: ogImage, width: 1200, height: 630, alt: title }],
+    },
+    twitter: { card: 'summary_large_image', title, description: desc, images: [ogImage] },
+  };
+}
 
 // ── Types ─────────────────────────────────────────────────────────────
 interface MerchantBranding {
