@@ -82,7 +82,7 @@ export default function HomePage() {
             No app. No hardware. Live in 10 minutes.
           </motion.p>
           <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45, delay: 0.26 }} className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <Link href="/merchant/login" className="btn-primary text-lg px-10 py-4">Start for Free <ArrowRight size={18} /></Link>
+            <Link href="/merchant/register" className="btn-primary text-lg px-10 py-4">Start for Free <ArrowRight size={18} /></Link>
             <a href="#how-it-works" className="btn-ghost text-lg px-8 py-4">See How It Works</a>
           </motion.div>
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5, delay: 0.38 }} className="mt-12 flex flex-wrap items-center justify-center gap-5 text-sm text-text-light font-medium">
@@ -289,7 +289,7 @@ export default function HomePage() {
             ))}
           </motion.div>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/merchant/login" className="btn-primary text-lg px-10 py-4">Merchant Login <ChevronRight size={18} /></Link>
+            <Link href="/merchant/register" className="btn-primary text-lg px-10 py-4">Get Started Free <ChevronRight size={18} /></Link>
             <Link href="/my-rewards" className="bg-white/15 hover:bg-white/25 border border-white/30 text-white font-bold rounded-full px-8 py-4 text-lg transition-all">View My Rewards</Link>
           </div>
         </div>
@@ -332,7 +332,7 @@ export default function HomePage() {
             <h2 className="font-jakarta font-bold text-3xl sm:text-5xl mb-5 leading-tight">Ready to Turn First-Time Visitors Into Loyal Customers?</h2>
             <p className="text-white/80 text-lg mb-10">Join the LetLoyal India Pilot — free to get started.</p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link href="/merchant/login" className="btn-primary text-lg px-10 py-4">Get Started Free</Link>
+              <Link href="/merchant/register" className="btn-primary text-lg px-10 py-4">Get Started Free</Link>
               <Link href="/my-rewards" className="bg-white/15 hover:bg-white/25 border border-white/30 text-white font-bold rounded-full px-8 py-4 text-lg transition-all">View My Rewards</Link>
             </div>
           </FadeUp>
@@ -364,6 +364,7 @@ export default function HomePage() {
               <div>
                 <p className="font-semibold text-white mb-3">Merchant</p>
                 <ul className="space-y-2">
+                  <li><Link href="/merchant/register" className="hover:text-white transition-colors">Create Account</Link></li>
                   <li><Link href="/merchant/login" className="hover:text-white transition-colors">Merchant Login</Link></li>
                   <li><Link href="/privacy-policy" className="hover:text-white transition-colors">Privacy Policy</Link></li>
                   <li><Link href="/terms-of-service" className="hover:text-white transition-colors">Terms of Service</Link></li>
