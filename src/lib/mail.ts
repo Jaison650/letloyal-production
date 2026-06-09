@@ -167,10 +167,19 @@ export async function sendMerchantWelcome(
   to: string,
   businessName: string,
   loginEmail: string,
-  tempPassword: string,
+  tempPassword: string | null,
   slug: string,
 ): Promise<void> {
   const dashboardUrl = `https://pilot.letloyal.com/m/${slug}`;
+  const passwordRow = tempPassword
+    ? `<tr style="border-top:1px solid #E2E8F0;">
+          <td style="padding:6px 0;color:#64748B;font-weight:500;">Password</td>
+          <td style="padding:6px 0;font-weight:700;font-family:'Courier New',monospace;letter-spacing:0.5px;background:#F8FAFC;padding-left:8px;border-radius:4px;">${tempPassword}</td>
+        </tr>`
+    : '';
+  const passwordNote = tempPassword
+    ? `<p style="margin:0 0 24px;font-size:13px;color:#94A3B8;font-family:'Inter',Arial,sans-serif;">Please change your password after your first login from the Settings page.</p>`
+    : '';
   const html = baseTemplate(`
     <h2 style="${H2}">Welcome to LetLoyal! 🚀</h2>
     <p style="${P}">
@@ -183,17 +192,14 @@ export async function sendMerchantWelcome(
           <td style="padding:6px 0 6px;width:100px;color:#64748B;font-weight:500;">Email</td>
           <td style="padding:6px 0;font-weight:600;">${loginEmail}</td>
         </tr>
-        <tr style="border-top:1px solid #E2E8F0;">
-          <td style="padding:6px 0;color:#64748B;font-weight:500;">Password</td>
-          <td style="padding:6px 0;font-weight:700;font-family:'Courier New',monospace;letter-spacing:0.5px;background:#F8FAFC;padding-left:8px;border-radius:4px;">${tempPassword}</td>
-        </tr>
+        ${passwordRow}
         <tr style="border-top:1px solid #E2E8F0;">
           <td style="padding:6px 0;color:#64748B;font-weight:500;">Dashboard</td>
           <td style="padding:6px 0;"><a href="${dashboardUrl}" style="color:#0D9488;text-decoration:none;font-weight:600;">${dashboardUrl}</a></td>
         </tr>
       </table>
     </div>
-    <p style="margin:0 0 24px;font-size:13px;color:#94A3B8;font-family:'Inter',Arial,sans-serif;">Please change your password after your first login from the Settings page.</p>
+    ${passwordNote}
     <a href="${dashboardUrl}" style="${BTN}">Go to Dashboard →</a>
   `);
   await sendMail({ to, subject: `Your LetLoyal merchant account is ready — ${businessName}`, html });

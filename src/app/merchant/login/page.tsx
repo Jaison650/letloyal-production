@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, FormEvent, Suspense } from 'react';
+import { useState, FormEvent, Suspense, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Input from '@/components/ui/Input';
@@ -23,11 +23,17 @@ function getSafeRedirect(redirect: string | null, defaultPath: string): string {
 function MerchantLoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectTo = searchParams.get('redirect');
+  const redirectTo   = searchParams.get('redirect');
+  const justRegistered = searchParams.get('registered') === '1';
   const [email,    setEmail]    = useState('');
   const [password, setPassword] = useState('');
   const [error,    setError]    = useState('');
+  const [success,  setSuccess]  = useState('');
   const [loading,  setLoading]  = useState(false);
+
+  useEffect(() => {
+    if (justRegistered) setSuccess('Account created! Sign in to continue.');
+  }, [justRegistered]);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -84,6 +90,12 @@ function MerchantLoginForm() {
           autoComplete="current-password"
         />
 
+        {success && (
+          <div className="rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm text-emerald-700 font-medium">
+            {success}
+          </div>
+        )}
+
         {error && (
           <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-status-error font-medium">
             {error}
@@ -95,12 +107,12 @@ function MerchantLoginForm() {
         </Button>
       </form>
 
-      <div className="mt-5 text-center">
-        <Link
-          href="/merchant/forgot"
-          className="text-sm text-primary hover:underline font-medium"
-        >
+      <div className="mt-5 flex items-center justify-between text-sm">
+        <Link href="/merchant/forgot" className="text-primary hover:underline font-medium">
           Forgot your password?
+        </Link>
+        <Link href="/merchant/register" className="text-primary hover:underline font-medium">
+          Create account →
         </Link>
       </div>
     </div>
