@@ -37,6 +37,7 @@ interface CustomerMerchantRow {
 
 interface MerchantRow {
   business_name: string;
+  slug:          string;
 }
 
 // ── Phone normalisation (India) ───────────────────────────────────────
@@ -168,9 +169,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // ── 5. Load merchant name ─────────────────────────────────────────
+    // ── 5. Load merchant name + slug ──────────────────────────────────
     const merchant = await queryOne<MerchantRow>(
-      'SELECT business_name FROM merchants WHERE id = ?',
+      'SELECT business_name, slug FROM merchants WHERE id = ?',
       [qrToken.merchant_id],
     );
 
@@ -364,10 +365,12 @@ export async function POST(req: NextRequest) {
         ? remaining <= 2
         : result.progress / result.threshold >= 0.8;
       if (nearMilestone) {
+        const bizName = merchant?.business_name ?? 'us';
+        const scanUrl = merchant?.slug ? `${process.env.NEXT_PUBLIC_BASE_URL ?? 'https://pilot.letloyal.com'}/s/${merchant.slug}` : '/';
         const nudgeMsg = remaining === 1
-          ? `Just 1 ${unit} away from ${result.reward_description} at ${merchant?.business_name ?? 'us'}! Come back soon 🎯`
-          : `Only ${remaining} ${unitPlural} away from your reward at ${merchant?.business_name ?? 'us'}! Keep it up 🔥`;
-        pushToCustomer(phone, qrToken.merchant_id, 'You\'re almost there!', nudgeMsg).catch(() => {});
+          ? `Just 1 ${unit} away from ${result.reward_description} at ${bizName}! Come back soon 🎯`
+          : `Only ${remaining} ${unitPlural} away from your reward at ${bizName}! Keep it up 🔥`;
+        pushToCustomer(phone, qrToken.merchant_id, `${bizName} — almost there!`, nudgeMsg, scanUrl).catch(() => {});
       }
     }
 

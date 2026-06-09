@@ -68,7 +68,16 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
     if (title.length > 80)  return NextResponse.json({ error: 'Title too long (max 80 chars).' }, { status: 400 });
     if (body.length > 200)  return NextResponse.json({ error: 'Message too long (max 200 chars).' }, { status: 400 });
 
-    const sent = await pushBlastToCustomers(auth.sub, title.trim(), body.trim());
+    // Look up business name to prefix the notification title
+    const merchantRow = await queryOne<{ business_name: string }>(
+      'SELECT business_name FROM merchants WHERE id = ?',
+      [auth.sub],
+    );
+    const bizName   = merchantRow?.business_name ?? slug;
+    const fullTitle = `${bizName}: ${title.trim()}`;
+    const scanUrl   = `${process.env.NEXT_PUBLIC_BASE_URL ?? 'https://pilot.letloyal.com'}/s/${slug}`;
+
+    const sent = await pushBlastToCustomers(auth.sub, fullTitle, body.trim(), scanUrl);
 
     // Log the blast
     await query(
