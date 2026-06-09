@@ -22,11 +22,12 @@ interface ScanResult {
   points_added:           number;
   is_first_visit:         boolean;
   campaign_type:          'visit_based' | 'spend_based';
-  streak_enabled:         boolean;
-  streak_count:           number;
-  streak_bonus:           boolean;
-  streak_days_target:     number;
-  streak_multiplier:      number;
+  streak_enabled:     boolean;
+  streak_count:       number;
+  streak_bonus:       boolean;
+  streak_days_target: number;
+  streak_multiplier:  number;
+  streak_period:      'day' | 'week' | 'month';
 }
 
 interface RedeemCode {
@@ -366,39 +367,45 @@ export default function ScanClient({ token, merchantId, businessName, campaignTy
         )}
 
         {/* Streak bonus banner */}
-        {result.streak_enabled && result.streak_count > 0 && (
-          <div className={`rounded-xl border px-4 py-3 flex items-center gap-3 ${
-            result.streak_bonus
-              ? 'bg-orange-50 border-orange-300'
-              : 'bg-amber-50/60 border-amber-200'
-          }`}>
-            <span className="text-2xl">🔥</span>
-            <div className="flex-1 min-w-0">
-              {result.streak_bonus ? (
-                <>
-                  <p className="text-sm font-bold text-orange-800">
-                    {result.streak_count}-Day Streak Bonus! {result.streak_multiplier}× Points
-                  </p>
-                  <p className="text-xs text-orange-600">
-                    Keep it up — come back tomorrow to continue your streak!
-                  </p>
-                </>
-              ) : (
-                <>
-                  <p className="text-sm font-semibold text-amber-800">
-                    {result.streak_count}-Day Streak
-                  </p>
-                  <p className="text-xs text-amber-600">
-                    {result.streak_days_target - result.streak_count > 0
-                      ? `${result.streak_days_target - result.streak_count} more day${result.streak_days_target - result.streak_count > 1 ? 's' : ''} to earn ${result.streak_multiplier}× points!`
-                      : `Come back tomorrow to keep your streak going!`
-                    }
-                  </p>
-                </>
-              )}
+        {result.streak_enabled && result.streak_count > 0 && (() => {
+          const p = result.streak_period ?? 'day';
+          const periodLabel = p === 'day' ? 'Day' : p === 'week' ? 'Week' : 'Month';
+          const nextLabel   = p === 'day' ? 'tomorrow' : p === 'week' ? 'next week' : 'next month';
+          const remaining   = result.streak_days_target - result.streak_count;
+          return (
+            <div className={`rounded-xl border px-4 py-3 flex items-center gap-3 ${
+              result.streak_bonus
+                ? 'bg-orange-50 border-orange-300'
+                : 'bg-amber-50/60 border-amber-200'
+            }`}>
+              <span className="text-2xl">🔥</span>
+              <div className="flex-1 min-w-0">
+                {result.streak_bonus ? (
+                  <>
+                    <p className="text-sm font-bold text-orange-800">
+                      {result.streak_count}-{periodLabel} Streak Bonus! {result.streak_multiplier}× Points
+                    </p>
+                    <p className="text-xs text-orange-600">
+                      Keep it up — come back {nextLabel} to continue your streak!
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-sm font-semibold text-amber-800">
+                      {result.streak_count}-{periodLabel} Streak
+                    </p>
+                    <p className="text-xs text-amber-600">
+                      {remaining > 0
+                        ? `${remaining} more ${p}${remaining > 1 ? 's' : ''} to earn ${result.streak_multiplier}× points!`
+                        : `Come back ${nextLabel} to keep your streak going!`
+                      }
+                    </p>
+                  </>
+                )}
+              </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* Link to customer dashboard */}
         {sessionPhone && (

@@ -19,10 +19,10 @@ interface CampaignRow {
   reward_threshold:     number;
   reward_description:   string;
   points_per_rupee:     number | null;
-  streak_enabled:       number;   // 0 | 1
-  streak_window_hours:  number;
-  streak_days:          number;
-  streak_multiplier:    number;
+  streak_enabled:    number;   // 0 | 1
+  streak_period:     'day' | 'week' | 'month';
+  streak_days:       number;
+  streak_multiplier: number;
 }
 
 interface CustomerMerchantRow {
@@ -48,9 +48,45 @@ function normalisePhone(raw: string): string | null {
   return `+91${digits}`;
 }
 
-// ── Streak helper — returns today's date string in IST (YYYY-MM-DD) ──
+// ── Streak helpers ────────────────────────────────────────────────────
+// Returns today's date string in IST (YYYY-MM-DD)
 function todayIST(): string {
   return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
+}
+
+// Returns a period key for a date string, used to compare calendar periods
+function periodKey(date: string, period: 'day' | 'week' | 'month'): string {
+  if (period === 'day') return date;
+  const d = new Date(date + 'T00:00:00');
+  if (period === 'month') {
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  }
+  // week: ISO week — Mon-based
+  const tmp = new Date(d);
+  tmp.setHours(0, 0, 0, 0);
+  tmp.setDate(tmp.getDate() + 4 - (tmp.getDay() || 7));
+  const yearStart = new Date(tmp.getFullYear(), 0, 1);
+  const week = Math.ceil(((tmp.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
+  return `${tmp.getFullYear()}-W${String(week).padStart(2, '0')}`;
+}
+
+// Checks if lastDate is exactly the PREVIOUS period relative to today
+function isConsecutivePeriod(lastDate: string, today: string, period: 'day' | 'week' | 'month'): boolean {
+  if (period === 'day') {
+    const diffDays = Math.round((new Date(today).getTime() - new Date(lastDate).getTime()) / 86400000);
+    return diffDays === 1;
+  }
+  if (period === 'week') {
+    const [lastYear, lastWeek] = periodKey(lastDate, 'week').split('-W').map(Number);
+    const [curYear,  curWeek]  = periodKey(today, 'week').split('-W').map(Number);
+    if (curYear === lastYear) return curWeek - lastWeek === 1;
+    // handle year boundary (week 52/53 → week 1)
+    return curYear - lastYear === 1 && curWeek === 1 && lastWeek >= 52;
+  }
+  // month
+  const [lastYear, lastMon] = periodKey(lastDate, 'month').split('-').map(Number);
+  const [curYear,  curMon]  = periodKey(today, 'month').split('-').map(Number);
+  return (curYear * 12 + curMon) - (lastYear * 12 + lastMon) === 1;
 }
 
 // ── POST /api/scan ────────────────────────────────────────────────────
@@ -119,7 +155,7 @@ export async function POST(req: NextRequest) {
     const campaign = await queryOne<CampaignRow>(
       `SELECT id, merchant_id, campaign_type, status,
               reward_threshold, reward_description, points_per_rupee,
-              streak_enabled, streak_window_hours, streak_days, streak_multiplier
+              streak_enabled, streak_period, streak_days, streak_multiplier
          FROM campaigns WHERE id = ?`,
       [qrToken.campaign_id],
     );
@@ -228,37 +264,38 @@ export async function POST(req: NextRequest) {
       let streakBonus = false;
 
       if (campaign.streak_enabled) {
-        const today      = todayIST();
-        const lastDate   = cm.streak_last_date ?? null;
-        const windowMs   = campaign.streak_window_hours * 60 * 60 * 1000;
-        const lastMs     = lastDate ? new Date(lastDate).getTime() : 0;
-        const todayMs    = new Date(today).getTime();
-        const diffMs     = todayMs - lastMs;
-        const alreadyToday = lastDate === today;
+        const today    = todayIST();
+        const lastDate = cm.streak_last_date ?? null;
+        const period   = campaign.streak_period ?? 'day';
 
-        if (alreadyToday) {
-          // Same day — don't increment, keep existing streak
+        // Same period = don't advance, don't reset (e.g. second scan same day/week/month)
+        const samePeriod = !!lastDate && periodKey(lastDate, period) === periodKey(today, period);
+        // Consecutive period = advance streak
+        const consecutive = !!lastDate && isConsecutivePeriod(lastDate, today, period);
+
+        if (samePeriod) {
+          // Already scanned in this period — keep streak as-is
           newStreak = cm.current_streak;
-        } else if (lastDate && diffMs <= windowMs) {
-          // Within streak window — increment
+        } else if (consecutive) {
+          // Perfect consecutive period — increment
           newStreak = cm.current_streak + 1;
         } else {
-          // Gap too long or first ever scan — reset to 1
+          // Gap too long or first scan — reset to 1
           newStreak = 1;
         }
 
-        // Apply multiplier if streak milestone reached
-        if (!alreadyToday && newStreak >= campaign.streak_days) {
+        // Apply multiplier if milestone reached (not on same-period rescan)
+        if (!samePeriod && newStreak >= campaign.streak_days) {
           streakBonus = true;
           pointsAdded = Math.ceil(pointsAdded * campaign.streak_multiplier);
         }
 
-        // Update streak columns
+        // Update streak columns (only write new date if this is a new period)
         await client.query(
           `UPDATE customer_merchant
               SET current_streak = ?, streak_last_date = ?
             WHERE id = ?`,
-          [newStreak, alreadyToday ? lastDate : today, cm.id],
+          [newStreak, samePeriod ? lastDate : today, cm.id],
         );
       }
 
@@ -298,11 +335,12 @@ export async function POST(req: NextRequest) {
         points_added:           pointsAdded,
         is_first_visit:         isFirstVisit,
         campaign_type:          campaign.campaign_type,
-        streak_enabled:         Boolean(campaign.streak_enabled),
-        streak_count:           campaign.streak_enabled ? newStreak : 0,
-        streak_bonus:           streakBonus,
-        streak_days_target:     campaign.streak_days,
-        streak_multiplier:      campaign.streak_multiplier,
+        streak_enabled:     Boolean(campaign.streak_enabled),
+        streak_count:       campaign.streak_enabled ? newStreak : 0,
+        streak_bonus:       streakBonus,
+        streak_days_target: campaign.streak_days,
+        streak_multiplier:  campaign.streak_multiplier,
+        streak_period:      campaign.streak_period ?? 'day',
       };
     });
 
@@ -317,11 +355,12 @@ export async function POST(req: NextRequest) {
       points_added:           result.points_added,
       is_first_visit:         result.is_first_visit,
       campaign_type:          result.campaign_type,
-      streak_enabled:         result.streak_enabled,
-      streak_count:           result.streak_count,
-      streak_bonus:           result.streak_bonus,
-      streak_days_target:     result.streak_days_target,
-      streak_multiplier:      result.streak_multiplier,
+      streak_enabled:     result.streak_enabled,
+      streak_count:       result.streak_count,
+      streak_bonus:       result.streak_bonus,
+      streak_days_target: result.streak_days_target,
+      streak_multiplier:  result.streak_multiplier,
+      streak_period:      result.streak_period,
     });
 
   } catch (err: unknown) {

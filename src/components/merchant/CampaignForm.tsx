@@ -16,7 +16,7 @@ export interface Campaign {
   reward_description:   string;
   points_per_rupee:     number | null;
   streak_enabled:       number;   // 0 | 1
-  streak_window_hours:  number;
+  streak_period:        'day' | 'week' | 'month';
   streak_days:          number;
   streak_multiplier:    number;
   created_at:           string;
@@ -39,7 +39,7 @@ export default function CampaignForm({ slug, existing }: CampaignFormProps) {
   const [reward,          setReward]          = useState(existing?.reward_description ?? '');
   const [ppr,             setPpr]             = useState(String(existing?.points_per_rupee ?? ''));
   const [streakEnabled,   setStreakEnabled]   = useState(Boolean(existing?.streak_enabled));
-  const [streakWindow,    setStreakWindow]    = useState(String(existing?.streak_window_hours ?? 24));
+  const [streakPeriod,    setStreakPeriod]    = useState<'day'|'week'|'month'>(existing?.streak_period ?? 'day');
   const [streakDays,      setStreakDays]      = useState(String(existing?.streak_days ?? 3));
   const [streakMultiplier,setStreakMultiplier]= useState(String(existing?.streak_multiplier ?? 2.0));
   const [saving,          setSaving]          = useState(false);
@@ -56,10 +56,10 @@ export default function CampaignForm({ slug, existing }: CampaignFormProps) {
         reward_threshold:     Number(threshold),
         reward_description:   reward,
         points_per_rupee:     type === 'spend_based' ? Number(ppr) : undefined,
-        streak_enabled:       streakEnabled,
-        streak_window_hours:  Number(streakWindow),
-        streak_days:          Number(streakDays),
-        streak_multiplier:    Number(streakMultiplier),
+        streak_enabled:    streakEnabled,
+        streak_period:     streakPeriod,
+        streak_days:       Number(streakDays),
+        streak_multiplier: Number(streakMultiplier),
       };
 
       const res = await fetch(`/api/merchant/${slug}/campaign`, {
@@ -260,16 +260,45 @@ export default function CampaignForm({ slug, existing }: CampaignFormProps) {
         {streakEnabled && (
           <div className="px-4 py-4 space-y-4 border-t border-border-light bg-white">
 
-            {/* Consecutive days target */}
+            {/* Streak period */}
+            <div>
+              <p className="form-label mb-2">Streak Period</p>
+              <div className="grid grid-cols-3 gap-2">
+                {([
+                  { value: 'day',   label: 'Daily',   desc: 'Visit every day'    },
+                  { value: 'week',  label: 'Weekly',  desc: 'Visit every week'   },
+                  { value: 'month', label: 'Monthly', desc: 'Visit every month'  },
+                ] as const).map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setStreakPeriod(opt.value)}
+                    className={clsx(
+                      'flex flex-col items-start gap-0.5 p-3 rounded-xl border-2 text-left transition-all',
+                      streakPeriod === opt.value
+                        ? 'border-primary bg-primary-light/40'
+                        : 'border-border-light hover:border-primary/40',
+                    )}
+                  >
+                    <span className={clsx('text-sm font-semibold', streakPeriod === opt.value ? 'text-primary' : 'text-text-dark')}>
+                      {opt.label}
+                    </span>
+                    <span className="text-xs text-text-light">{opt.desc}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Consecutive periods target */}
             <Input
-              label="Streak Milestone (days)"
+              label={`Consecutive ${streakPeriod === 'day' ? 'Days' : streakPeriod === 'week' ? 'Weeks' : 'Months'} Needed`}
               type="number"
               value={streakDays}
               onChange={(e) => setStreakDays(e.target.value)}
               placeholder="3"
               min={2}
-              max={30}
-              hint="Customer earns the bonus after this many consecutive-day visits"
+              max={streakPeriod === 'day' ? 30 : streakPeriod === 'week' ? 12 : 6}
+              hint={`Customer earns the bonus after this many consecutive ${streakPeriod}s`}
             />
 
             {/* Multiplier */}
@@ -284,44 +313,15 @@ export default function CampaignForm({ slug, existing }: CampaignFormProps) {
               max={10}
               hint={
                 type === 'visit_based'
-                  ? `e.g. 2 = counts as 2 visits on streak day (rounded up)`
-                  : `e.g. 2 = double points on streak day`
+                  ? `e.g. 2 = counts as 2 visits on the bonus ${streakPeriod} (rounded up)`
+                  : `e.g. 2 = double points on the bonus ${streakPeriod}`
               }
             />
 
-            {/* Streak window */}
-            <div>
-              <p className="form-label mb-2">Streak Window</p>
-              <div className="grid grid-cols-2 gap-3">
-                {([
-                  { value: '24', label: 'Strict',  desc: 'Every day — miss one = reset' },
-                  { value: '48', label: 'Relaxed', desc: 'Up to 2-day gap allowed'      },
-                ] as const).map((opt) => (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    onClick={() => setStreakWindow(opt.value)}
-                    className={clsx(
-                      'flex flex-col items-start gap-0.5 p-3 rounded-xl border-2 text-left transition-all',
-                      streakWindow === opt.value
-                        ? 'border-primary bg-primary-light/40'
-                        : 'border-border-light hover:border-primary/40',
-                    )}
-                  >
-                    <span className={clsx('text-sm font-semibold', streakWindow === opt.value ? 'text-primary' : 'text-text-dark')}>
-                      {opt.label}
-                    </span>
-                    <span className="text-xs text-text-light">{opt.desc}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
             {/* Live preview */}
             <div className="rounded-lg bg-orange-50 border border-orange-200 px-3 py-2.5 text-xs text-orange-800">
-              🔥 After <strong>{streakDays || '?'} consecutive day{Number(streakDays) !== 1 ? 's' : ''}</strong>,
-              customer earns <strong>{streakMultiplier || '?'}× points</strong> on that visit
-              {streakWindow === '48' ? ' (48 hr grace period)' : ' (strict daily)'}
+              🔥 After <strong>{streakDays || '?'} consecutive {streakPeriod}{Number(streakDays) !== 1 ? 's' : ''}</strong>,
+              customer earns <strong>{streakMultiplier || '?'}× points</strong> on that {streakPeriod}
             </div>
 
           </div>
