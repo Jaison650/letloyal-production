@@ -315,6 +315,10 @@ export default function ScanClient({ token, merchantId, businessName, campaignTy
   if (redeemCode) {
     return (
       <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <Link href="/" className="text-xs text-text-light hover:text-primary transition-colors">← Home</Link>
+          <Link href="/my-rewards" className="text-xs text-primary font-medium hover:underline">My rewards →</Link>
+        </div>
         <RedeemCodeCard
           code={redeemCode.code}
           rewardDesc={redeemCode.rewardDesc}
@@ -438,15 +442,19 @@ export default function ScanClient({ token, merchantId, businessName, campaignTy
           );
         })()}
 
-        {/* Link to customer dashboard */}
-        {sessionPhone && (
+        {/* Link to customer dashboard — always visible */}
+        <div className="flex flex-col items-center gap-1 pt-1">
           <Link
             href="/my-rewards"
-            className="flex items-center justify-center gap-2 text-sm text-primary font-medium hover:underline pt-1"
+            className="flex items-center justify-center gap-2 text-sm text-primary font-medium hover:underline"
           >
-            <LayoutDashboard size={14} /> View all my rewards
+            <LayoutDashboard size={14} />
+            {sessionPhone ? 'View all my rewards' : 'Create account / View rewards'}
           </Link>
-        )}
+          <Link href="/" className="text-xs text-text-light hover:text-text-medium transition-colors">
+            ← Back to home
+          </Link>
+        </div>
 
         {/* Push notification opt-in */}
         {!pushOffered && !pushDone && typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'default' && (
@@ -479,6 +487,12 @@ export default function ScanClient({ token, merchantId, businessName, campaignTy
   // ── Phone entry form ──────────────────────────────────────────────────────
   return (
     <div className="space-y-5">
+      {/* Back to home */}
+      <div className="text-center">
+        <Link href="/" className="inline-flex items-center gap-1 text-xs text-text-light hover:text-primary transition-colors">
+          <span>←</span> Back to home
+        </Link>
+      </div>
       <div className="text-center">
         <h2 className="text-xl font-bold text-text-dark mb-1">Enter your mobile number</h2>
         <p className="text-sm text-text-medium">We&apos;ll use this to track your loyalty points.</p>
