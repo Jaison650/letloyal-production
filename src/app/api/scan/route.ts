@@ -366,7 +366,7 @@ export async function POST(req: NextRequest) {
         : result.progress / result.threshold >= 0.8;
       if (nearMilestone) {
         const bizName = merchant?.business_name ?? 'us';
-        const scanUrl = merchant?.slug ? `${process.env.NEXT_PUBLIC_BASE_URL ?? 'https://pilot.letloyal.com'}/s/${merchant.slug}` : '/';
+        const scanUrl = merchant?.slug ? `${process.env.NEXT_PUBLIC_BASE_URL ?? 'https://pilot.letloyal.com'}/my-rewards?merchant=${merchant.slug}` : '/my-rewards';
         const nudgeMsg = remaining === 1
           ? `Just 1 ${unit} away from ${result.reward_description} at ${bizName}! Come back soon 🎯`
           : `Only ${remaining} ${unitPlural} away from your reward at ${bizName}! Keep it up 🔥`;

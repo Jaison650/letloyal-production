@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback, FormEvent } from 'react';
+import { useState, useEffect, useCallback, useRef, FormEvent, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import {
@@ -228,7 +229,7 @@ function ProfileField({
 }
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
-export default function MyRewardsPage() {
+function MyRewardsContent() {
   const [phase,     setPhase]     = useState<'loading' | 'login' | 'dashboard'>('loading');
   const [authMode,  setAuthMode]  = useState<AuthMode>('login');
   const [phone,     setPhone]     = useState('');
@@ -251,6 +252,11 @@ export default function MyRewardsPage() {
   const [pwError,   setPwError]   = useState('');
   const [pwSaving,  setPwSaving]  = useState(false);
   const [pwDone,    setPwDone]    = useState(false);
+
+  // ── Deep-link from push notification: ?merchant=slug ───────────────────
+  const searchParams    = useSearchParams();
+  const highlightSlug   = searchParams.get('merchant');
+  const cardRefs        = useRef<Record<string, HTMLDivElement | null>>({});
 
   // ── Auth header for profile API calls ──────────────────────────────────
   function authHeaders(): Record<string, string> {
@@ -307,6 +313,17 @@ export default function MyRewardsPage() {
     if (session) { setPhone(session.phone); loadCards(session.phone, session.name); }
     else setPhase('login');
   }, [loadCards]);
+
+  // Scroll to highlighted card once dashboard + cards are ready
+  useEffect(() => {
+    if (phase !== 'dashboard' || !highlightSlug) return;
+    const el = cardRefs.current[highlightSlug];
+    if (el) {
+      setTimeout(() => {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 300);
+    }
+  }, [phase, cards, highlightSlug]);
 
   async function handleLogin(e: FormEvent) {
     e.preventDefault(); setError('');
@@ -639,13 +656,25 @@ export default function MyRewardsPage() {
                   {unlocked.length > 0 && (
                     <section className="space-y-3">
                       <p className="text-xs font-bold text-primary uppercase tracking-wide flex items-center gap-1"><Gift size={12} /> Rewards Ready to Claim ({unlocked.length})</p>
-                      {unlocked.map((card, i) => <LoyaltyCardItem key={i} card={card} phone={phone} />)}
+                      {unlocked.map((card, i) => (
+                        <div key={i}
+                          ref={el => { cardRefs.current[card.merchant_slug] = el; }}
+                          className={`rounded-2xl transition-all duration-500 ${highlightSlug === card.merchant_slug ? 'ring-2 ring-primary ring-offset-2' : ''}`}>
+                          <LoyaltyCardItem card={card} phone={phone} />
+                        </div>
+                      ))}
                     </section>
                   )}
                   {cards.filter(c => c.reward_status !== 'unlocked').length > 0 && (
                     <section className="space-y-3">
                       {unlocked.length > 0 && <p className="text-xs font-bold text-text-medium uppercase tracking-wide">In Progress ({cards.filter(c => c.reward_status !== 'unlocked').length})</p>}
-                      {cards.filter(c => c.reward_status !== 'unlocked').map((card, i) => <LoyaltyCardItem key={i} card={card} phone={phone} />)}
+                      {cards.filter(c => c.reward_status !== 'unlocked').map((card, i) => (
+                        <div key={i}
+                          ref={el => { cardRefs.current[card.merchant_slug] = el; }}
+                          className={`rounded-2xl transition-all duration-500 ${highlightSlug === card.merchant_slug ? 'ring-2 ring-primary ring-offset-2' : ''}`}>
+                          <LoyaltyCardItem card={card} phone={phone} />
+                        </div>
+                      ))}
                     </section>
                   )}
                 </>
@@ -837,5 +866,13 @@ export default function MyRewardsPage() {
         </div>
       </nav>
     </main>
+  );
+}
+
+export default function MyRewardsPage() {
+  return (
+    <Suspense fallback={null}>
+      <MyRewardsContent />
+    </Suspense>
   );
 }
