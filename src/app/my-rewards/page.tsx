@@ -90,7 +90,7 @@ function InlineRedeemCode({ phone, slug, onCancel }: { phone: string; slug: stri
         : error ? <p className="text-center text-sm text-status-error py-2">{error}</p>
         : code ? (
           <>
-            <div className="flex items-center justify-center gap-1.5">
+            <div data-clarity-mask="true" className="flex items-center justify-center gap-1.5">
               {code.split('').map((d, i) => (
                 <span key={i} className="w-10 flex items-center justify-center text-2xl font-bold text-primary bg-white rounded-xl border-2 border-primary shadow-sm" style={{ height: 52 }}>{d}</span>
               ))}
@@ -195,7 +195,7 @@ function ProfileField({
             <span className="text-text-light flex-shrink-0">{icon}</span>
             <div className="min-w-0">
               <p className="text-xs text-text-light">{label}</p>
-              <p className={`text-sm font-medium truncate ${value ? 'text-text-dark' : 'text-text-light italic'}`}>{value || 'Not set'}</p>
+              <p data-clarity-mask="true" className={`text-sm font-medium truncate ${value ? 'text-text-dark' : 'text-text-light italic'}`}>{value || 'Not set'}</p>
             </div>
           </div>
           <button onClick={() => { setInput(value ?? ''); setEditing(true); }}
@@ -716,11 +716,11 @@ function MyRewardsContent() {
                 {/* Avatar + name header */}
                 <div className="flex items-center gap-3 p-4 border-b border-border-light">
                   <div className="w-12 h-12 rounded-2xl bg-primary-light flex items-center justify-center flex-shrink-0">
-                    <span className="text-xl font-bold text-primary">{(customer.name ?? 'C')[0].toUpperCase()}</span>
+                    <span data-clarity-mask="true" className="text-xl font-bold text-primary">{(customer.name ?? 'C')[0].toUpperCase()}</span>
                   </div>
                   <div>
-                    <p className="font-bold text-text-dark">{customer.name ?? 'Customer'}</p>
-                    <p className="text-sm text-text-light">+91 {customer.phone}</p>
+                    <p data-clarity-mask="true" className="font-bold text-text-dark">{customer.name ?? 'Customer'}</p>
+                    <p data-clarity-mask="true" className="text-sm text-text-light">+91 {customer.phone}</p>
                   </div>
                 </div>
 

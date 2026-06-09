@@ -159,7 +159,7 @@ function RedeemCodeCard({ code, rewardDesc, expiresMinutes, onRefresh, onCancel 
         <p className="text-xs font-semibold text-primary uppercase tracking-widest mb-1">Your Reward Code</p>
         <p className="text-sm text-text-medium">{rewardDesc}</p>
       </div>
-      <div className="flex items-center justify-center gap-1.5">
+      <div data-clarity-mask="true" className="flex items-center justify-center gap-1.5">
         {code.split('').map((d, i) => (
           <span key={i} className="w-11 h-14 flex items-center justify-center text-3xl font-bold text-primary bg-white rounded-xl border-2 border-primary shadow-sm">
             {d}
@@ -622,7 +622,7 @@ export default function ScanClient({ token, merchantId, businessName, campaignTy
         {navBar}
         <div className="text-center">
           <h2 className="text-xl font-bold text-text-dark mb-1">Create your account</h2>
-          <p className="text-sm text-text-medium">+91 {phone} · Enter your details to get started</p>
+          <p data-clarity-mask="true" className="text-sm text-text-medium">+91 {phone} · Enter your details to get started</p>
         </div>
         <form onSubmit={handleRegister} className="space-y-3">
           {/* Name — optional */}
@@ -679,7 +679,7 @@ export default function ScanClient({ token, merchantId, businessName, campaignTy
         {navBar}
         <div className="text-center">
           <h2 className="text-xl font-bold text-text-dark mb-1">Welcome back!</h2>
-          <p className="text-sm text-text-medium">+91 {phone} · Enter your password to continue</p>
+          <p data-clarity-mask="true" className="text-sm text-text-medium">+91 {phone} · Enter your password to continue</p>
         </div>
         <form onSubmit={handleLogin} className="space-y-3">
           <div>
