@@ -53,26 +53,29 @@ function useCountdown(minutes: number) {
 }
 
 // ── Redeem Code Card ──────────────────────────────────────────────────────────
-function RedeemCodeCard({ code, rewardDesc, expiresMinutes, onRefresh }: {
-  code: string; rewardDesc: string; expiresMinutes: number; onRefresh: () => void;
+function RedeemCodeCard({ code, rewardDesc, expiresMinutes, onRefresh, onCancel }: {
+  code: string; rewardDesc: string; expiresMinutes: number;
+  onRefresh: () => void; onCancel: () => void;
 }) {
   const [copied,    setCopied]    = useState(false);
   const [confirmed, setConfirmed] = useState(false);
+  const [rejected,  setRejected]  = useState(false);
   const { expired, display, secs } = useCountdown(expiresMinutes);
   const urgency = secs < 120;
 
-  // ── Poll every 3s to detect merchant confirmation ──────────────────
+  // ── Poll every 3s to detect merchant confirmation or rejection ─────
   useEffect(() => {
-    if (confirmed || expired) return;
+    if (confirmed || rejected || expired) return;
     const id = setInterval(async () => {
       try {
-        const res = await fetch(`/api/public/redeem-code?code=${code}`);
+        const res  = await fetch(`/api/public/redeem-code?code=${code}`);
         const data = await res.json();
-        if (data.status === 'used') setConfirmed(true);
-      } catch { /* ignore */ }
+        if (data.status === 'used')    setConfirmed(true);
+        if (data.status === 'expired') setRejected(true);
+      } catch { /* ignore network errors — keep polling */ }
     }, 3000);
     return () => clearInterval(id);
-  }, [code, confirmed, expired]);
+  }, [code, confirmed, rejected, expired]);
 
   function copyCode() {
     navigator.clipboard.writeText(code).catch(() => {});
@@ -80,7 +83,7 @@ function RedeemCodeCard({ code, rewardDesc, expiresMinutes, onRefresh }: {
     setTimeout(() => setCopied(false), 2000);
   }
 
-  // ── Success state: merchant confirmed ─────────────────────────────
+  // ── Success state ─────────────────────────────────────────────────
   if (confirmed) {
     return (
       <div className="rounded-2xl border-2 border-green-400 bg-green-50 p-6 text-center space-y-3">
@@ -96,6 +99,51 @@ function RedeemCodeCard({ code, rewardDesc, expiresMinutes, onRefresh }: {
     );
   }
 
+  // ── Rejected / invalidated by merchant ───────────────────────────
+  if (rejected) {
+    return (
+      <div className="rounded-2xl border-2 border-orange-300 bg-orange-50 p-6 text-center space-y-3">
+        <div className="w-16 h-16 rounded-full bg-orange-400 flex items-center justify-center mx-auto">
+          <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-8 h-8">
+            <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </div>
+        <p className="text-base font-bold text-orange-800">Code Not Accepted</p>
+        <p className="text-sm text-orange-700">This code was marked invalid by the merchant. Please speak to the staff or generate a new code.</p>
+        <div className="flex flex-col gap-2 pt-1">
+          <button onClick={onRefresh} className="btn-primary text-sm py-2.5 flex items-center justify-center gap-1.5">
+            <RefreshCw size={14} /> Generate New Code
+          </button>
+          <button onClick={onCancel} className="text-xs text-text-light hover:text-text-medium transition-colors">
+            ← Back to my rewards
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Expired countdown state ───────────────────────────────────────
+  if (expired) {
+    return (
+      <div className="rounded-2xl border-2 border-border-light bg-white p-6 text-center space-y-3">
+        <div className="w-14 h-14 rounded-full bg-bg-muted flex items-center justify-center mx-auto">
+          <Gift size={26} className="text-text-light" />
+        </div>
+        <p className="font-bold text-text-dark">Code Expired</p>
+        <p className="text-sm text-text-medium">Your 10-minute window has passed. Generate a fresh code and show it to the merchant.</p>
+        <div className="flex flex-col gap-2 pt-1">
+          <button onClick={onRefresh} className="btn-primary text-sm py-2.5 flex items-center justify-center gap-1.5">
+            <RefreshCw size={14} /> Get New Code
+          </button>
+          <button onClick={onCancel} className="text-xs text-text-light hover:text-text-medium transition-colors">
+            ← Back to my rewards
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Active code ───────────────────────────────────────────────────
   return (
     <div className="rounded-2xl border-2 border-primary bg-primary-light p-6 text-center space-y-4">
       <div className="w-14 h-14 rounded-full bg-primary flex items-center justify-center mx-auto">
@@ -116,23 +164,17 @@ function RedeemCodeCard({ code, rewardDesc, expiresMinutes, onRefresh }: {
         {copied ? <Check size={14} /> : <Copy size={14} />}
         {copied ? 'Copied!' : 'Copy code'}
       </button>
-      {expired ? (
-        <div className="space-y-2">
-          <p className="text-sm font-semibold text-status-error">Code expired</p>
-          <button onClick={onRefresh} className="flex items-center gap-1.5 mx-auto text-sm font-medium text-primary hover:underline">
-            <RefreshCw size={14} /> Generate new code
-          </button>
-        </div>
-      ) : (
-        <p className={`text-sm font-semibold tabular-nums ${urgency ? 'text-status-error' : 'text-text-medium'}`}>
-          Expires in {display}
-        </p>
-      )}
+      <p className={`text-sm font-semibold tabular-nums ${urgency ? 'text-status-error' : 'text-text-medium'}`}>
+        Expires in {display}
+      </p>
       <p className="text-xs text-text-light">Show this code to the merchant to claim your reward</p>
       <p className="text-xs text-text-light/60 flex items-center justify-center gap-1">
         <span className="inline-block w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
         Waiting for merchant confirmation…
       </p>
+      <button onClick={onCancel} className="text-xs text-text-light hover:text-text-medium transition-colors pt-1">
+        ← Back to my rewards
+      </button>
     </div>
   );
 }
@@ -241,6 +283,7 @@ export default function ScanClient({ token, merchantId, businessName, campaignTy
           rewardDesc={redeemCode.rewardDesc}
           expiresMinutes={redeemCode.expiresMinutes}
           onRefresh={() => { setRedeemCode(null); generateRedeemCode(); }}
+          onCancel={() => setRedeemCode(null)}
         />
         {showFeedback && (
           <FeedbackForm
