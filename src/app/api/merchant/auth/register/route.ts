@@ -14,14 +14,16 @@ function slugify(name: string): string {
 
 export async function POST(req: NextRequest) {
   try {
-    const { business_name, email, password } = await req.json();
+    const { business_name, email, phone, password } = await req.json();
 
     if (!business_name?.trim()) return NextResponse.json({ error: 'Business name is required.' }, { status: 400 });
     if (!email?.trim())         return NextResponse.json({ error: 'Email is required.' },         { status: 400 });
+    if (!phone?.trim())         return NextResponse.json({ error: 'Phone number is required.' },  { status: 400 });
     if (!password)              return NextResponse.json({ error: 'Password is required.' },      { status: 400 });
     if (password.length < 8)    return NextResponse.json({ error: 'Password must be at least 8 characters.' }, { status: 400 });
 
     const normEmail = email.toLowerCase().trim();
+    const normPhone = phone.trim();
     const bizName   = business_name.trim();
 
     const existing = await queryOne<{ id: string }>(
@@ -46,9 +48,9 @@ export async function POST(req: NextRequest) {
 
     const passwordHash = await hashPassword(password);
     await query(
-      `INSERT INTO merchants (id, slug, business_name, email, password_hash, status)
-       VALUES (UUID(), ?, ?, ?, ?, 'active')`,
-      [slug, bizName, normEmail, passwordHash],
+      `INSERT INTO merchants (id, slug, business_name, email, phone, password_hash, status)
+       VALUES (UUID(), ?, ?, ?, ?, ?, 'active')`,
+      [slug, bizName, normEmail, normPhone, passwordHash],
     );
 
     sendMerchantWelcome(normEmail, bizName, normEmail, null, slug).catch(() => {});
