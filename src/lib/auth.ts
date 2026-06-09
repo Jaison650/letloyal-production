@@ -8,7 +8,11 @@ import bcrypt from 'bcryptjs';
 import { cookies } from 'next/headers';
 import { NextRequest } from 'next/server';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret_change_in_production';
+const JWT_SECRET = (() => {
+  const s = process.env.JWT_SECRET;
+  if (!s && process.env.NODE_ENV === 'production') throw new Error('JWT_SECRET env var is required in production');
+  return s || 'dev_secret_change_in_production';
+})();
 const JWT_EXPIRY = process.env.JWT_EXPIRY || '7d';
 
 export const MERCHANT_COOKIE_NAME = 'letloyal_merchant_session';

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { query, queryOne } from '@/lib/db';
 import { hashPassword } from '@/lib/auth';
 import { sendMerchantWelcome } from '@/lib/mail';
+import { isRateLimited, rateLimitKey } from '@/lib/rateLimit';
 
 function slugify(name: string): string {
   return name
@@ -13,6 +14,9 @@ function slugify(name: string): string {
 }
 
 export async function POST(req: NextRequest) {
+  if (isRateLimited(rateLimitKey(req, 'merch-register'), 10)) {
+    return NextResponse.json({ error: 'Too many attempts. Please try again later.' }, { status: 429 });
+  }
   try {
     const { business_name, email, phone, password } = await req.json();
 

@@ -2,9 +2,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { queryOne, query } from '@/lib/db';
 import { sendCustomerResetPassword } from '@/lib/mail';
+import { isRateLimited, rateLimitKey } from '@/lib/rateLimit';
 import crypto from 'crypto';
 
 export async function POST(req: NextRequest) {
+  if (isRateLimited(rateLimitKey(req, 'cust-forgot'), 3)) {
+    return NextResponse.json({ error: 'Too many attempts. Please try again later.' }, { status: 429 });
+  }
   try {
     const { email } = await req.json();
     if (!email?.trim()) return NextResponse.json({ error: 'Email is required.' }, { status: 400 });

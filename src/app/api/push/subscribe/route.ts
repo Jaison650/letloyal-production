@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query, queryOne } from '@/lib/db';
+import { isRateLimited, rateLimitKey } from '@/lib/rateLimit';
 
 // POST /api/push/subscribe
 // Registers a push subscription for a merchant or customer.
 // Body: { type: 'merchant' | 'customer', ownerId: string, merchantId?: string, subscription: PushSubscription }
 export async function POST(req: NextRequest) {
+  if (isRateLimited(rateLimitKey(req, 'push-sub'), 20)) {
+    return NextResponse.json({ error: 'Too many requests.' }, { status: 429 });
+  }
   try {
     const { type, ownerId, merchantId, subscription } = await req.json();
 

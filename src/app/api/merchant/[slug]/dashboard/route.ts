@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireMerchant } from '@/lib/auth';
 import { query, queryOne } from '@/lib/db';
+import { maskPhone } from '@/lib/utils';
 
 type RouteContext = { params: Promise<{ slug: string }> };
 
@@ -117,8 +118,8 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
         redeemed_week:    statsRow?.redeemed_week    ?? 0,
       },
       campaign:      campaign   ?? null,
-      recent_visits: recentVisits,
-      insights:      insightRows,
+      recent_visits: recentVisits.map((v) => ({ ...v, phone_number: maskPhone(v.phone_number) })),
+      insights:      insightRows.map((r) => ({ ...r, phone_number: maskPhone(r.phone_number) })),
     });
   } catch (err) {
     if (err instanceof Response) return err;

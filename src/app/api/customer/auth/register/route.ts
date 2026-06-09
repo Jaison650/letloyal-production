@@ -3,8 +3,12 @@ import { hashPassword } from '@/lib/auth';
 import { signCustomerToken } from '@/lib/customerAuth';
 import { query, queryOne } from '@/lib/db';
 import { normalizePhone } from '@/lib/utils';
+import { isRateLimited, rateLimitKey } from '@/lib/rateLimit';
 
 export async function POST(req: NextRequest) {
+  if (isRateLimited(rateLimitKey(req, 'cust-register'), 10)) {
+    return NextResponse.json({ error: 'Too many attempts. Please try again later.' }, { status: 429 });
+  }
   try {
     const { name, email, phone_number, password } = await req.json();
 

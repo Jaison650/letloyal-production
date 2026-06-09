@@ -1,5 +1,7 @@
 import nodemailer from 'nodemailer';
 
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://pilot.letloyal.com';
+
 const transporter = nodemailer.createTransport({
   host:   process.env.SMTP_HOST   || 'smtp-relay.brevo.com',
   port:   Number(process.env.SMTP_PORT) || 587,
@@ -92,7 +94,7 @@ function baseTemplate(body: string): string {
                     <span style="font-weight:500;color:#0D9488;">Let</span>Loyal
                   </span>
                   <span style="font-size:12px;color:#94A3B8;margin:0 6px;">·</span>
-                  <a href="https://pilot.letloyal.com" style="font-size:12px;color:#0D9488;text-decoration:none;">pilot.letloyal.com</a>
+                  <a href="${BASE_URL}" style="font-size:12px;color:#0D9488;text-decoration:none;">${BASE_URL.replace('https://', '')}</a>
                 </td>
               </tr>
             </table>
@@ -158,7 +160,7 @@ export async function sendCustomerWelcome(to: string, name: string): Promise<voi
         <tr><td style="padding:5px 0;"><span style="color:#0D9488;font-weight:700;margin-right:8px;">3.</span>Hit your milestone and redeem your reward!</td></tr>
       </table>
     </div>
-    <a href="https://pilot.letloyal.com/my-rewards" style="${BTN}">View My Rewards →</a>
+    <a href="${BASE_URL}/my-rewards" style="${BTN}">View My Rewards →</a>
   `);
   await sendMail({ to, subject: `Welcome to LetLoyal, ${firstName}! 🌟`, html });
 }
@@ -170,7 +172,7 @@ export async function sendMerchantWelcome(
   tempPassword: string | null,
   slug: string,
 ): Promise<void> {
-  const dashboardUrl = `https://pilot.letloyal.com/m/${slug}`;
+  const dashboardUrl = `${BASE_URL}/m/${slug}`;
   const passwordRow = tempPassword
     ? `<tr style="border-top:1px solid #E2E8F0;">
           <td style="padding:6px 0;color:#64748B;font-weight:500;">Password</td>

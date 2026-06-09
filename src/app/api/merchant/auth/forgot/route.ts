@@ -2,10 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { queryOne, query } from '@/lib/db';
 import { sendMerchantResetPassword } from '@/lib/mail';
+import { isRateLimited, rateLimitKey } from '@/lib/rateLimit';
 
 const RESET_TTL_MINUTES = 15;
 
 export async function POST(req: NextRequest) {
+  if (isRateLimited(rateLimitKey(req, 'merch-forgot'), 3)) {
+    return NextResponse.json({ error: 'Too many attempts. Please try again later.' }, { status: 429 });
+  }
   try {
     const { email } = await req.json();
 

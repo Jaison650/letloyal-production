@@ -4,7 +4,11 @@
 
 import jwt from 'jsonwebtoken';
 
-const SECRET  = process.env.CUSTOMER_JWT_SECRET || process.env.JWT_SECRET || 'dev_cust_secret';
+const SECRET = (() => {
+  const s = process.env.CUSTOMER_JWT_SECRET || process.env.JWT_SECRET;
+  if (!s && process.env.NODE_ENV === 'production') throw new Error('CUSTOMER_JWT_SECRET or JWT_SECRET env var is required in production');
+  return s || 'dev_cust_secret';
+})();
 const EXPIRY  = '7d';
 export const TOKEN_KEY = 'll_customer_token'; // localStorage key
 
