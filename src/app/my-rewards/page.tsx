@@ -571,6 +571,12 @@ export default function MyRewardsPage() {
           </div>
 
           <p className="text-center text-xs text-text-light">Powered by LetLoyal</p>
+          <p className="text-center text-xs text-text-light mt-2">
+            Are you a merchant?{' '}
+            <a href="/merchant/login" className="text-primary font-semibold hover:underline">
+              Merchant login →
+            </a>
+          </p>
         </div>
       </main>
     );
