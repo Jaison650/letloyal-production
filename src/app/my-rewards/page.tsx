@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, FormEvent } from 'react';
+import Link from 'next/link';
 import Image from 'next/image';
 import {
   Phone, Mail, User, Lock, Eye, EyeOff, Gift, LogOut, RefreshCw,
@@ -412,6 +413,12 @@ export default function MyRewardsPage() {
     return (
       <main className="min-h-screen bg-bg-muted flex flex-col items-center justify-center px-4 py-12">
         <div className="w-full max-w-sm space-y-5">
+          {/* Back to home */}
+          <div className="text-center">
+            <Link href="/" className="inline-flex items-center gap-1 text-xs text-text-medium hover:text-primary transition-colors">
+              <span>←</span> Back to home
+            </Link>
+          </div>
           {/* Branded top section on login */}
           <div className="text-center space-y-3">
             <div className="mx-auto">

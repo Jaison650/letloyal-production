@@ -3,6 +3,7 @@
 
 import { useState, useEffect, FormEvent, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { Lock, Eye, EyeOff } from 'lucide-react';
 import { saveCustomerSession } from '@/lib/customerSession';
 
@@ -106,6 +107,12 @@ export default function ResetPasswordPage() {
   return (
     <main className="min-h-screen bg-bg-muted flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-sm space-y-6">
+        {/* Back to home */}
+        <div className="text-center">
+          <Link href="/" className="inline-flex items-center gap-1 text-xs text-text-medium hover:text-primary transition-colors">
+            <span>←</span> Back to home
+          </Link>
+        </div>
         <div className="text-center">
           <h1 className="text-2xl font-bold text-text-dark">Set new password</h1>
           <p className="text-text-medium text-sm mt-1">Choose a strong password for your account</p>

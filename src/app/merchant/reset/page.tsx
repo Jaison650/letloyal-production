@@ -118,6 +118,12 @@ export default function ResetPasswordPage() {
   return (
     <main className="min-h-screen flex items-center justify-center bg-bg-muted px-4 py-12">
       <div className="w-full max-w-sm">
+        {/* Back to home */}
+        <div className="mb-6 text-center">
+          <Link href="/" className="inline-flex items-center gap-1 text-xs text-text-medium hover:text-primary transition-colors">
+            <span>←</span> Back to home
+          </Link>
+        </div>
         <div className="flex justify-center mb-8">
           <Logo size={28} />
         </div>
