@@ -12,13 +12,13 @@ export async function POST(req: NextRequest) {
     if (digits.length !== 10) return NextResponse.json({ error: 'Invalid phone number.' }, { status: 400 });
     const normPhone = `+91${digits}`;
 
-    const customer = await queryOne<{ id: string; name: string | null; created_at: string }>(
-      'SELECT id, name, created_at FROM customers WHERE phone_number = ?',
+    const customer = await queryOne<{ id: string; name: string | null; created_at: string; password_hash: string | null }>(
+      'SELECT id, name, created_at, password_hash FROM customers WHERE phone_number = ?',
       [normPhone],
     );
 
     if (!customer) {
-      return NextResponse.json({ ok: true, customer: null, cards: [] });
+      return NextResponse.json({ ok: true, customer: null, has_password: false, cards: [] });
     }
 
     const cards = await query<{
@@ -57,6 +57,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       ok: true,
       customer: { id: customer.id, name: customer.name, phone: digits },
+      has_password: !!customer.password_hash,
       cards,
     });
   } catch (err) {

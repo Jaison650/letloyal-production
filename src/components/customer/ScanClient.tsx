@@ -3,7 +3,7 @@
 import { useState, useEffect, FormEvent } from 'react';
 import MilestoneCard from '@/components/customer/MilestoneCard';
 import FeedbackForm from '@/components/customer/FeedbackForm';
-import { Phone, User, Gift, RefreshCw, Copy, Check, LayoutDashboard } from 'lucide-react';
+import { Phone, User, Mail, Lock, Eye, EyeOff, Gift, RefreshCw, Copy, Check, LayoutDashboard } from 'lucide-react';
 import {
   getCustomerSession,
   saveCustomerSession,
@@ -186,14 +186,19 @@ function RedeemCodeCard({ code, rewardDesc, expiresMinutes, onRefresh, onCancel 
 }
 
 // ── Main ScanClient ───────────────────────────────────────────────────────────
+type Step = 'phone' | 'register' | 'login' | 'scanning' | 'result';
+
 export default function ScanClient({ token, merchantId, businessName, campaignType, slug, googleReviewUrl }: ScanClientProps) {
+  const [step,         setStep]         = useState<Step>('phone');
   const [phone,        setPhone]        = useState('');
   const [name,         setName]         = useState('');
+  const [email,        setEmail]        = useState('');
+  const [password,     setPassword]     = useState('');
+  const [confirmPw,    setConfirmPw]    = useState('');
+  const [showPw,       setShowPw]       = useState(false);
   const [loading,      setLoading]      = useState(false);
-  const [submitting,   setSubmitting]   = useState(false); // auto-submit in progress
   const [error,        setError]        = useState('');
   const [result,       setResult]       = useState<ScanResult | null>(null);
-  const [showName,     setShowName]     = useState(false);
   const [showFeedback, setShowFeedback] = useState(true);
   const [redeemCode,   setRedeemCode]   = useState<RedeemCode | null>(null);
   const [codeLoading,  setCodeLoading]  = useState(false);
@@ -202,15 +207,14 @@ export default function ScanClient({ token, merchantId, businessName, campaignTy
   const [pushOffered,  setPushOffered]  = useState(false);
   const [pushDone,     setPushDone]     = useState(false);
 
-  // ── On mount: check stored session ───────────────────────────────────────
+  // ── On mount: check stored session → auto-scan ───────────────────────────
   useEffect(() => {
     const session = getCustomerSession();
     if (session) {
       setPhone(session.phone);
       setName(session.name ?? '');
       setSessionPhone(session.phone);
-      // Auto-submit scan
-      setSubmitting(true);
+      setStep('scanning');
       doScan(session.phone, session.name ?? '');
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -226,28 +230,104 @@ export default function ScanClient({ token, merchantId, businessName, campaignTy
       const data = await res.json();
       if (!res.ok) {
         setError(data.error || 'Something went wrong. Please try again.');
-        if (data.is_first_visit) setShowName(true);
+        setStep('phone');
         return;
       }
       setResult(data);
-      if (data.is_first_visit) setShowName(true);
-      // Update session name if first visit
+      setStep('result');
       saveCustomerSession(phoneDigits, nameVal || data.customer_name || null);
       touchCustomerSession();
     } catch {
       setError('Connection error. Please try again.');
+      setStep('phone');
     } finally {
       setLoading(false);
-      setSubmitting(false);
     }
   }
 
-  async function handleSubmit(e: FormEvent) {
+  // ── Step 1: Phone submitted → check account ──────────────────────────────
+  async function handlePhoneSubmit(e: FormEvent) {
     e.preventDefault();
     const digits = phone.replace(/\D/g, '');
     if (digits.length !== 10) { setError('Please enter a valid 10-digit mobile number.'); return; }
-    saveCustomerSession(digits, name || null);
-    await doScan(digits, name);
+    setError('');
+    setLoading(true);
+    try {
+      const res  = await fetch('/api/customer/lookup', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone_number: digits }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setError(data.error || 'Something went wrong.'); return; }
+      if (!data.customer || !data.has_password) {
+        setStep('register');
+      } else {
+        setStep('login');
+      }
+    } catch {
+      setError('Connection error. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // ── Step 2a: Register new account → scan ────────────────────────────────
+  async function handleRegister(e: FormEvent) {
+    e.preventDefault();
+    setError('');
+    if (!email.trim()) { setError('Email is required.'); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) { setError('Enter a valid email address.'); return; }
+    if (password.length < 8) { setError('Password must be at least 8 characters.'); return; }
+    if (password !== confirmPw) { setError('Passwords do not match.'); return; }
+    setLoading(true);
+    try {
+      const res  = await fetch('/api/customer/auth/register', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: name.trim() || 'Customer', email: email.trim().toLowerCase(), phone_number: phone, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setError(data.error || 'Registration failed.'); return; }
+      saveCustomerSession(data.customer.phone, data.customer.name, data.token);
+      setSessionPhone(data.customer.phone);
+      setStep('scanning');
+      doScan(data.customer.phone, data.customer.name ?? '');
+    } catch {
+      setError('Connection error. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // ── Step 2b: Login existing account → scan ───────────────────────────────
+  async function handleLogin(e: FormEvent) {
+    e.preventDefault();
+    setError('');
+    if (!password) { setError('Password is required.'); return; }
+    setLoading(true);
+    try {
+      const res  = await fetch('/api/customer/auth/login', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone_number: phone, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        if (data.error === 'PASSWORD_NOT_SET') {
+          setStep('register');
+          setError('Please create a password to secure your account.');
+        } else {
+          setError(data.error || 'Incorrect password.');
+        }
+        return;
+      }
+      saveCustomerSession(data.customer.phone, data.customer.name, data.token);
+      setSessionPhone(data.customer.phone);
+      setStep('scanning');
+      doScan(data.customer.phone, data.customer.name ?? '');
+    } catch {
+      setError('Connection error. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function generateRedeemCode() {
@@ -298,8 +378,8 @@ export default function ScanClient({ token, merchantId, businessName, campaignTy
     setPushDone(true);
   }
 
-  // ── Auto-submitting spinner ───────────────────────────────────────────────
-  if (submitting) {
+  // ── Scanning spinner ─────────────────────────────────────────────────────
+  if (step === 'scanning') {
     return (
       <div className="flex flex-col items-center justify-center py-16 gap-4">
         <svg className="animate-spin h-10 w-10 text-primary" viewBox="0 0 24 24" fill="none">
@@ -484,76 +564,146 @@ export default function ScanClient({ token, merchantId, businessName, campaignTy
     );
   }
 
-  // ── Phone entry form ──────────────────────────────────────────────────────
-  return (
-    <div className="space-y-5">
-      {/* Back to home */}
-      <div className="text-center">
-        <Link href="/" className="inline-flex items-center gap-1 text-xs text-text-light hover:text-primary transition-colors">
-          <span>←</span> Back to home
-        </Link>
-      </div>
-      <div className="text-center">
-        <h2 className="text-xl font-bold text-text-dark mb-1">Enter your mobile number</h2>
-        <p className="text-sm text-text-medium">We&apos;ll use this to track your loyalty points.</p>
-      </div>
+  // ── Shared nav bar for auth steps ────────────────────────────────────────
+  const navBar = (
+    <div className="flex items-center justify-between mb-2">
+      <button onClick={() => { setStep('phone'); setError(''); setPassword(''); setConfirmPw(''); }}
+        className="text-xs text-text-light hover:text-primary transition-colors">← Back</button>
+      <Link href="/" className="text-xs text-text-light hover:text-primary transition-colors">Home</Link>
+    </div>
+  );
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="form-label">Mobile Number</label>
-          <div className="flex gap-2">
-            <div className="flex items-center justify-center px-3 rounded-xl border border-border-light bg-bg-muted text-text-medium font-medium text-sm flex-shrink-0">
-              🇮🇳 +91
-            </div>
-            <div className="relative flex-1">
-              <Phone size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-light" />
-              <input
-                type="tel"
-                value={phone}
-                onChange={e => setPhone(e.target.value.replace(/[^\d]/g, '').slice(0, 10))}
-                placeholder="98765 43210"
-                className="form-input pl-9"
-                inputMode="numeric"
-                autoComplete="tel-national"
-                autoFocus
-                required
-              />
+  // ── Step 1: Phone entry ───────────────────────────────────────────────────
+  if (step === 'phone') {
+    return (
+      <div className="space-y-5">
+        <div className="text-center">
+          <Link href="/" className="inline-flex items-center gap-1 text-xs text-text-light hover:text-primary transition-colors">
+            <span>←</span> Back to home
+          </Link>
+        </div>
+        <div className="text-center">
+          <h2 className="text-xl font-bold text-text-dark mb-1">Enter your mobile number</h2>
+          <p className="text-sm text-text-medium">We&apos;ll use this to track your loyalty points.</p>
+        </div>
+        <form onSubmit={handlePhoneSubmit} className="space-y-4">
+          <div>
+            <label className="form-label">Mobile Number</label>
+            <div className="flex gap-2">
+              <div className="flex items-center justify-center px-3 rounded-xl border border-border-light bg-bg-muted text-text-medium font-medium text-sm flex-shrink-0">
+                🇮🇳 +91
+              </div>
+              <div className="relative flex-1">
+                <Phone size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-light" />
+                <input type="tel" value={phone}
+                  onChange={e => setPhone(e.target.value.replace(/[^\d]/g, '').slice(0, 10))}
+                  placeholder="98765 43210" className="form-input pl-9"
+                  inputMode="numeric" autoComplete="tel-national" autoFocus required />
+              </div>
             </div>
           </div>
-        </div>
+          {error && <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-status-error font-medium">{error}</div>}
+          <button type="submit" disabled={loading || phone.replace(/\D/g, '').length !== 10}
+            className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed">
+            {loading ? <span className="flex items-center justify-center gap-2"><svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>Checking…</span> : 'Continue'}
+          </button>
+        </form>
+        <Link href="/my-rewards" className="flex items-center justify-center gap-1.5 text-sm text-primary font-medium hover:underline">
+          <LayoutDashboard size={14} /> View my rewards dashboard
+        </Link>
+      </div>
+    );
+  }
 
-        {showName && (
+  // ── Step 2a: Register ─────────────────────────────────────────────────────
+  if (step === 'register') {
+    return (
+      <div className="space-y-4">
+        {navBar}
+        <div className="text-center">
+          <h2 className="text-xl font-bold text-text-dark mb-1">Create your account</h2>
+          <p className="text-sm text-text-medium">+91 {phone} · Enter your details to get started</p>
+        </div>
+        <form onSubmit={handleRegister} className="space-y-3">
+          {/* Name — optional */}
           <div>
             <label className="form-label">Your Name <span className="text-text-light font-normal">(optional)</span></label>
             <div className="relative">
               <User size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-light" />
-              <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Enter your name" className="form-input pl-9" autoComplete="name" maxLength={120} />
+              <input type="text" value={name} onChange={e => setName(e.target.value)}
+                placeholder="Enter your name" className="form-input pl-9" autoComplete="name" maxLength={120} />
             </div>
           </div>
-        )}
-
-        {error && (
-          <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-status-error font-medium">
-            {error}
+          {/* Email — required */}
+          <div>
+            <label className="form-label">Email <span className="text-status-error">*</span></label>
+            <div className="relative">
+              <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-light" />
+              <input type="email" value={email} onChange={e => setEmail(e.target.value)}
+                placeholder="you@example.com" className="form-input pl-9" autoComplete="email" required />
+            </div>
           </div>
-        )}
+          {/* Password — required */}
+          <div>
+            <label className="form-label">Password <span className="text-status-error">*</span></label>
+            <div className="relative">
+              <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-light" />
+              <input type={showPw ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)}
+                placeholder="Min 8 characters" className="form-input pl-9 pr-10" autoComplete="new-password" required />
+              <button type="button" onClick={() => setShowPw(v => !v)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-text-light">{showPw ? <EyeOff size={16} /> : <Eye size={16} />}</button>
+            </div>
+          </div>
+          {/* Confirm password */}
+          <div>
+            <label className="form-label">Confirm Password <span className="text-status-error">*</span></label>
+            <div className="relative">
+              <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-light" />
+              <input type={showPw ? 'text' : 'password'} value={confirmPw} onChange={e => setConfirmPw(e.target.value)}
+                placeholder="Repeat password" className="form-input pl-9" autoComplete="new-password" required />
+            </div>
+          </div>
+          {error && <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-status-error font-medium">{error}</div>}
+          <button type="submit" disabled={loading} className="btn-primary w-full disabled:opacity-50">
+            {loading ? <span className="flex items-center justify-center gap-2"><svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>Creating account…</span> : 'Create Account & Claim Stamp'}
+          </button>
+        </form>
+      </div>
+    );
+  }
 
-        <button type="submit" disabled={loading || phone.replace(/\D/g, '').length !== 10} className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed">
-          {loading ? (
-            <span className="flex items-center justify-center gap-2">
-              <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-              </svg>
-              Checking…
-            </span>
-          ) : 'Claim My Stamp'}
-        </button>
-      </form>
+  // ── Step 2b: Login ────────────────────────────────────────────────────────
+  if (step === 'login') {
+    return (
+      <div className="space-y-4">
+        {navBar}
+        <div className="text-center">
+          <h2 className="text-xl font-bold text-text-dark mb-1">Welcome back!</h2>
+          <p className="text-sm text-text-medium">+91 {phone} · Enter your password to continue</p>
+        </div>
+        <form onSubmit={handleLogin} className="space-y-3">
+          <div>
+            <label className="form-label">Password</label>
+            <div className="relative">
+              <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-light" />
+              <input type={showPw ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)}
+                placeholder="Your password" className="form-input pl-9 pr-10" autoComplete="current-password" autoFocus required />
+              <button type="button" onClick={() => setShowPw(v => !v)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-text-light">{showPw ? <EyeOff size={16} /> : <Eye size={16} />}</button>
+            </div>
+          </div>
+          {error && <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-status-error font-medium">{error}</div>}
+          <button type="submit" disabled={loading} className="btn-primary w-full disabled:opacity-50">
+            {loading ? <span className="flex items-center justify-center gap-2"><svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>Signing in…</span> : 'Sign In & Claim Stamp'}
+          </button>
+          <p className="text-center text-xs text-text-light pt-1">
+            Forgot your password?{' '}
+            <Link href="/my-rewards" className="text-primary font-medium hover:underline">Reset via My Rewards</Link>
+          </p>
+        </form>
+      </div>
+    );
+  }
 
-      <Link href="/my-rewards" className="flex items-center justify-center gap-1.5 text-sm text-primary font-medium hover:underline">
-        <LayoutDashboard size={14} /> View my rewards dashboard
-      </Link>
-    </div>
-  );
+  return null;
 }
