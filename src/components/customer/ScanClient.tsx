@@ -3,7 +3,7 @@
 import { useState, useEffect, FormEvent } from 'react';
 import MilestoneCard from '@/components/customer/MilestoneCard';
 import FeedbackForm from '@/components/customer/FeedbackForm';
-import { Phone, User, Gift, RefreshCw, Copy, Check, LayoutDashboard } from 'lucide-react';
+import { Phone, User, Gift, RefreshCw, Copy, Check, LayoutDashboard, Flame } from 'lucide-react';
 import {
   getCustomerSession,
   saveCustomerSession,
@@ -12,16 +12,21 @@ import {
 import Link from 'next/link';
 
 interface ScanResult {
-  ok:                    boolean;
-  business_name:         string;
-  progress:              number;
-  threshold:             number;
-  reward_unlocked:       boolean;       // just crossed threshold THIS scan
+  ok:                     boolean;
+  business_name:          string;
+  progress:               number;
+  threshold:              number;
+  reward_unlocked:        boolean;       // just crossed threshold THIS scan
   reward_already_waiting: boolean;      // had an unclaimed reward BEFORE this scan
-  reward_description:    string;
-  points_added:          number;
-  is_first_visit:        boolean;
-  campaign_type:         'visit_based' | 'spend_based';
+  reward_description:     string;
+  points_added:           number;
+  is_first_visit:         boolean;
+  campaign_type:          'visit_based' | 'spend_based';
+  streak_enabled:         boolean;
+  streak_count:           number;
+  streak_bonus:           boolean;
+  streak_days_target:     number;
+  streak_multiplier:      number;
 }
 
 interface RedeemCode {
@@ -358,6 +363,41 @@ export default function ScanClient({ token, merchantId, businessName, campaignTy
           <p className="text-center text-xs text-text-light pt-2">
             Come back again to keep earning {campaignType === 'visit_based' ? 'stamps' : 'points'}!
           </p>
+        )}
+
+        {/* Streak bonus banner */}
+        {result.streak_enabled && result.streak_count > 0 && (
+          <div className={`rounded-xl border px-4 py-3 flex items-center gap-3 ${
+            result.streak_bonus
+              ? 'bg-orange-50 border-orange-300'
+              : 'bg-amber-50/60 border-amber-200'
+          }`}>
+            <span className="text-2xl">🔥</span>
+            <div className="flex-1 min-w-0">
+              {result.streak_bonus ? (
+                <>
+                  <p className="text-sm font-bold text-orange-800">
+                    {result.streak_count}-Day Streak Bonus! {result.streak_multiplier}× Points
+                  </p>
+                  <p className="text-xs text-orange-600">
+                    Keep it up — come back tomorrow to continue your streak!
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="text-sm font-semibold text-amber-800">
+                    {result.streak_count}-Day Streak
+                  </p>
+                  <p className="text-xs text-amber-600">
+                    {result.streak_days_target - result.streak_count > 0
+                      ? `${result.streak_days_target - result.streak_count} more day${result.streak_days_target - result.streak_count > 1 ? 's' : ''} to earn ${result.streak_multiplier}× points!`
+                      : `Come back tomorrow to keep your streak going!`
+                    }
+                  </p>
+                </>
+              )}
+            </div>
+          </div>
         )}
 
         {/* Link to customer dashboard */}

@@ -12,21 +12,26 @@ interface QRTokenRow {
 }
 
 interface CampaignRow {
-  id:                 string;
-  merchant_id:        string;
-  campaign_type:      'visit_based' | 'spend_based';
-  status:             string;
-  reward_threshold:   number;
-  reward_description: string;
-  points_per_rupee:   number | null;
+  id:                   string;
+  merchant_id:          string;
+  campaign_type:        'visit_based' | 'spend_based';
+  status:               string;
+  reward_threshold:     number;
+  reward_description:   string;
+  points_per_rupee:     number | null;
+  streak_enabled:       number;   // 0 | 1
+  streak_window_hours:  number;
+  streak_days:          number;
+  streak_multiplier:    number;
 }
 
-
 interface CustomerMerchantRow {
-  id:            string;
-  progress:      number;
-  cycle_number:  number;
-  reward_status: 'in_progress' | 'unlocked';
+  id:               string;
+  progress:         number;
+  cycle_number:     number;
+  reward_status:    'in_progress' | 'unlocked';
+  current_streak:   number;
+  streak_last_date: string | null;  // MySQL DATE as string 'YYYY-MM-DD'
 }
 
 interface MerchantRow {
@@ -41,6 +46,11 @@ function normalisePhone(raw: string): string | null {
   const digits = raw.replace(/\D/g, '').replace(/^(91|0)/, '');
   if (digits.length !== 10) return null;
   return `+91${digits}`;
+}
+
+// ── Streak helper — returns today's date string in IST (YYYY-MM-DD) ──
+function todayIST(): string {
+  return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
 }
 
 // ── POST /api/scan ────────────────────────────────────────────────────
@@ -105,10 +115,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // ── 4. Load campaign ──────────────────────────────────────────────
+    // ── 4. Load campaign (including streak config) ────────────────────
     const campaign = await queryOne<CampaignRow>(
       `SELECT id, merchant_id, campaign_type, status,
-              reward_threshold, reward_description, points_per_rupee
+              reward_threshold, reward_description, points_per_rupee,
+              streak_enabled, streak_window_hours, streak_days, streak_multiplier
          FROM campaigns WHERE id = ?`,
       [qrToken.campaign_id],
     );
@@ -175,7 +186,7 @@ export async function POST(req: NextRequest) {
 
       // ── 6c. Find-or-create customer_merchant ────────────────────────
       const cmRows = await client.query(
-        `SELECT id, progress, cycle_number, reward_status
+        `SELECT id, progress, cycle_number, reward_status, current_streak, streak_last_date
            FROM customer_merchant
           WHERE customer_id = ? AND campaign_id = ?`,
         [customerId, campaign.id],
@@ -190,7 +201,7 @@ export async function POST(req: NextRequest) {
            VALUES (?, ?, ?, ?, 0, 1, 'in_progress')`,
           [newCmId, customerId, qrToken.merchant_id, campaign.id],
         );
-        cm = { id: newCmId, progress: 0, cycle_number: 1, reward_status: 'in_progress' };
+        cm = { id: newCmId, progress: 0, cycle_number: 1, reward_status: 'in_progress', current_streak: 0, streak_last_date: null };
       } else {
         cm = cmRows.rows[0] as unknown as CustomerMerchantRow;
       }
@@ -198,7 +209,7 @@ export async function POST(req: NextRequest) {
       // ── 6d. Note if reward was already waiting (no longer a hard block) ─
       const rewardAlreadyWaiting = cm.reward_status === 'unlocked';
 
-      // ── 6e. Compute points_added ──────────────────────────────────────
+      // ── 6e. Compute base points_added ────────────────────────────────
       let pointsAdded: number;
       if (campaign.campaign_type === 'visit_based') {
         pointsAdded = 1;
@@ -212,10 +223,47 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      // ── 6f. Update progress ───────────────────────────────────────────
+      // ── 6f. Streak calculation ────────────────────────────────────────
+      let newStreak = 1;
+      let streakBonus = false;
+
+      if (campaign.streak_enabled) {
+        const today      = todayIST();
+        const lastDate   = cm.streak_last_date ?? null;
+        const windowMs   = campaign.streak_window_hours * 60 * 60 * 1000;
+        const lastMs     = lastDate ? new Date(lastDate).getTime() : 0;
+        const todayMs    = new Date(today).getTime();
+        const diffMs     = todayMs - lastMs;
+        const alreadyToday = lastDate === today;
+
+        if (alreadyToday) {
+          // Same day — don't increment, keep existing streak
+          newStreak = cm.current_streak;
+        } else if (lastDate && diffMs <= windowMs) {
+          // Within streak window — increment
+          newStreak = cm.current_streak + 1;
+        } else {
+          // Gap too long or first ever scan — reset to 1
+          newStreak = 1;
+        }
+
+        // Apply multiplier if streak milestone reached
+        if (!alreadyToday && newStreak >= campaign.streak_days) {
+          streakBonus = true;
+          pointsAdded = Math.ceil(pointsAdded * campaign.streak_multiplier);
+        }
+
+        // Update streak columns
+        await client.query(
+          `UPDATE customer_merchant
+              SET current_streak = ?, streak_last_date = ?
+            WHERE id = ?`,
+          [newStreak, alreadyToday ? lastDate : today, cm.id],
+        );
+      }
+
+      // ── 6g. Update progress ───────────────────────────────────────────
       const newProgress = cm.progress + pointsAdded;
-      // If reward was already waiting, keep it unlocked.
-      // If not, check if this scan just crossed the threshold.
       const justUnlocked    = !rewardAlreadyWaiting && newProgress >= campaign.reward_threshold;
       const newRewardStatus = (rewardAlreadyWaiting || justUnlocked) ? 'unlocked' : 'in_progress';
 
@@ -226,7 +274,7 @@ export async function POST(req: NextRequest) {
         [newProgress, newRewardStatus, cm.id],
       );
 
-      // ── 6g. Insert visits row ─────────────────────────────────────────
+      // ── 6h. Insert visits row ─────────────────────────────────────────
       await client.query(
         `INSERT INTO visits
            (id, customer_id, merchant_id, campaign_id, points_added, amount_rupees)
@@ -242,28 +290,38 @@ export async function POST(req: NextRequest) {
       );
 
       return {
-        progress:              newProgress,
-        threshold:             campaign.reward_threshold,
-        reward_unlocked:       justUnlocked,          // true only if just crossed threshold NOW
-        reward_already_waiting: rewardAlreadyWaiting, // true if reward was pending before this scan
-        reward_description:    campaign.reward_description,
-        points_added:          pointsAdded,
-        is_first_visit:        isFirstVisit,
-        campaign_type:         campaign.campaign_type,
+        progress:               newProgress,
+        threshold:              campaign.reward_threshold,
+        reward_unlocked:        justUnlocked,
+        reward_already_waiting: rewardAlreadyWaiting,
+        reward_description:     campaign.reward_description,
+        points_added:           pointsAdded,
+        is_first_visit:         isFirstVisit,
+        campaign_type:          campaign.campaign_type,
+        streak_enabled:         Boolean(campaign.streak_enabled),
+        streak_count:           campaign.streak_enabled ? newStreak : 0,
+        streak_bonus:           streakBonus,
+        streak_days_target:     campaign.streak_days,
+        streak_multiplier:      campaign.streak_multiplier,
       };
     });
 
     return NextResponse.json({
-      ok:                    true,
-      business_name:         merchant?.business_name ?? '',
-      progress:              result.progress,
-      threshold:             result.threshold,
-      reward_unlocked:       result.reward_unlocked,
+      ok:                     true,
+      business_name:          merchant?.business_name ?? '',
+      progress:               result.progress,
+      threshold:              result.threshold,
+      reward_unlocked:        result.reward_unlocked,
       reward_already_waiting: result.reward_already_waiting,
-      reward_description:    result.reward_description,
-      points_added:          result.points_added,
-      is_first_visit:        result.is_first_visit,
-      campaign_type:         result.campaign_type,
+      reward_description:     result.reward_description,
+      points_added:           result.points_added,
+      is_first_visit:         result.is_first_visit,
+      campaign_type:          result.campaign_type,
+      streak_enabled:         result.streak_enabled,
+      streak_count:           result.streak_count,
+      streak_bonus:           result.streak_bonus,
+      streak_days_target:     result.streak_days_target,
+      streak_multiplier:      result.streak_multiplier,
     });
 
   } catch (err: unknown) {

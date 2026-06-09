@@ -3,16 +3,20 @@ import { requireMerchant } from '@/lib/auth';
 import { queryOne, query } from '@/lib/db';
 
 interface CampaignRow {
-  id:                 string;
-  merchant_id:        string;
-  name:               string;
-  campaign_type:      'visit_based' | 'spend_based';
-  status:             'active' | 'paused' | 'ended';
-  reward_threshold:   number;
-  reward_description: string;
-  points_per_rupee:   number | null;
-  created_at:         string;
-  updated_at:         string;
+  id:                   string;
+  merchant_id:          string;
+  name:                 string;
+  campaign_type:        'visit_based' | 'spend_based';
+  status:               'active' | 'paused' | 'ended';
+  reward_threshold:     number;
+  reward_description:   string;
+  points_per_rupee:     number | null;
+  streak_enabled:       number;   // 0 | 1
+  streak_window_hours:  number;
+  streak_days:          number;
+  streak_multiplier:    number;
+  created_at:           string;
+  updated_at:           string;
 }
 
 type RouteContext = { params: Promise<{ slug: string }> };
@@ -82,7 +86,10 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
       return NextResponse.json({ error: validationError }, { status: 400 });
     }
 
-    const { name, campaign_type, reward_threshold, reward_description, points_per_rupee } = body;
+    const {
+      name, campaign_type, reward_threshold, reward_description, points_per_rupee,
+      streak_enabled, streak_window_hours, streak_days, streak_multiplier,
+    } = body;
 
     // Enforce one active campaign per merchant
     const existing = await queryOne<{ id: string }>(
@@ -102,8 +109,9 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
     await query(
       `INSERT INTO campaigns
          (id, merchant_id, name, campaign_type, status,
-          reward_threshold, reward_description, points_per_rupee)
-       VALUES (UUID(), ?, ?, ?, 'active', ?, ?, ?)`,
+          reward_threshold, reward_description, points_per_rupee,
+          streak_enabled, streak_window_hours, streak_days, streak_multiplier)
+       VALUES (UUID(), ?, ?, ?, 'active', ?, ?, ?, ?, ?, ?, ?)`,
       [
         auth.sub,
         name.trim(),
@@ -111,6 +119,10 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
         Number(reward_threshold),
         reward_description.trim(),
         campaign_type === 'spend_based' ? Number(points_per_rupee) : null,
+        streak_enabled ? 1 : 0,
+        Number(streak_window_hours) || 24,
+        Number(streak_days) || 3,
+        Number(streak_multiplier) || 2.0,
       ],
     );
 
@@ -158,12 +170,16 @@ export async function PUT(req: NextRequest, { params }: RouteContext) {
       return NextResponse.json({ error: validationError }, { status: 400 });
     }
 
-    const { name, campaign_type, reward_threshold, reward_description, points_per_rupee } = body;
+    const {
+      name, campaign_type, reward_threshold, reward_description, points_per_rupee,
+      streak_enabled, streak_window_hours, streak_days, streak_multiplier,
+    } = body;
 
     await query(
       `UPDATE campaigns
           SET name = ?, campaign_type = ?, reward_threshold = ?,
-              reward_description = ?, points_per_rupee = ?
+              reward_description = ?, points_per_rupee = ?,
+              streak_enabled = ?, streak_window_hours = ?, streak_days = ?, streak_multiplier = ?
         WHERE merchant_id = ? AND status IN ('active','paused')
         ORDER BY created_at DESC LIMIT 1`,
       [
@@ -172,6 +188,10 @@ export async function PUT(req: NextRequest, { params }: RouteContext) {
         Number(reward_threshold),
         reward_description.trim(),
         campaign_type === 'spend_based' ? Number(points_per_rupee) : null,
+        streak_enabled ? 1 : 0,
+        Number(streak_window_hours) || 24,
+        Number(streak_days) || 3,
+        Number(streak_multiplier) || 2.0,
         auth.sub,
       ],
     );
