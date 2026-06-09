@@ -121,29 +121,26 @@ export default function FeedbackForm({ merchantId, phoneNumber, onDismiss }: Fee
           <p className="text-xs text-text-light text-right mt-1">{message.length}/500</p>
         </div>
 
-        {/* Anonymous toggle */}
-        <label className="flex items-center gap-3 cursor-pointer group">
-          <div
-            role="switch"
-            aria-checked={isAnonymous}
-            onClick={() => setIsAnonymous(!isAnonymous)}
-            className={clsx(
-              'relative w-10 h-6 rounded-full transition-colors flex-shrink-0 cursor-pointer',
-              isAnonymous ? 'bg-primary' : 'bg-border-light',
-            )}
-          >
-            <span
-              className={clsx(
-                'absolute top-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform',
-                isAnonymous ? 'translate-x-4' : 'translate-x-0.5',
-              )}
-            />
-          </div>
-          <div className="flex items-center gap-1.5">
-            <EyeOff size={13} className="text-text-light" />
-            <span className="text-sm text-text-medium group-hover:text-text-dark transition-colors">
-              Submit anonymously
-            </span>
+        {/* Anonymous checkbox */}
+        <label className="flex items-start gap-3 cursor-pointer group">
+          <input
+            type="checkbox"
+            checked={isAnonymous}
+            onChange={(e) => setIsAnonymous(e.target.checked)}
+            className="mt-0.5 h-4 w-4 rounded border-brand-border text-primary focus:ring-primary cursor-pointer flex-shrink-0"
+          />
+          <div>
+            <div className="flex items-center gap-1.5">
+              <EyeOff size={13} className={clsx('transition-colors', isAnonymous ? 'text-primary' : 'text-text-light')} />
+              <span className={clsx('text-sm font-medium transition-colors', isAnonymous ? 'text-primary' : 'text-text-medium group-hover:text-text-dark')}>
+                Submit anonymously
+              </span>
+            </div>
+            <p className="text-xs text-text-light mt-0.5">
+              {isAnonymous
+                ? 'Your name and phone number will not be shared with the merchant.'
+                : 'Your name will be visible to the merchant.'}
+            </p>
           </div>
         </label>
 
