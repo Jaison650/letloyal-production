@@ -413,8 +413,8 @@ export default function MyRewardsPage() {
         <div className="w-full max-w-sm space-y-5">
           {/* Branded top section on login */}
           <div className="text-center space-y-3">
-            <div className="mx-auto w-20 h-20 rounded-3xl bg-primary flex items-center justify-center shadow-2xl border-4 border-primary/20">
-              <span className="text-4xl">⭐</span>
+            <div className="mx-auto w-20 h-20">
+              <img src="/favicon.svg" alt="LetLoyal" className="w-full h-full" />
             </div>
             <div>
               <h1 className="text-3xl font-black text-text-dark tracking-tight">LetLoyal</h1>
@@ -584,7 +584,7 @@ export default function MyRewardsPage() {
       <header className="bg-primary sticky top-0 z-10 shadow-sm">
         <div className="max-w-lg mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-xl">⭐</span>
+            <img src="/favicon.svg" alt="LetLoyal" className="w-7 h-7" />
             <span className="font-black text-white text-lg tracking-tight">LetLoyal</span>
           </div>
           {tab === 'cards' && cards.length > 0 && (
