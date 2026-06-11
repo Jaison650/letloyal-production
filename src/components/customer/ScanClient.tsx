@@ -6,6 +6,8 @@ import FeedbackForm from '@/components/customer/FeedbackForm';
 import { Phone, User, Mail, Lock, Eye, EyeOff, Gift, RefreshCw, Copy, Check, LayoutDashboard } from 'lucide-react';
 import {
   getCustomerSession,
+  getCustomerToken,
+  clearCustomerSession,
   saveCustomerSession,
   touchCustomerSession,
 } from '@/lib/customerSession';
@@ -207,15 +209,20 @@ export default function ScanClient({ token, merchantId, businessName, campaignTy
   const [pushOffered,  setPushOffered]  = useState(false);
   const [pushDone,     setPushDone]     = useState(false);
 
-  // ── On mount: check stored session → auto-scan ───────────────────────────
+  // ── On mount: check stored session + JWT → auto-scan ────────────────────
   useEffect(() => {
     const session = getCustomerSession();
-    if (session) {
+    const token   = getCustomerToken();
+    // Only auto-scan if both session and a valid JWT token exist
+    if (session && token) {
       setPhone(session.phone);
       setName(session.name ?? '');
       setSessionPhone(session.phone);
       setStep('scanning');
       doScan(session.phone, session.name ?? '');
+    } else if (session && !token) {
+      // Stale session without auth — wipe it so they go through login
+      clearCustomerSession();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
