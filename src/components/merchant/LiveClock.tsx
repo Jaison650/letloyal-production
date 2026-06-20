@@ -34,7 +34,7 @@ export default function LiveClock({ businessName }: { businessName: string }) {
     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
       <div>
         <h1 className="text-2xl font-bold text-text-dark">
-          {greeting()}, {businessName}!
+          {greeting()}, {businessName}
         </h1>
         <p className="text-sm text-text-light mt-0.5">{today}</p>
       </div>
