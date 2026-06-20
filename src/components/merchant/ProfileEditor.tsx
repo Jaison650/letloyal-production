@@ -32,12 +32,14 @@ function ImageUpload({
   onChange,
   folder,
   aspectRatio,
+  hint,
 }: {
   label:       string;
   value:       string | null;
   onChange:    (url: string | null) => void;
   folder:      string;
   aspectRatio: string;
+  hint?:       string;
 }) {
   const inputRef    = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
@@ -109,6 +111,7 @@ function ImageUpload({
               <Upload size={20} className="text-text-light" />
               <span className="text-xs text-text-light">Click to upload</span>
               <span className="text-xs text-text-light opacity-60">PNG, JPG, WebP</span>
+              {hint && <span className="text-xs text-text-light opacity-60">{hint}</span>}
             </>
           )}
         </button>
@@ -207,6 +210,7 @@ export default function ProfileEditor({ slug, initialData }: ProfileEditorProps)
             onChange={(url) => setField('logo_url', url)}
             folder="logos"
             aspectRatio="h-24"
+            hint="Recommended: 400 × 400px (square)"
           />
 
           <ImageUpload
@@ -215,6 +219,7 @@ export default function ProfileEditor({ slug, initialData }: ProfileEditorProps)
             onChange={(url) => setField('banner_url', url)}
             folder="banners"
             aspectRatio="h-36"
+            hint="Recommended: 1200 × 400px (3:1 wide)"
           />
         </div>
       )}
