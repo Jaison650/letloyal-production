@@ -17,6 +17,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { MERCHANT_COOKIE_NAME, ADMIN_COOKIE_NAME } from '@/lib/auth';
 
 const MERCHANT_AUTH_WHITELIST = [
+  '/api/merchant/auth/register',
   '/api/merchant/auth/login',
   '/api/merchant/auth/logout',
   '/api/merchant/auth/forgot',
