@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
       [slug, bizName, normEmail, normPhone, passwordHash],
     );
 
-    sendMerchantWelcome(normEmail, bizName, normEmail, null, slug).catch(() => {});
+    sendMerchantWelcome(normEmail, bizName, normEmail, slug).catch(() => {});
 
     return NextResponse.json({ ok: true, slug }, { status: 201 });
   } catch (err) {

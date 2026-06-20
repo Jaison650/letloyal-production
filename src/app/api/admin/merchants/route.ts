@@ -105,7 +105,6 @@ export async function POST(req: NextRequest) {
         email.toLowerCase().trim(),
         business_name.trim(),
         email.toLowerCase().trim(),
-        null,
         created.slug,
       ).catch(() => {});
     }

@@ -4,9 +4,9 @@
  * For DB-backed session helpers, use @/lib/session.ts instead.
  */
 import jwt from 'jsonwebtoken';
-import bcrypt from 'bcryptjs';
 import { cookies } from 'next/headers';
 import { NextRequest } from 'next/server';
+// bcryptjs is Node.js-only — imported in @/lib/password.ts, NOT here (Edge-safe)
 
 const JWT_SECRET = (() => {
   const s = process.env.JWT_SECRET;
@@ -66,14 +66,9 @@ export function verifyToken(token: string): TokenPayload | null {
   }
 }
 
-// ── Password helpers ──────────────────────────────────────────────────
-export async function hashPassword(password: string): Promise<string> {
-  return bcrypt.hash(password, 12);
-}
-
-export async function comparePassword(plain: string, hash: string): Promise<boolean> {
-  return bcrypt.compare(plain, hash);
-}
+// Password helpers live in @/lib/password.ts (Node.js only, bcryptjs).
+// Re-export here for backward compat so existing import sites don't break.
+export { hashPassword, comparePassword } from '@/lib/password';
 
 // ── Cookie helpers ────────────────────────────────────────────────────
 export function cookieOptions(cookieName: string, maxAge: number) {

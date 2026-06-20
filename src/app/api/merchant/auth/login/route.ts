@@ -6,7 +6,7 @@ import {
   MERCHANT_COOKIE_NAME,
 } from '@/lib/auth';
 import { MERCHANT_SESSION_MAX_AGE } from '@/lib/constants';
-import { isRateLimited, rateLimitKey } from '@/lib/rateLimit';
+import { checkRateLimit, rateLimitKey } from '@/lib/rateLimit';
 
 interface MerchantAuthRow {
   id:            string;
@@ -17,8 +17,12 @@ interface MerchantAuthRow {
 }
 
 export async function POST(req: NextRequest) {
-  if (isRateLimited(rateLimitKey(req, 'merch-login'))) {
-    return NextResponse.json({ error: 'Too many attempts. Please try again later.' }, { status: 429 });
+  const rl = checkRateLimit(rateLimitKey(req, 'merch-login'), 5, 15 * 60 * 1000);
+  if (rl.limited) {
+    return NextResponse.json(
+      { error: 'Too many attempts. Please try again later.' },
+      { status: 429, headers: { 'Retry-After': String(rl.retryAfter) } },
+    );
   }
   try {
     const { email, password } = await req.json();

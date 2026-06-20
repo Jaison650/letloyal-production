@@ -1,14 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
-import { queryOne, query } from '@/lib/db';
+import { withTransaction } from '@/lib/db';
 import { hashPassword } from '@/lib/auth';
 
-interface ResetTokenRow {
-  id:          string;
-  merchant_id: string;
-  expires_at:  Date;
-  used_at:     Date | null;
-}
+const MIN_PASSWORD_LENGTH = 8;
 
 export async function POST(req: NextRequest) {
   try {
@@ -18,46 +13,51 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Token and new password are required.' }, { status: 400 });
     }
 
-    if (new_password.length < 8) {
+    if (new_password.length < MIN_PASSWORD_LENGTH) {
       return NextResponse.json(
-        { error: 'Password must be at least 8 characters.' },
+        { error: `Password must be at least ${MIN_PASSWORD_LENGTH} characters.` },
         { status: 400 },
       );
     }
 
-    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
-
-    const resetToken = await queryOne<ResetTokenRow>(
-      'SELECT id, merchant_id, expires_at, used_at FROM reset_tokens WHERE token_hash = ?',
-      [tokenHash],
-    );
-
-    if (!resetToken) {
-      return NextResponse.json({ error: 'Invalid or expired reset link.' }, { status: 400 });
-    }
-
-    if (resetToken.used_at) {
-      return NextResponse.json(
-        { error: 'This reset link has already been used.' },
-        { status: 400 },
-      );
-    }
-
-    if (new Date() > new Date(resetToken.expires_at)) {
-      return NextResponse.json(
-        { error: 'This reset link has expired. Please request a new one.' },
-        { status: 400 },
-      );
-    }
-
+    const tokenHash   = crypto.createHash('sha256').update(String(token)).digest('hex');
     const passwordHash = await hashPassword(new_password);
 
-    // Update password and mark token used in one go
-    await query('UPDATE merchants SET password_hash = ? WHERE id = ?', [
-      passwordHash,
-      resetToken.merchant_id,
-    ]);
-    await query('UPDATE reset_tokens SET used_at = NOW() WHERE id = ?', [resetToken.id]);
+    // Atomic: look up token, verify, mark used, and update password in one transaction.
+    // This closes the TOCTOU window between lookup and update.
+    const result = await withTransaction(async (client) => {
+      const rows = await client.query(
+        `SELECT id, merchant_id, expires_at, used_at
+           FROM reset_tokens
+          WHERE token_hash = ?
+          LIMIT 1`,
+        [tokenHash],
+      );
+      const resetToken = rows.rows[0];
+
+      if (!resetToken) return { error: 'Invalid or expired reset link.', status: 400 };
+      if (resetToken.used_at) return { error: 'This reset link has already been used.', status: 400 };
+      if (new Date() > new Date(resetToken.expires_at as string)) {
+        return { error: 'This reset link has expired. Please request a new one.', status: 400 };
+      }
+
+      // Mark token used FIRST — prevents replay if the password update fails
+      await client.query(
+        'UPDATE reset_tokens SET used_at = NOW() WHERE id = ?',
+        [resetToken.id],
+      );
+
+      await client.query(
+        'UPDATE merchants SET password_hash = ? WHERE id = ?',
+        [passwordHash, resetToken.merchant_id],
+      );
+
+      return { ok: true };
+    });
+
+    if ('error' in result) {
+      return NextResponse.json({ error: result.error }, { status: result.status as number });
+    }
 
     return NextResponse.json({ ok: true, message: 'Password updated. You can now log in.' });
   } catch (err) {
