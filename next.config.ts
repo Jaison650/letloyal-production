@@ -61,15 +61,31 @@ const nextConfig: NextConfig = {
   },
 
   images: {
-    remotePatterns: [
-      // Cloudflare R2 public bucket (NEXT_PUBLIC_MEDIA_URL)
-      {
-        protocol: 'https',
-        hostname: 'pub-296a26c4474f4fa292574ea422002407.r2.dev',
-        pathname: '/**',
-      },
-    ],
+    remotePatterns: buildImagePatterns(),
   },
 };
+
+// Whitelist whatever hostname NEXT_PUBLIC_MEDIA_URL points to (R2 public
+// bucket or custom domain) plus a hardcoded fallback. If the uploaded image
+// hostname isn't whitelisted, next/image throws a client-side exception at
+// render — so this must always match the bucket the uploads actually use.
+function buildImagePatterns(): NonNullable<NextConfig['images']>['remotePatterns'] {
+  const patterns: NonNullable<NextConfig['images']>['remotePatterns'] = [
+    { protocol: 'https', hostname: 'pub-296a26c4474f4fa292574ea422002407.r2.dev', pathname: '/**' },
+  ];
+  const mediaUrl = process.env.NEXT_PUBLIC_MEDIA_URL;
+  if (mediaUrl) {
+    try {
+      const u = new URL(mediaUrl);
+      const protocol = u.protocol.replace(':', '') as 'http' | 'https';
+      if (!patterns.some((p) => p.hostname === u.hostname)) {
+        patterns.push({ protocol, hostname: u.hostname, pathname: '/**' });
+      }
+    } catch {
+      // ignore malformed NEXT_PUBLIC_MEDIA_URL
+    }
+  }
+  return patterns;
+}
 
 export default nextConfig;
