@@ -5,6 +5,7 @@
 // Pre-production TODO: migrate to httpOnly cookie to eliminate XSS exposure.
 
 import jwt from 'jsonwebtoken';
+import { TOKEN_KEY } from './customerTokenKey';
 
 const SECRET = (() => {
   // Must use a DIFFERENT secret from JWT_SECRET so a compromised customer token
@@ -17,7 +18,7 @@ const SECRET = (() => {
 })();
 
 const EXPIRY = '30d';
-export const TOKEN_KEY = 'll_customer_token'; // localStorage key
+export { TOKEN_KEY }; // re-exported from client-safe module; single source of truth
 
 export interface CustomerTokenPayload {
   sub:   string;  // customer id

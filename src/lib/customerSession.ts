@@ -2,7 +2,7 @@
 // Client-side only — customer session persistence via localStorage
 // 30-day inactivity → auto logout
 
-import { TOKEN_KEY } from '@/lib/customerAuth';
+import { TOKEN_KEY } from '@/lib/customerTokenKey';
 
 const KEY = 'll_customer';
 const INACTIVITY_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
