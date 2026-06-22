@@ -14,7 +14,9 @@
  * expose runtime env vars.
  */
 import { NextRequest, NextResponse } from 'next/server';
-import { MERCHANT_COOKIE_NAME, ADMIN_COOKIE_NAME } from '@/lib/auth';
+// Import from authConstants (Edge-safe) — NOT @/lib/auth, which pulls
+// jsonwebtoken + bcryptjs into the Edge bundle.
+import { MERCHANT_COOKIE_NAME, ADMIN_COOKIE_NAME } from '@/lib/authConstants';
 
 const MERCHANT_AUTH_WHITELIST = [
   '/api/merchant/auth/register',

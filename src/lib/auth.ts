@@ -1,7 +1,8 @@
 /**
- * auth.ts — Edge-compatible JWT + cookie helpers.
- * NO database imports here — this file runs in middleware (Edge runtime).
- * For DB-backed session helpers, use @/lib/session.ts instead.
+ * auth.ts — JWT + cookie helpers (Node.js runtime).
+ * Pulls in jsonwebtoken + bcryptjs, so this file MUST NOT be imported by
+ * middleware (Edge runtime). Middleware imports cookie names from
+ * @/lib/authConstants instead. For DB-backed session helpers see @/lib/session.ts.
  */
 import jwt from 'jsonwebtoken';
 import { cookies } from 'next/headers';
@@ -15,8 +16,10 @@ const JWT_SECRET = (() => {
 })();
 const JWT_EXPIRY = process.env.JWT_EXPIRY || '7d';
 
-export const MERCHANT_COOKIE_NAME = 'letloyal_merchant_session';
-export const ADMIN_COOKIE_NAME    = 'letloyal_admin_session';
+// Cookie names live in @/lib/authConstants (Edge-safe, no Node deps).
+// Imported for use below and re-exported so existing import sites keep working.
+import { MERCHANT_COOKIE_NAME, ADMIN_COOKIE_NAME } from '@/lib/authConstants';
+export { MERCHANT_COOKIE_NAME, ADMIN_COOKIE_NAME };
 
 // ── Token payload shapes ──────────────────────────────────────────────
 export interface MerchantPayload {

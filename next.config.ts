@@ -1,4 +1,5 @@
 import type { NextConfig } from 'next';
+import path from 'path';
 
 const securityHeaders = [
   {
@@ -37,6 +38,10 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+
+  // Pin file-tracing to this project so a stray package-lock.json elsewhere
+  // (e.g. in the home dir) can't make Next infer the wrong workspace root.
+  outputFileTracingRoot: path.resolve(),
 
   // Keep server-only Node.js packages out of the client bundle
   serverExternalPackages: [

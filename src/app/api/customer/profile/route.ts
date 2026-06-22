@@ -1,7 +1,7 @@
 // src/app/api/customer/profile/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { requireCustomer } from '@/lib/customerAuth';
-import { comparePassword, hashPassword } from '@/lib/auth';
+import { comparePassword } from '@/lib/auth';
 import { queryOne, query } from '@/lib/db';
 import { normalizePhone } from '@/lib/utils';
 

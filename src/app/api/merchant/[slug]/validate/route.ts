@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireMerchant } from '@/lib/auth';
-import { query, queryOne, withTransaction } from '@/lib/db';
+import { queryOne, withTransaction } from '@/lib/db';
 
 type RouteContext = { params: Promise<{ slug: string }> };
 
