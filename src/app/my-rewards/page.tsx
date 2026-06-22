@@ -115,7 +115,10 @@ function InlineRedeemCode({ phone, slug, onCancel }: { phone: string; slug: stri
 function LoyaltyCardItem({ card, phone }: { card: LoyaltyCard; phone: string }) {
   const [showCode, setShowCode] = useState(false);
   const isUnlocked = card.reward_status === 'unlocked';
-  const pct = Math.min(100, Math.round((card.progress / card.reward_threshold) * 100));
+  // Unlocked rewards are "earned" — show the bar full even if the merchant has
+  // since raised the threshold above the customer's progress (rewards are
+  // grandfathered), so the card never contradicts itself (e.g. "100/1000" + "ready").
+  const pct = isUnlocked ? 100 : Math.min(100, Math.round((card.progress / card.reward_threshold) * 100));
   const remaining = Math.max(0, card.reward_threshold - card.progress);
   const isSpend = card.campaign_type === 'spend_based';
   return (
@@ -133,7 +136,9 @@ function LoyaltyCardItem({ card, phone }: { card: LoyaltyCard; phone: string }) 
           <Gift size={13} className="text-primary flex-shrink-0" />{card.reward_description}
         </p>
         <div className="flex items-center justify-between mb-1.5">
-          <span className="text-xs text-text-medium tabular-nums">{card.progress} / {card.reward_threshold} {isSpend ? 'points' : 'visits'}</span>
+          {isUnlocked
+            ? <span className="text-xs font-semibold text-primary tabular-nums">Reward earned</span>
+            : <span className="text-xs text-text-medium tabular-nums">{card.progress} / {card.reward_threshold} {isSpend ? 'points' : 'visits'}</span>}
           {isUnlocked
             ? <span className="text-xs font-semibold text-primary">🎉 Reward ready!</span>
             : <span className="text-xs text-text-light">{remaining} more to go</span>}
