@@ -11,6 +11,7 @@ import {
   saveCustomerSession,
   touchCustomerSession,
 } from '@/lib/customerSession';
+import { setAnalyticsConsent } from '@/lib/analyticsConsent';
 import Link from 'next/link';
 
 interface ScanResult {
@@ -197,6 +198,8 @@ export default function ScanClient({ token, merchantId, businessName, campaignTy
   const [email,        setEmail]        = useState('');
   const [password,     setPassword]     = useState('');
   const [confirmPw,    setConfirmPw]    = useState('');
+  const [consent,      setConsent]      = useState(false);
+  const [analyticsOptIn, setAnalyticsOptIn] = useState(false);
   const [showPw,       setShowPw]       = useState(false);
   const [loading,      setLoading]      = useState(false);
   const [error,        setError]        = useState('');
@@ -230,10 +233,13 @@ export default function ScanClient({ token, merchantId, businessName, campaignTy
   async function doScan(phoneDigits: string, nameVal: string) {
     setError('');
     setLoading(true);
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 10_000);
     try {
       const body: Record<string, string> = { token, phone_number: phoneDigits };
       if (nameVal.trim()) body.name = nameVal.trim();
-      const res  = await fetch('/api/scan', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      const res  = await fetch('/api/scan', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), signal: controller.signal });
+      clearTimeout(timer);
       const data = await res.json();
       if (!res.ok) {
         setError(data.error || 'Something went wrong. Please try again.');
@@ -244,8 +250,15 @@ export default function ScanClient({ token, merchantId, businessName, campaignTy
       setStep('result');
       saveCustomerSession(phoneDigits, nameVal || data.customer_name || null);
       touchCustomerSession();
-    } catch {
-      setError('Connection error. Please try again.');
+    } catch (err: unknown) {
+      clearTimeout(timer);
+      if (err instanceof Error && err.name === 'AbortError') {
+        setError('Connection timed out. Please try again.');
+      } else if (!navigator.onLine) {
+        setError('No internet connection. Please check your network and try again.');
+      } else {
+        setError('Connection error. Please try again.');
+      }
       setStep('phone');
     } finally {
       setLoading(false);
@@ -286,6 +299,7 @@ export default function ScanClient({ token, merchantId, businessName, campaignTy
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) { setError('Enter a valid email address.'); return; }
     if (password.length < 8) { setError('Password must be at least 8 characters.'); return; }
     if (password !== confirmPw) { setError('Passwords do not match.'); return; }
+    if (!consent) { setError('Please agree to the data processing terms to continue.'); return; }
     setLoading(true);
     try {
       const res  = await fetch('/api/customer/auth/register', {
@@ -294,6 +308,7 @@ export default function ScanClient({ token, merchantId, businessName, campaignTy
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error || 'Registration failed.'); return; }
+      setAnalyticsConsent(analyticsOptIn);
       saveCustomerSession(data.customer.phone, data.customer.name, data.token);
       setSessionPhone(data.customer.phone);
       setStep('scanning');
@@ -340,17 +355,28 @@ export default function ScanClient({ token, merchantId, businessName, campaignTy
   async function generateRedeemCode() {
     setCodeLoading(true);
     setCodeError('');
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 10_000);
     try {
       const res  = await fetch('/api/public/redeem-code', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ phone_number: phone, slug }),
+        signal: controller.signal,
       });
+      clearTimeout(timer);
       const data = await res.json();
       if (!res.ok) { setCodeError(data.error || 'Could not generate code. Try again.'); return; }
       setRedeemCode({ code: data.code, rewardDesc: data.reward_description, expiresMinutes: data.expires_minutes });
-    } catch {
-      setCodeError('Connection error. Try again.');
+    } catch (err: unknown) {
+      clearTimeout(timer);
+      if (err instanceof Error && err.name === 'AbortError') {
+        setCodeError('Connection timed out. Please try again.');
+      } else if (!navigator.onLine) {
+        setCodeError('No internet connection. Please try again when back online.');
+      } else {
+        setCodeError('Connection error. Try again.');
+      }
     } finally {
       setCodeLoading(false);
     }
@@ -671,6 +697,22 @@ export default function ScanClient({ token, merchantId, businessName, campaignTy
             </div>
           </div>
           {error && <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-status-error font-medium">{error}</div>}
+          {/* DPDP 2023 — required notice + consent for account processing */}
+          <label className="flex items-start gap-2 text-xs text-text-medium cursor-pointer">
+            <input type="checkbox" checked={consent} onChange={e => setConsent(e.target.checked)} required
+              className="mt-0.5 h-4 w-4 rounded border-border-light text-primary focus:ring-primary shrink-0" />
+            <span>
+              I agree to LetLoyal collecting my name, phone number, email address, and optional date of
+              birth and gender to operate my loyalty account, as described in the{' '}
+              <Link href="/privacy-policy" target="_blank" className="text-primary underline">Privacy Policy</Link>.
+            </span>
+          </label>
+          {/* DPDP 2023 — separate, optional analytics consent (default off) */}
+          <label className="flex items-start gap-2 text-xs text-text-light cursor-pointer">
+            <input type="checkbox" checked={analyticsOptIn} onChange={e => setAnalyticsOptIn(e.target.checked)}
+              className="mt-0.5 h-4 w-4 rounded border-border-light text-primary focus:ring-primary shrink-0" />
+            <span>Optional: allow anonymous usage analytics to help improve the app. You can turn this off anytime in My Rewards.</span>
+          </label>
           <button type="submit" disabled={loading} className="btn-primary w-full disabled:opacity-50">
             {loading ? <span className="flex items-center justify-center gap-2"><svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>Creating account…</span> : 'Create Account & Claim Stamp'}
           </button>

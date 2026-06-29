@@ -3,6 +3,10 @@ import path from 'path';
 
 const securityHeaders = [
   {
+    key: 'Server',
+    value: 'letloyal',
+  },
+  {
     key: 'X-Frame-Options',
     value: 'DENY',
   },
@@ -38,6 +42,7 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  productionBrowserSourceMaps: false,
 
   // Pin file-tracing to this project so a stray package-lock.json elsewhere
   // (e.g. in the home dir) can't make Next infer the wrong workspace root.

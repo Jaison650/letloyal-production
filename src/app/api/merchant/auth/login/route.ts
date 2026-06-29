@@ -30,6 +30,9 @@ export async function POST(req: NextRequest) {
     if (!email || !password) {
       return NextResponse.json({ error: 'Email and password are required.' }, { status: 400 });
     }
+    if (typeof password !== 'string') {
+      return NextResponse.json({ error: 'Email and password are required.' }, { status: 400 });
+    }
 
     const merchant = await queryOne<MerchantAuthRow>(
       'SELECT id, slug, business_name, password_hash, status FROM merchants WHERE email = ?',
