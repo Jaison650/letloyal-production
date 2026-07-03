@@ -4,13 +4,6 @@ import { useState, useEffect, FormEvent } from 'react';
 import MilestoneCard from '@/components/customer/MilestoneCard';
 import FeedbackForm from '@/components/customer/FeedbackForm';
 import { Phone, User, Mail, Lock, Eye, EyeOff, Gift, RefreshCw, Copy, Check, LayoutDashboard } from 'lucide-react';
-import {
-  getCustomerSession,
-  getCustomerToken,
-  clearCustomerSession,
-  saveCustomerSession,
-  touchCustomerSession,
-} from '@/lib/customerSession';
 import { setAnalyticsConsent } from '@/lib/analyticsConsent';
 import Link from 'next/link';
 
@@ -212,21 +205,23 @@ export default function ScanClient({ token, merchantId, businessName, campaignTy
   const [pushOffered,  setPushOffered]  = useState(false);
   const [pushDone,     setPushDone]     = useState(false);
 
-  // ── On mount: check stored session + JWT → auto-scan ────────────────────
+  // ── On mount: check cookie session → auto-scan ──────────────────────────
   useEffect(() => {
-    const session = getCustomerSession();
-    const token   = getCustomerToken();
-    // Only auto-scan if both session and a valid JWT token exist
-    if (session && token) {
-      setPhone(session.phone);
-      setName(session.name ?? '');
-      setSessionPhone(session.phone);
-      setStep('scanning');
-      doScan(session.phone, session.name ?? '');
-    } else if (session && !token) {
-      // Stale session without auth — wipe it so they go through login
-      clearCustomerSession();
-    }
+    fetch('/api/customer/auth/me', { credentials: 'include' })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data?.ok && data.customer) {
+          const phoneDigits = data.customer.phone ?? '';
+          const nameVal     = data.customer.name  ?? '';
+          setPhone(phoneDigits);
+          setName(nameVal);
+          setSessionPhone(phoneDigits);
+          setStep('scanning');
+          doScan(phoneDigits, nameVal);
+        }
+        // If no session, stay on phone-entry step (default)
+      })
+      .catch(() => { /* no session — stay on phone entry */ });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -248,8 +243,6 @@ export default function ScanClient({ token, merchantId, businessName, campaignTy
       }
       setResult(data);
       setStep('result');
-      saveCustomerSession(phoneDigits, nameVal || data.customer_name || null);
-      touchCustomerSession();
     } catch (err: unknown) {
       clearTimeout(timer);
       if (err instanceof Error && err.name === 'AbortError') {
@@ -304,12 +297,12 @@ export default function ScanClient({ token, merchantId, businessName, campaignTy
     try {
       const res  = await fetch('/api/customer/auth/register', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ name: name.trim() || 'Customer', email: email.trim().toLowerCase(), phone_number: phone, password }),
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error || 'Registration failed.'); return; }
       setAnalyticsConsent(analyticsOptIn);
-      saveCustomerSession(data.customer.phone, data.customer.name, data.token);
       setSessionPhone(data.customer.phone);
       setStep('scanning');
       doScan(data.customer.phone, data.customer.name ?? '');
@@ -329,6 +322,7 @@ export default function ScanClient({ token, merchantId, businessName, campaignTy
     try {
       const res  = await fetch('/api/customer/auth/login', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ phone_number: phone, password }),
       });
       const data = await res.json();
@@ -341,7 +335,6 @@ export default function ScanClient({ token, merchantId, businessName, campaignTy
         }
         return;
       }
-      saveCustomerSession(data.customer.phone, data.customer.name, data.token);
       setSessionPhone(data.customer.phone);
       setStep('scanning');
       doScan(data.customer.phone, data.customer.name ?? '');

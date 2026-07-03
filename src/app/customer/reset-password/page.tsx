@@ -5,7 +5,6 @@ import { useState, useEffect, FormEvent, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Lock, Eye, EyeOff } from 'lucide-react';
-import { saveCustomerSession } from '@/lib/customerSession';
 
 function ResetForm() {
   const router       = useRouter();
@@ -33,12 +32,12 @@ function ResetForm() {
       const res  = await fetch('/api/customer/auth/reset', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ token, password }),
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error || 'Reset failed.'); return; }
-      // Auto-login
-      saveCustomerSession(data.customer.phone, data.customer.name, data.token);
+      // Auto-login: cookie is set by server, just redirect
       setDone(true);
       setTimeout(() => router.push('/my-rewards'), 2000);
     } catch {
