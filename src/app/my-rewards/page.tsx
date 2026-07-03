@@ -6,7 +6,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import {
   Phone, Mail, User, Lock, Eye, EyeOff, Gift, LogOut, RefreshCw,
-  CreditCard, ScanLine, ArrowRight, Copy, Check, MapPin,
+  CreditCard, ScanLine, ArrowRight, Copy, Check, MapPin, Navigation,
   ChevronDown, ChevronUp, Calendar, Users,
 } from 'lucide-react';
 import Logo, { LogoIcon } from '@/components/ui/Logo';
@@ -28,7 +28,7 @@ interface CustomerData {
   id: string; name: string | null; phone: string; email: string | null;
   birthday: string | null; gender: string | null;
 }
-type Tab = 'cards' | 'scan' | 'account';
+type Tab = 'cards' | 'scan' | 'nearby' | 'account';
 type AuthMode = 'login' | 'register' | 'forgot';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -257,6 +257,11 @@ function MyRewardsContent() {
   const [pwSaving,  setPwSaving]  = useState(false);
   const [pwDone,    setPwDone]    = useState(false);
 
+  // ── Nearby stores ──────────────────────────────────────────────────────
+  const [nearbyStores,  setNearbyStores]  = useState<Array<{ id: string; business_name: string; slug: string; logo_url: string | null; distance_km: number }> | null>(null);
+  const [nearbyLoading, setNearbyLoading] = useState(false);
+  const [nearbyError,   setNearbyError]   = useState('');
+
   // ── Deep-link from push notification: ?merchant=slug ───────────────────
   const searchParams    = useSearchParams();
   const router          = useRouter();
@@ -457,6 +462,34 @@ function MyRewardsContent() {
     setCards([]);
     setStores([]);
     setPhase('login');
+  }
+
+  function handleFindNearby() {
+    if (!navigator.geolocation) {
+      setNearbyError('Geolocation is not supported by your browser.');
+      return;
+    }
+    setNearbyLoading(true);
+    setNearbyError('');
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const { latitude, longitude } = pos.coords;
+        try {
+          const res = await fetch(`/api/customer/nearby?lat=${latitude}&lng=${longitude}`);
+          const d   = await res.json();
+          if (d.ok) setNearbyStores(d.stores);
+          else      setNearbyError(d.error || 'Failed to load stores.');
+        } catch {
+          setNearbyError('Network error. Please try again.');
+        } finally {
+          setNearbyLoading(false);
+        }
+      },
+      () => {
+        setNearbyError('Location access denied. Please allow location access in your browser and try again.');
+        setNearbyLoading(false);
+      },
+    );
   }
 
   // ── Loading ────────────────────────────────────────────────────────────────
@@ -727,6 +760,7 @@ function MyRewardsContent() {
             </div>
           )}
           {tab === 'scan' && <p className="text-white font-bold text-lg">Scan a QR Code</p>}
+          {tab === 'nearby' && <p className="text-white font-bold text-lg">Nearby Stores</p>}
           {tab === 'account' && <p className="text-white font-bold text-lg">My Account</p>}
         </div>
       </header>
@@ -798,6 +832,77 @@ function MyRewardsContent() {
                 <p>2. Scan with your phone camera</p>
                 <p>3. Your stamp is added automatically!</p>
               </div>
+            </div>
+          )}
+
+          {/* ── Nearby tab ── */}
+          {tab === 'nearby' && (
+            <div className="space-y-4">
+              {!nearbyStores && !nearbyLoading && (
+                <div className="bg-white rounded-2xl border border-border-light p-8 text-center space-y-4">
+                  <div className="w-20 h-20 rounded-2xl bg-primary-light flex items-center justify-center mx-auto">
+                    <Navigation size={40} className="text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-text-dark text-lg">Find Stores Near You</p>
+                    <p className="text-sm text-text-light mt-1">Discover LetLoyal stores within 5 km of your current location.</p>
+                  </div>
+                  {nearbyError && <p className="text-sm text-status-error">{nearbyError}</p>}
+                  <button
+                    onClick={handleFindNearby}
+                    className="w-full bg-primary hover:bg-primary/90 text-white font-semibold py-3 rounded-xl flex items-center justify-center gap-2 transition-colors"
+                  >
+                    <MapPin size={18} /> Find Stores Near Me
+                  </button>
+                </div>
+              )}
+              {nearbyLoading && (
+                <div className="flex flex-col items-center gap-3 py-12">
+                  <Spinner />
+                  <p className="text-sm text-text-medium">Finding nearby stores…</p>
+                </div>
+              )}
+              {nearbyStores && !nearbyLoading && (
+                <>
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-semibold text-text-medium uppercase tracking-wide">
+                      {nearbyStores.length === 0
+                        ? 'No stores found'
+                        : `${nearbyStores.length} store${nearbyStores.length > 1 ? 's' : ''} within 5 km`}
+                    </p>
+                    <button
+                      onClick={() => { setNearbyStores(null); setNearbyError(''); }}
+                      className="text-xs text-primary font-medium hover:underline"
+                    >
+                      Search again
+                    </button>
+                  </div>
+                  {nearbyStores.length === 0 ? (
+                    <div className="bg-white rounded-2xl border border-border-light p-8 text-center">
+                      <MapPin size={36} className="text-text-light mx-auto opacity-30 mb-3" />
+                      <p className="font-semibold text-text-medium">No stores found within 5 km</p>
+                      <p className="text-sm text-text-light mt-1">Try again from a different location or check back later.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {nearbyStores.map(s => (
+                        <a
+                          key={s.id}
+                          href={`/s/${s.slug}`}
+                          className="flex items-center gap-3 bg-white rounded-2xl border border-border-light shadow-sm p-4 hover:border-primary transition-colors"
+                        >
+                          <MerchantAvatar logo_url={s.logo_url} name={s.business_name} size={44} />
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-text-dark truncate">{s.business_name}</p>
+                            <p className="text-xs text-text-light">{s.distance_km.toFixed(1)} km away</p>
+                          </div>
+                          <ArrowRight size={16} className="text-text-light flex-shrink-0" />
+                        </a>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
             </div>
           )}
 
@@ -959,8 +1064,9 @@ function MyRewardsContent() {
       <nav className="fixed bottom-0 inset-x-0 bg-white border-t border-border-light z-20">
         <div className="max-w-lg mx-auto flex">
           {([
-            { id: 'cards' as Tab,   label: 'Cards',   icon: <CreditCard size={22} /> },
-            { id: 'scan'  as Tab,   label: 'Scan',    icon: <ScanLine   size={22} /> },
+            { id: 'cards'   as Tab, label: 'Cards',   icon: <CreditCard size={22} /> },
+            { id: 'scan'    as Tab, label: 'Scan',    icon: <ScanLine   size={22} /> },
+            { id: 'nearby'  as Tab, label: 'Nearby',  icon: <Navigation size={22} /> },
             { id: 'account' as Tab, label: 'Account', icon: <User       size={22} /> },
           ] as { id: Tab; label: string; icon: ReactNode }[]).map(({ id, label, icon }) => (
             <button key={id} onClick={() => setTab(id)}

@@ -39,6 +39,7 @@ const CUSTOMER_AUTH_WHITELIST = [
   '/api/customer/auth/google/callback',
   '/api/customer/auth/me',
   '/api/customer/lookup',
+  '/api/customer/nearby',
 ];
 
 export function middleware(req: NextRequest) {

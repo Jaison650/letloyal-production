@@ -14,6 +14,8 @@ interface MerchantProfileRow {
   instagram_url:     string | null;
   google_review_url: string | null;
   speed_dials:       string | null;   // JSON string from MySQL
+  latitude:          number | null;
+  longitude:         number | null;
   status:            string;
   created_at:        string;
 }
@@ -38,7 +40,7 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
     const merchant = await queryOne<MerchantProfileRow>(
       `SELECT id, slug, business_name, logo_url, banner_url, address,
               gmaps_url, instagram_url, google_review_url, speed_dials,
-              status, created_at
+              latitude, longitude, status, created_at
          FROM merchants WHERE slug = ?`,
       [slug],
     );
@@ -79,6 +81,8 @@ export async function PUT(req: NextRequest, { params }: RouteContext) {
       instagram_url,
       google_review_url,
       speed_dials,
+      latitude,
+      longitude,
     } = body;
 
     // ── Validate URL fields ───────────────────────────────────────────
@@ -142,6 +146,34 @@ export async function PUT(req: NextRequest, { params }: RouteContext) {
     if (speed_dials !== undefined) {
       updates.push('speed_dials = ?');
       values.push(JSON.stringify(speed_dials));
+    }
+
+    // ── Validate and store lat/lng (null clears the pin) ─────────────
+    if (latitude !== undefined) {
+      if (latitude === null) {
+        updates.push('latitude = ?');
+        values.push(null);
+      } else {
+        const lat = parseFloat(String(latitude));
+        if (!isFinite(lat) || lat < -90 || lat > 90) {
+          return NextResponse.json({ error: 'Invalid latitude.' }, { status: 400 });
+        }
+        updates.push('latitude = ?');
+        values.push(lat);
+      }
+    }
+    if (longitude !== undefined) {
+      if (longitude === null) {
+        updates.push('longitude = ?');
+        values.push(null);
+      } else {
+        const lng = parseFloat(String(longitude));
+        if (!isFinite(lng) || lng < -180 || lng > 180) {
+          return NextResponse.json({ error: 'Invalid longitude.' }, { status: 400 });
+        }
+        updates.push('longitude = ?');
+        values.push(lng);
+      }
     }
 
     if (updates.length === 0) {

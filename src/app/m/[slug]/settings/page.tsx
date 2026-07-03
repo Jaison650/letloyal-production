@@ -15,6 +15,8 @@ interface MerchantProfile {
   instagram_url:     string | null;
   google_review_url: string | null;
   speed_dials:       string | null;
+  latitude:          number | null;
+  longitude:         number | null;
 }
 
 interface PageProps {
@@ -29,7 +31,8 @@ export default async function SettingsPage({ params }: PageProps) {
 
   const merchant = await queryOne<MerchantProfile>(
     `SELECT id, slug, business_name, logo_url, banner_url, address,
-            gmaps_url, instagram_url, google_review_url, speed_dials
+            gmaps_url, instagram_url, google_review_url, speed_dials,
+            latitude, longitude
        FROM merchants WHERE slug = ?`,
     [slug],
   );
@@ -44,6 +47,8 @@ export default async function SettingsPage({ params }: PageProps) {
     gmaps_url:         merchant.gmaps_url,
     instagram_url:     merchant.instagram_url,
     google_review_url: merchant.google_review_url,
+    latitude:          merchant.latitude,
+    longitude:         merchant.longitude,
     speed_dials:       !merchant.speed_dials
       ? DEFAULT_SPEED_DIALS
       : Array.isArray(merchant.speed_dials)

@@ -1,11 +1,14 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
 import { Upload, X, Plus, Trash2, Globe, Instagram, MapPin, Star } from 'lucide-react';
 import { clsx } from 'clsx';
+
+const LocationPicker = dynamic(() => import('@/components/LocationPicker'), { ssr: false });
 
 interface ProfileData {
   business_name:     string;
@@ -15,6 +18,8 @@ interface ProfileData {
   gmaps_url:         string | null;
   instagram_url:     string | null;
   google_review_url: string | null;
+  latitude:          number | null;
+  longitude:         number | null;
   speed_dials:       number[];
 }
 
@@ -23,7 +28,7 @@ interface ProfileEditorProps {
   initialData: ProfileData;
 }
 
-type Tab = 'branding' | 'contact' | 'speed_dials';
+type Tab = 'branding' | 'contact' | 'location' | 'speed_dials';
 
 // ── Image upload widget ───────────────────────────────────────────────────────
 function ImageUpload({
@@ -169,6 +174,7 @@ export default function ProfileEditor({ slug, initialData }: ProfileEditorProps)
   const tabs: { id: Tab; label: string }[] = [
     { id: 'branding',    label: 'Branding'         },
     { id: 'contact',     label: 'Contact & Social'  },
+    { id: 'location',    label: 'Location'          },
     { id: 'speed_dials', label: 'Speed Dials'       },
   ];
 
@@ -255,6 +261,37 @@ export default function ProfileEditor({ slug, initialData }: ProfileEditorProps)
             placeholder="https://g.page/r/..."
             icon={<Star size={16} />}
           />
+        </div>
+      )}
+
+      {/* ── Location tab ─────────────────────────────────────────── */}
+      {tab === 'location' && (
+        <div className="space-y-4">
+          <p className="text-sm text-text-medium">
+            Pin your store on the map so customers can discover you nearby.
+          </p>
+          {form.latitude && form.longitude && (
+            <p className="text-xs text-primary font-medium">
+              ✓ Location set ({form.latitude.toFixed(5)}, {form.longitude.toFixed(5)})
+            </p>
+          )}
+          <LocationPicker
+            initialLat={form.latitude}
+            initialLng={form.longitude}
+            onChange={(lat, lng) => {
+              setForm(prev => ({ ...prev, latitude: lat, longitude: lng }));
+              setSaved(false);
+            }}
+          />
+          {form.latitude && form.longitude && (
+            <button
+              type="button"
+              onClick={() => { setForm(prev => ({ ...prev, latitude: null, longitude: null })); setSaved(false); }}
+              className="text-xs text-status-error hover:underline"
+            >
+              Remove location pin
+            </button>
+          )}
         </div>
       )}
 
