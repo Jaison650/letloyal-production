@@ -40,6 +40,9 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
     if (!title || title.length > 120) {
       return NextResponse.json({ error: 'Title is required (max 120 chars).' }, { status: 400 });
     }
+    if (description && description.length > 500) {
+      return NextResponse.json({ error: 'Description must be 500 characters or fewer.' }, { status: 400 });
+    }
     if (!valid_until || isNaN(valid_until.getTime()) || valid_until <= new Date()) {
       return NextResponse.json({ error: 'valid_until must be a future datetime.' }, { status: 400 });
     }

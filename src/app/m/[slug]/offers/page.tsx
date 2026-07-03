@@ -60,12 +60,13 @@ export default function OffersPage() {
 
   async function handleDelete(id: string) {
     if (!confirm('Delete this offer?')) return;
-    try {
-      await fetch(`/api/merchant/${slug}/offers/${id}`, { method: 'DELETE' });
-      setOffers(prev => prev.filter(o => o.id !== id));
-    } catch {
-      alert('Failed to delete. Please try again.');
+    const res = await fetch(`/api/merchant/${slug}/offers/${id}`, { method: 'DELETE' });
+    if (!res.ok) {
+      const d = await res.json().catch(() => ({}));
+      alert(d.error || 'Failed to delete. Please try again.');
+      return;
     }
+    setOffers(prev => prev.filter(o => o.id !== id));
   }
 
   const now     = new Date();
@@ -106,6 +107,7 @@ export default function OffersPage() {
                 className="input w-full"
                 rows={2}
                 placeholder="More details…"
+                maxLength={500}
                 value={form.description}
                 onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
               />
@@ -116,6 +118,7 @@ export default function OffersPage() {
                 type="datetime-local"
                 className="input w-full"
                 value={form.valid_until}
+                min={new Date().toISOString().slice(0, 16)}
                 onChange={e => setForm(f => ({ ...f, valid_until: e.target.value }))}
                 required
               />
