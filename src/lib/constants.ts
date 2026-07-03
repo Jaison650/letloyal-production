@@ -1,7 +1,7 @@
 export const APP_NAME = 'LetLoyal';
 export const POWERED_BY = 'Powered by LetLoyal';
 
-// Merchant session: 7 days. Admin session: 12 hours.
+// Merchant session: 7 days. Admin session: 7 days.
 export const MERCHANT_SESSION_MAX_AGE = 60 * 60 * 24 * 7;
 export const ADMIN_SESSION_MAX_AGE = 60 * 60 * 24 * 7; // 7 days
 

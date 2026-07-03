@@ -13,18 +13,23 @@ interface BillingMerchant {
   created_at:   string;
 }
 
-async function patchMerchant(id: string, patch: Record<string, string>) {
-  await fetch(`/api/admin/billing/${id}`, {
-    method:  'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body:    JSON.stringify(patch),
-  });
+async function patchMerchant(id: string, patch: Record<string, string>): Promise<string | null> {
+  try {
+    const res = await fetch(`/api/admin/billing/${id}`, {
+      method:  'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify(patch),
+    });
+    if (!res.ok) { const d = await res.json(); return d.error || 'Update failed.'; }
+    return null;
+  } catch { return 'Network error.'; }
 }
 
 export default function AdminBillingPage() {
-  const [merchants, setMerchants] = useState<BillingMerchant[]>([]);
-  const [loading,   setLoading]   = useState(true);
-  const [error,     setError]     = useState('');
+  const [merchants,   setMerchants]   = useState<BillingMerchant[]>([]);
+  const [loading,     setLoading]     = useState(true);
+  const [error,       setError]       = useState('');
+  const [patchError,  setPatchError]  = useState('');
 
   useEffect(() => {
     fetch('/api/admin/billing')
@@ -44,6 +49,12 @@ export default function AdminBillingPage() {
         <h1 className="text-2xl font-bold text-text-dark">Billing</h1>
         <p className="text-sm text-text-light mt-1">Manage merchant plans and billing notes.</p>
       </div>
+      {patchError && (
+        <div className="mb-4 rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-600 flex items-center justify-between">
+          <span>{patchError}</span>
+          <button onClick={() => setPatchError('')} className="ml-4 text-red-400 hover:text-red-600">✕</button>
+        </div>
+      )}
 
       {loading ? (
         <p className="text-text-medium text-sm">Loading…</p>
@@ -78,7 +89,7 @@ export default function AdminBillingPage() {
                       onChange={(e) => {
                         const status = e.target.value;
                         updateLocal(m.id, { status });
-                        patchMerchant(m.id, { status });
+                        patchMerchant(m.id, { status }).then(e => { if (e) setPatchError(e); });
                       }}
                       className={clsx(
                         'text-xs font-semibold px-2 py-1 rounded-full border-0 outline-none cursor-pointer',
@@ -98,7 +109,7 @@ export default function AdminBillingPage() {
                       onChange={(e) => {
                         const plan = e.target.value;
                         updateLocal(m.id, { plan });
-                        patchMerchant(m.id, { plan });
+                        patchMerchant(m.id, { plan }).then(e => { if (e) setPatchError(e); });
                       }}
                       className="text-xs font-medium px-2 py-1 rounded-lg border border-border-light bg-surface outline-none cursor-pointer"
                     >
@@ -116,7 +127,7 @@ export default function AdminBillingPage() {
                       onBlur={(e) => {
                         const billing_note = e.target.value;
                         updateLocal(m.id, { billing_note });
-                        patchMerchant(m.id, { billing_note });
+                        patchMerchant(m.id, { billing_note }).then(e => { if (e) setPatchError(e); });
                       }}
                       className="w-full text-xs px-2 py-1 rounded-lg border border-border-light bg-surface outline-none focus:border-primary transition-colors"
                     />
