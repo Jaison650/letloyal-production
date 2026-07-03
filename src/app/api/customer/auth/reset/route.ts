@@ -4,9 +4,13 @@ import { hashPassword } from '@/lib/auth';
 import { signCustomerToken, CUSTOMER_SESSION_MAX_AGE } from '@/lib/customerAuth';
 import { CUSTOMER_COOKIE_NAME } from '@/lib/authConstants';
 import { queryOne, query } from '@/lib/db';
+import { isRateLimited, rateLimitKey } from '@/lib/rateLimit';
 import crypto from 'crypto';
 
 export async function POST(req: NextRequest) {
+  if (isRateLimited(rateLimitKey(req, 'cust-reset'), 5)) {
+    return NextResponse.json({ error: 'Too many attempts. Please try again later.' }, { status: 429 });
+  }
   try {
     const { token, password } = await req.json();
     if (!token)    return NextResponse.json({ error: 'Token is required.' },    { status: 400 });

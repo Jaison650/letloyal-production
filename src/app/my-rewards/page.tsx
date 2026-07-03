@@ -433,9 +433,17 @@ function MyRewardsContent() {
     finally { setPwSaving(false); }
   }
 
-  function handleLogout() {
-    fetch('/api/customer/auth/logout', { method: 'POST', credentials: 'include' }).catch(() => {});
-    setPhone(''); setCustomer(null); setCards([]); setStores([]); setPhase('login');
+  async function handleLogout() {
+    try {
+      await fetch('/api/customer/auth/logout', { method: 'POST', credentials: 'include' });
+    } catch {
+      // Even if network fails, clear local state
+    }
+    setPhone(''); setName(''); setEmail('');
+    setCustomer(null);
+    setCards([]);
+    setStores([]);
+    setPhase('login');
   }
 
   // ── Loading ────────────────────────────────────────────────────────────────
@@ -866,10 +874,7 @@ function MyRewardsContent() {
                         credentials: 'include',
                       });
                       if (res.ok) {
-                        fetch('/api/customer/auth/logout', { method: 'POST', credentials: 'include' }).catch(() => {});
-                        setPhase('login');
-                        setCustomer(null);
-                        setCards([]);
+                        await handleLogout();
                         alert('Your account has been deleted.');
                       } else {
                         alert('Failed to delete account. Please contact hello@letloyal.com');

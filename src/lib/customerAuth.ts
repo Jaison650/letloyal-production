@@ -15,8 +15,8 @@ const SECRET = (() => {
   return s || 'dev_cust_secret_change_in_production';
 })();
 
-const EXPIRY = '30d';
 export const CUSTOMER_SESSION_MAX_AGE = 60 * 60 * 24 * 30; // 30 days in seconds
+const EXPIRY = `${CUSTOMER_SESSION_MAX_AGE}s`;
 
 export interface CustomerTokenPayload {
   sub:   string;       // customer id
