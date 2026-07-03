@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import type jsQRType from 'jsqr';
 
 interface Props {
   onScan: (data: string) => void;
@@ -13,6 +14,7 @@ export default function QRScanner({ onScan, onError, active }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const rafRef    = useRef<number>(0);
+  const jsQRRef   = useRef<typeof jsQRType | null>(null);
   const [scanning, setScanning] = useState(false);
 
   useEffect(() => {
@@ -34,6 +36,8 @@ export default function QRScanner({ onScan, onError, active }: Props) {
         videoRef.current.srcObject = stream;
         videoRef.current.play().catch(console.error);
         setScanning(true);
+        const { default: jsQR } = await import('jsqr');
+        jsQRRef.current = jsQR;
         rafRef.current = requestAnimationFrame(tick);
       }
     } catch (err) {
@@ -53,9 +57,13 @@ export default function QRScanner({ onScan, onError, active }: Props) {
   }
 
   function tick() {
+    if (!streamRef.current) return; // camera already stopped
+
     const video  = videoRef.current;
     const canvas = canvasRef.current;
-    if (!video || !canvas || video.readyState !== video.HAVE_ENOUGH_DATA) {
+    const jsQR   = jsQRRef.current;
+
+    if (!video || !canvas || !jsQR || video.readyState !== video.HAVE_ENOUGH_DATA) {
       rafRef.current = requestAnimationFrame(tick);
       return;
     }
@@ -66,21 +74,18 @@ export default function QRScanner({ onScan, onError, active }: Props) {
     canvas.width  = video.videoWidth;
     canvas.height = video.videoHeight;
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
 
-    // Dynamic import jsQR to keep it out of the initial bundle
-    import('jsqr').then(({ default: jsQR }) => {
-      const code = jsQR(imageData.data, imageData.width, imageData.height, {
-        inversionAttempts: 'dontInvert',
-      });
-      if (code?.data) {
-        stopCamera();
-        onScan(code.data);
-      } else {
-        rafRef.current = requestAnimationFrame(tick);
-      }
+    const code = jsQR(imageData.data, imageData.width, imageData.height, {
+      inversionAttempts: 'dontInvert',
     });
+
+    if (code?.data) {
+      stopCamera();
+      onScan(code.data);
+    } else {
+      rafRef.current = requestAnimationFrame(tick);
+    }
   }
 
   return (
