@@ -42,7 +42,7 @@ export default function MerchantRegisterPage() {
         return;
       }
 
-      router.push(`/merchant/login?registered=1`);
+      router.push(`/merchant/verify-email?email=${encodeURIComponent(email)}`);
     } catch {
       setError('Something went wrong. Please try again.');
     } finally {

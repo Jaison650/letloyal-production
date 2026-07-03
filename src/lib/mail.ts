@@ -198,3 +198,30 @@ export async function sendMerchantWelcome(
   `);
   await sendMail({ to, subject: `Your LetLoyal merchant account is ready — ${businessName}`, html });
 }
+
+export async function sendMerchantEmailOTP(to: string, businessName: string, otp: string): Promise<void> {
+  const html = baseTemplate(`
+    <p style="font-family:'Plus Jakarta Sans',Arial,sans-serif;font-size:16px;font-weight:700;color:#0F172A;margin:0 0 8px">Hello, ${businessName}!</p>
+    <p style="${P}">Use the code below to verify your LetLoyal account. It expires in 10 minutes.</p>
+    <div style="background:#F0FDF4;border:2px solid #0D9488;border-radius:16px;padding:24px;text-align:center;margin:0 0 24px">
+      <p style="font-family:'Plus Jakarta Sans',Arial,sans-serif;font-size:36px;font-weight:800;letter-spacing:12px;color:#0D9488;margin:0">${otp}</p>
+    </div>
+    <p style="font-family:'Inter',Arial,sans-serif;font-size:12px;color:#94A3B8;margin:0">If you did not create a LetLoyal account, ignore this email.</p>
+  `);
+  await sendMail({ to, subject: `${otp} — Your LetLoyal Verification Code`, html });
+}
+
+export async function sendNewMerchantAlert(merchantEmail: string, businessName: string, slug: string): Promise<void> {
+  const adminEmail = process.env.ADMIN_ALERT_EMAIL || 'hello@letloyal.com';
+  const html = baseTemplate(`
+    <p style="font-family:'Plus Jakarta Sans',Arial,sans-serif;font-size:16px;font-weight:700;color:#0F172A;margin:0 0 16px">New merchant verified on LetLoyal India</p>
+    <div style="${BOX}">
+      <table style="width:100%;border-collapse:collapse;font-family:'Inter',Arial,sans-serif;font-size:14px">
+        <tr><td style="padding:8px;color:#64748B;width:140px">Business</td><td style="padding:8px;color:#0F172A;font-weight:600">${businessName}</td></tr>
+        <tr style="border-top:1px solid #E2E8F0;"><td style="padding:8px;color:#64748B">Email</td><td style="padding:8px;color:#0F172A">${merchantEmail}</td></tr>
+        <tr style="border-top:1px solid #E2E8F0;"><td style="padding:8px;color:#64748B">Slug</td><td style="padding:8px;color:#0D9488">/m/${slug}</td></tr>
+      </table>
+    </div>
+  `);
+  await sendMail({ to: adminEmail, subject: `New Merchant: ${businessName}`, html });
+}

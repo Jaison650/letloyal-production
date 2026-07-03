@@ -25,6 +25,8 @@ const MERCHANT_AUTH_WHITELIST = [
   '/api/merchant/auth/logout',
   '/api/merchant/auth/forgot',
   '/api/merchant/auth/reset',
+  '/api/merchant/auth/verify-email',
+  '/api/merchant/auth/resend-otp',
 ];
 
 const CUSTOMER_AUTH_WHITELIST = [

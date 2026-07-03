@@ -25,6 +25,7 @@ function MerchantLoginForm() {
   const searchParams = useSearchParams();
   const redirectTo   = searchParams.get('redirect');
   const justRegistered = searchParams.get('registered') === '1';
+  const justVerified   = searchParams.get('verified') === '1';
   const [email,    setEmail]    = useState('');
   const [password, setPassword] = useState('');
   const [error,    setError]    = useState('');
@@ -32,8 +33,9 @@ function MerchantLoginForm() {
   const [loading,  setLoading]  = useState(false);
 
   useEffect(() => {
-    if (justRegistered) setSuccess('Account created! Sign in to continue.');
-  }, [justRegistered]);
+    if (justVerified)   setSuccess('Email verified! You can now sign in.');
+    else if (justRegistered) setSuccess('Account created! Sign in to continue.');
+  }, [justRegistered, justVerified]);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -50,6 +52,10 @@ function MerchantLoginForm() {
       const data = await res.json();
 
       if (!res.ok) {
+        if (data.needsVerification && data.email) {
+          router.push(`/merchant/verify-email?email=${encodeURIComponent(data.email)}`);
+          return;
+        }
         setError(data.error || 'Login failed.');
         return;
       }

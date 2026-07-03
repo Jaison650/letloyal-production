@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query, queryOne } from '@/lib/db';
 import { hashPassword } from '@/lib/auth';
-import { sendMerchantWelcome } from '@/lib/mail';
+import { sendMerchantEmailOTP } from '@/lib/mail';
 import { isRateLimited, rateLimitKey } from '@/lib/rateLimit';
 
 function slugify(name: string): string {
@@ -11,6 +11,10 @@ function slugify(name: string): string {
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
     .slice(0, 48);
+}
+
+function generateOTP(): string {
+  return String(Math.floor(100000 + Math.random() * 900000));
 }
 
 export async function POST(req: NextRequest) {
@@ -27,14 +31,13 @@ export async function POST(req: NextRequest) {
     if (password.length < 8)    return NextResponse.json({ error: 'Password must be at least 8 characters.' }, { status: 400 });
 
     const normEmail = email.toLowerCase().trim();
-    const normPhone = phone.trim();
     const bizName   = business_name.trim();
 
-    const existing = await queryOne<{ id: string }>(
-      'SELECT id FROM merchants WHERE email = ?',
+    const existing = await queryOne<{ id: string; email_verified: number }>(
+      'SELECT id, email_verified FROM merchants WHERE email = ?',
       [normEmail],
     );
-    if (existing) {
+    if (existing?.email_verified) {
       return NextResponse.json({ error: 'An account with this email already exists.' }, { status: 409 });
     }
 
@@ -51,15 +54,26 @@ export async function POST(req: NextRequest) {
     }
 
     const passwordHash = await hashPassword(password);
-    await query(
-      `INSERT INTO merchants (id, slug, business_name, email, phone, password_hash, status)
-       VALUES (UUID(), ?, ?, ?, ?, ?, 'active')`,
-      [slug, bizName, normEmail, normPhone, passwordHash],
-    );
+    const otp     = generateOTP();
+    const expires = new Date(Date.now() + 10 * 60 * 1000);
 
-    sendMerchantWelcome(normEmail, bizName, normEmail, slug).catch(() => {});
+    if (existing) {
+      // Unverified account exists — update it so they can re-register
+      await query(
+        'UPDATE merchants SET password_hash=?, slug=?, business_name=?, phone=?, email_otp=?, email_otp_expires=?, status=? WHERE id=?',
+        [passwordHash, slug, bizName, phone.trim(), otp, expires, 'pending', existing.id],
+      );
+    } else {
+      await query(
+        `INSERT INTO merchants (id, slug, business_name, email, phone, password_hash, status, email_verified, email_otp, email_otp_expires)
+         VALUES (UUID(), ?, ?, ?, ?, ?, 'pending', 0, ?, ?)`,
+        [slug, bizName, normEmail, phone.trim(), passwordHash, otp, expires],
+      );
+    }
 
-    return NextResponse.json({ ok: true, slug }, { status: 201 });
+    sendMerchantEmailOTP(normEmail, bizName, otp).catch(e => console.error('[register] OTP email failed:', e));
+
+    return NextResponse.json({ ok: true, email: normEmail });
   } catch (err) {
     console.error('[POST /api/merchant/auth/register]', err);
     return NextResponse.json({ error: 'Registration failed. Please try again.' }, { status: 500 });

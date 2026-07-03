@@ -9,11 +9,13 @@ import { MERCHANT_SESSION_MAX_AGE } from '@/lib/constants';
 import { checkRateLimit, rateLimitKey } from '@/lib/rateLimit';
 
 interface MerchantAuthRow {
-  id:            string;
-  slug:          string;
-  business_name: string;
-  password_hash: string;
-  status:        string;
+  id:             string;
+  slug:           string;
+  business_name:  string;
+  email:          string;
+  password_hash:  string;
+  status:         string;
+  email_verified: number;
 }
 
 export async function POST(req: NextRequest) {
@@ -35,7 +37,7 @@ export async function POST(req: NextRequest) {
     }
 
     const merchant = await queryOne<MerchantAuthRow>(
-      'SELECT id, slug, business_name, password_hash, status FROM merchants WHERE email = ?',
+      'SELECT id, slug, business_name, email, password_hash, status, email_verified FROM merchants WHERE email = ?',
       [email.toLowerCase().trim()],
     );
 
@@ -45,6 +47,17 @@ export async function POST(req: NextRequest) {
 
     if (!merchant || !passwordMatch) {
       return NextResponse.json({ error: 'Invalid email or password.' }, { status: 401 });
+    }
+
+    if (!merchant.email_verified) {
+      return NextResponse.json(
+        {
+          error: 'Please verify your email first. Check your inbox for the verification code.',
+          needsVerification: true,
+          email: merchant.email,
+        },
+        { status: 403 },
+      );
     }
 
     if (merchant.status !== 'active') {
