@@ -58,7 +58,8 @@ export function signToken(payload: MerchantPayload, expiresIn: string = JWT_EXPI
 }
 
 export function signAdminToken(payload: Omit<AdminPayload, 'type'>): string {
-  return jwt.sign({ ...payload, type: 'admin' }, JWT_SECRET, { expiresIn: '12h' });
+  // Expiry is controlled by the cookie maxAge (ADMIN_SESSION_MAX_AGE); token is long-lived.
+  return jwt.sign({ ...payload, type: 'admin' }, JWT_SECRET, { expiresIn: '7d' });
 }
 
 export function verifyToken(token: string): TokenPayload | null {

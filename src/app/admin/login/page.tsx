@@ -9,14 +9,11 @@ import { Mail, Lock } from 'lucide-react';
 
 function getSafeRedirect(redirect: string | null, defaultPath: string): string {
   if (!redirect) return defaultPath;
-  try {
-    if (redirect.startsWith('/') && !redirect.startsWith('//')) {
-      return redirect;
-    }
-    return defaultPath;
-  } catch {
-    return defaultPath;
+  // Only allow redirects within /admin to prevent open-redirect abuse
+  if (redirect.startsWith('/admin') && !redirect.startsWith('//')) {
+    return redirect;
   }
+  return defaultPath;
 }
 
 function AdminLoginForm() {
