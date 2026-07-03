@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import ClarityScript from '@/components/ClarityScript';
 import ConsentBanner from '@/components/ConsentBanner';
+import ServiceWorkerRegistrar from '@/components/ServiceWorkerRegistrar';
 
 const BASE_URL = 'https://pilot.letloyal.com';
 const OG_IMAGE = `${BASE_URL}/api/og`;
@@ -33,6 +34,19 @@ export const metadata: Metadata = {
   },
   alternates: { canonical: BASE_URL },
   robots: { index: true, follow: true },
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'LetLoyal',
+  },
+  icons: {
+    apple: '/icons/apple-touch-icon.png',
+  },
+  other: {
+    'theme-color': '#0ea5e9',
+    'mobile-web-app-capable': 'yes',
+  },
 };
 
 const jsonLd = {
@@ -55,6 +69,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {children}
         <ClarityScript />
         <ConsentBanner />
+        <ServiceWorkerRegistrar />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
