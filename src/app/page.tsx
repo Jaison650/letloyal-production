@@ -347,7 +347,7 @@ export default function HomePage() {
               <div className="mb-2"><Logo variant="dark" size={26} /></div>
               <p className="text-sm max-w-xs leading-relaxed">QR-first loyalty for local merchants.<br />No app. No hardware. Just loyal customers.</p>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-8 text-sm">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-8 text-sm">
               <div>
                 <p className="font-semibold text-white mb-3">Product</p>
                 <ul className="space-y-2">
@@ -366,8 +366,17 @@ export default function HomePage() {
                 <ul className="space-y-2">
                   <li><Link href="/merchant/register" className="hover:text-white transition-colors">Create Account</Link></li>
                   <li><Link href="/merchant/login" className="hover:text-white transition-colors">Merchant Login</Link></li>
+                  <li><Link href="/merchant-terms" className="hover:text-white transition-colors">Merchant Terms</Link></li>
+                  <li><Link href="/merchant-rights" className="hover:text-white transition-colors">Merchant Rights</Link></li>
+                </ul>
+              </div>
+              <div>
+                <p className="font-semibold text-white mb-3">Legal</p>
+                <ul className="space-y-2">
                   <li><Link href="/privacy-policy" className="hover:text-white transition-colors">Privacy Policy</Link></li>
                   <li><Link href="/terms-of-service" className="hover:text-white transition-colors">Terms of Service</Link></li>
+                  <li><Link href="/cookie-policy" className="hover:text-white transition-colors">Cookie Policy</Link></li>
+                  <li><Link href="/customer-policy" className="hover:text-white transition-colors">Customer Privacy</Link></li>
                 </ul>
               </div>
             </div>

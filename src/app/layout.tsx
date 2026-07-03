@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import ClarityScript from '@/components/ClarityScript';
+import ConsentBanner from '@/components/ConsentBanner';
 
 const BASE_URL = 'https://pilot.letloyal.com';
 const OG_IMAGE = `${BASE_URL}/api/og`;
@@ -53,6 +54,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         {children}
         <ClarityScript />
+        <ConsentBanner />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
