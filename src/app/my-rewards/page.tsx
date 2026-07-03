@@ -9,10 +9,6 @@ import {
   CreditCard, ScanLine, ArrowRight, Copy, Check, MapPin,
   ChevronDown, ChevronUp, Calendar, Users,
 } from 'lucide-react';
-import {
-  getCustomerSession, saveCustomerSession,
-  clearCustomerSession, getCustomerToken,
-} from '@/lib/customerSession';
 import Logo, { LogoIcon } from '@/components/ui/Logo';
 import { hasAnalyticsConsent, setAnalyticsConsent } from '@/lib/analyticsConsent';
 import type { ReactNode } from 'react';
@@ -266,21 +262,9 @@ function MyRewardsContent() {
   const highlightSlug   = searchParams.get('merchant');
   const cardRefs        = useRef<Record<string, HTMLDivElement | null>>({});
 
-  // ── Auth header for profile API calls ──────────────────────────────────
-  function authHeaders(): Record<string, string> {
-    const token = getCustomerToken();
-    return {
-      'Content-Type': 'application/json',
-      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-    };
-  }
-
   const loadCards = useCallback(async (phoneDigits: string, cName: string | null = null) => {
     setFetching(true);
     try {
-      const token = getCustomerToken();
-      const authHdr: Record<string, string> = token ? { 'Authorization': `Bearer ${token}` } : {};
-
       const [lookupRes, discoverRes, profileRes] = await Promise.all([
         fetch('/api/customer/lookup', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -288,17 +272,19 @@ function MyRewardsContent() {
         }),
         fetch('/api/customer/discover', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', ...(token ? { 'Authorization': `Bearer ${token}` } : {}) },
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({ phone_number: phoneDigits }),
         }),
-        token
-          ? fetch('/api/customer/profile', { headers: { 'Content-Type': 'application/json', ...authHdr } })
-          : Promise.resolve(null),
+        fetch('/api/customer/profile', {
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+        }),
       ]);
 
       const lookupData   = await lookupRes.json();
       const discoverData = await discoverRes.json();
-      const profileData  = profileRes ? await profileRes.json() : null;
+      const profileData  = profileRes.ok ? await profileRes.json() : null;
 
       if (!lookupRes.ok) { setError(lookupData.error || 'Lookup failed.'); setPhase('login'); return; }
 
@@ -317,9 +303,19 @@ function MyRewardsContent() {
   }, []);
 
   useEffect(() => {
-    const session = getCustomerSession();
-    if (session) { setPhone(session.phone); loadCards(session.phone, session.name); }
-    else setPhase('login');
+    fetch('/api/customer/auth/me', { credentials: 'include' })
+      .then(r => r.json())
+      .then(data => {
+        if (data.ok && data.customer) {
+          const phoneDigits = data.customer.phone ?? '';
+          setPhone(phoneDigits);
+          setCustomer(data.customer);
+          loadCards(phoneDigits, data.customer.name);
+        } else {
+          setPhase('login');
+        }
+      })
+      .catch(() => setPhase('login'));
   }, [loadCards]);
 
   // Scroll to highlighted card once dashboard + cards are ready
@@ -350,6 +346,7 @@ function MyRewardsContent() {
     try {
       const res  = await fetch('/api/customer/auth/login', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ phone_number: digits, password }),
       });
       const data = await res.json();
@@ -361,7 +358,6 @@ function MyRewardsContent() {
         }
         return;
       }
-      saveCustomerSession(data.customer.phone, data.customer.name, data.token);
       setCustomer(data.customer);
       await loadCards(data.customer.phone, data.customer.name);
     } catch { setError('Connection error.'); }
@@ -379,12 +375,12 @@ function MyRewardsContent() {
     try {
       const res  = await fetch('/api/customer/auth/register', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ name: name.trim(), email: email.trim(), phone_number: digits, password }),
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error || 'Registration failed.'); return; }
       setAnalyticsConsent(analyticsOptIn);
-      saveCustomerSession(data.customer.phone, data.customer.name, data.token);
       setCustomer(data.customer);
       await loadCards(data.customer.phone, data.customer.name);
     } catch { setError('Connection error.'); }
@@ -407,13 +403,14 @@ function MyRewardsContent() {
 
   async function saveField(field: string, value: string) {
     const res = await fetch('/api/customer/profile', {
-      method: 'PUT', headers: authHeaders(),
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({ [field]: value }),
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Failed.');
     setCustomer(prev => prev ? { ...prev, [field]: value || null } : prev);
-    if (field === 'name') saveCustomerSession(customer?.phone ?? '', value, getCustomerToken() ?? undefined);
   }
 
   async function handleChangePassword(e: FormEvent) {
@@ -423,7 +420,9 @@ function MyRewardsContent() {
     setPwSaving(true);
     try {
       const res  = await fetch('/api/customer/profile/password', {
-        method: 'PUT', headers: authHeaders(),
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ current_password: curPw, new_password: newPw }),
       });
       const data = await res.json();
@@ -435,7 +434,8 @@ function MyRewardsContent() {
   }
 
   function handleLogout() {
-    clearCustomerSession(); setPhone(''); setCustomer(null); setCards([]); setStores([]); setPhase('login');
+    fetch('/api/customer/auth/logout', { method: 'POST', credentials: 'include' }).catch(() => {});
+    setPhone(''); setCustomer(null); setCards([]); setStores([]); setPhase('login');
   }
 
   // ── Loading ────────────────────────────────────────────────────────────────
@@ -861,13 +861,12 @@ function MyRewardsContent() {
                   <button
                     onClick={async () => {
                       if (!confirm('Are you sure you want to permanently delete your account and all your loyalty data? This cannot be undone.')) return;
-                      const token = getCustomerToken();
                       const res = await fetch('/api/customer/account', {
                         method: 'DELETE',
-                        headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+                        credentials: 'include',
                       });
                       if (res.ok) {
-                        clearCustomerSession();
+                        fetch('/api/customer/auth/logout', { method: 'POST', credentials: 'include' }).catch(() => {});
                         setPhase('login');
                         setCustomer(null);
                         setCards([]);

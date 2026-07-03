@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { comparePassword } from '@/lib/auth';
-import { signCustomerToken } from '@/lib/customerAuth';
+import { signCustomerToken, CUSTOMER_SESSION_MAX_AGE } from '@/lib/customerAuth';
+import { CUSTOMER_COOKIE_NAME } from '@/lib/authConstants';
 import { queryOne } from '@/lib/db';
 import { normalizePhone } from '@/lib/utils';
 import { isRateLimited, rateLimitKey } from '@/lib/rateLimit';
@@ -44,9 +45,8 @@ export async function POST(req: NextRequest) {
     const token  = signCustomerToken({ sub: customer.id, phone: normPhone });
     const digits = normPhone.replace('+91', '');
 
-    return NextResponse.json({
+    const res = NextResponse.json({
       ok: true,
-      token,
       customer: {
         id:       customer.id,
         name:     customer.name,
@@ -56,6 +56,16 @@ export async function POST(req: NextRequest) {
         gender:   customer.gender,
       },
     });
+    res.cookies.set({
+      name:     CUSTOMER_COOKIE_NAME,
+      value:    token,
+      httpOnly: true,
+      secure:   process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path:     '/',
+      maxAge:   CUSTOMER_SESSION_MAX_AGE,
+    });
+    return res;
   } catch (err) {
     console.error('[POST /api/customer/auth/login]', err);
     return NextResponse.json({ error: 'Login failed.' }, { status: 500 });

@@ -1,7 +1,8 @@
 // src/app/api/customer/auth/reset/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { hashPassword } from '@/lib/auth';
-import { signCustomerToken } from '@/lib/customerAuth';
+import { signCustomerToken, CUSTOMER_SESSION_MAX_AGE } from '@/lib/customerAuth';
+import { CUSTOMER_COOKIE_NAME } from '@/lib/authConstants';
 import { queryOne, query } from '@/lib/db';
 import crypto from 'crypto';
 
@@ -43,11 +44,20 @@ export async function POST(req: NextRequest) {
     const jwtToken = signCustomerToken({ sub: customer.id, phone: customer.phone_number });
     const digits   = customer.phone_number.replace('+91', '');
 
-    return NextResponse.json({
+    const res = NextResponse.json({
       ok: true,
-      token: jwtToken,
       customer: { id: customer.id, name: customer.name, phone: digits, email: customer.email },
     });
+    res.cookies.set({
+      name:     CUSTOMER_COOKIE_NAME,
+      value:    jwtToken,
+      httpOnly: true,
+      secure:   process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path:     '/',
+      maxAge:   CUSTOMER_SESSION_MAX_AGE,
+    });
+    return res;
   } catch (err) {
     console.error('[POST /api/customer/auth/reset]', err);
     return NextResponse.json({ error: 'Password reset failed.' }, { status: 500 });

@@ -5,3 +5,4 @@
  */
 export const MERCHANT_COOKIE_NAME = 'letloyal_merchant_session';
 export const ADMIN_COOKIE_NAME    = 'letloyal_admin_session';
+export const CUSTOMER_COOKIE_NAME = 'letloyal_customer_session';
