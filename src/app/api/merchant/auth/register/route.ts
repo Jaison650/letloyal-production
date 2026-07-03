@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { randomInt } from 'crypto';
 import { query, queryOne } from '@/lib/db';
 import { hashPassword } from '@/lib/auth';
 import { sendMerchantEmailOTP } from '@/lib/mail';
@@ -14,7 +15,7 @@ function slugify(name: string): string {
 }
 
 function generateOTP(): string {
-  return String(Math.floor(100000 + Math.random() * 900000));
+  return String(randomInt(100000, 1000000)); // cryptographically random 6-digit
 }
 
 export async function POST(req: NextRequest) {

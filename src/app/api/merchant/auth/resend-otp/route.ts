@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { randomInt } from 'crypto';
 import { queryOne, query } from '@/lib/db';
 import { isRateLimited, rateLimitKey } from '@/lib/rateLimit';
 import { sendMerchantEmailOTP } from '@/lib/mail';
@@ -18,7 +19,7 @@ export async function POST(req: NextRequest) {
     if (!merchant) return NextResponse.json({ error: 'No account found.' }, { status: 404 });
     if (merchant.email_verified) return NextResponse.json({ ok: true, alreadyVerified: true });
 
-    const otp = String(Math.floor(100000 + Math.random() * 900000));
+    const otp = String(randomInt(100000, 1000000));
     const expires = new Date(Date.now() + 10 * 60 * 1000);
     await query('UPDATE merchants SET email_otp=?, email_otp_expires=? WHERE id=?', [otp, expires, merchant.id]);
 

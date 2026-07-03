@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { timingSafeEqual } from 'crypto';
 import { queryOne, query } from '@/lib/db';
 import { isRateLimited, rateLimitKey } from '@/lib/rateLimit';
 import { sendMerchantWelcome, sendNewMerchantAlert } from '@/lib/mail';
@@ -27,7 +28,11 @@ export async function POST(req: NextRequest) {
     );
     if (!merchant) return NextResponse.json({ error: 'Invalid code.' }, { status: 400 });
     if (merchant.email_verified) return NextResponse.json({ ok: true, alreadyVerified: true });
-    if (!merchant.email_otp || merchant.email_otp !== String(otp).trim())
+    const submittedOtp = String(otp).trim();
+    const storedOtp = merchant.email_otp ?? '';
+    const otpMatch = storedOtp.length === submittedOtp.length &&
+      timingSafeEqual(Buffer.from(storedOtp), Buffer.from(submittedOtp));
+    if (!merchant.email_otp || !otpMatch)
       return NextResponse.json({ error: 'Invalid code.' }, { status: 400 });
     if (!merchant.email_otp_expires || new Date(merchant.email_otp_expires) < new Date())
       return NextResponse.json({ error: 'Code expired. Request a new one.' }, { status: 400 });

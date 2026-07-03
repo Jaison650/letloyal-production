@@ -26,8 +26,9 @@ function VerifyForm() {
         body: JSON.stringify({ email, otp }),
       });
       const data = await res.json();
-      if (!res.ok) {
-        setError(data.error || 'Verification failed.');
+      if (!res.ok) { setError(data.error || 'Verification failed.'); return; }
+      if (data.alreadyVerified) {
+        router.push('/merchant/login?verified=1');
         return;
       }
       router.push('/merchant/login?verified=1');
@@ -47,8 +48,16 @@ function VerifyForm() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
       });
-      if (res.ok) setResent(true);
-      else setError('Failed to resend. Try again.');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.alreadyVerified) {
+          router.push('/merchant/login?verified=1');
+          return;
+        }
+        setResent(true);
+      } else {
+        setError('Failed to resend. Try again.');
+      }
     } catch {
       setError('Connection error. Please try again.');
     }
