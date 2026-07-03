@@ -2,12 +2,16 @@
 
 import Script from 'next/script';
 import { usePathname } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { hasAnalyticsConsent, ANALYTICS_CONSENT_EVENT } from '@/lib/analyticsConsent';
 
 // Microsoft Clarity — session recording + heatmaps
-// Privacy rules:
+// Privacy rules (DPDP Act 2023):
+//   - Loads ONLY after the customer gives explicit, opt-in analytics consent
+//     (default OFF). Consent is separate from account processing and can be
+//     withdrawn from My Rewards → Data & Privacy.
 //   - /admin and /m/* routes are excluded (merchant + admin PII)
 //   - All customer PII in the DOM is masked via data-clarity-mask="true"
-//   - Clarity uses localStorage (no cookies) — GDPR compliant by default
 //   - IP anonymisation must be enabled in the Clarity project dashboard
 const CLARITY_PROJECT_ID = process.env.NEXT_PUBLIC_CLARITY_PROJECT_ID ?? '';
 
@@ -15,10 +19,25 @@ const EXCLUDED_PREFIXES = ['/admin', '/m/'];
 
 export default function ClarityScript() {
   const pathname = usePathname();
+  const [consented, setConsented] = useState(false);
+
+  // Re-read consent on mount and whenever it changes (opt-in / withdrawal)
+  useEffect(() => {
+    const sync = () => setConsented(hasAnalyticsConsent());
+    sync();
+    window.addEventListener(ANALYTICS_CONSENT_EVENT, sync);
+    window.addEventListener('storage', sync);
+    return () => {
+      window.removeEventListener(ANALYTICS_CONSENT_EVENT, sync);
+      window.removeEventListener('storage', sync);
+    };
+  }, []);
 
   // Don't load Clarity at all on merchant/admin pages
   if (!CLARITY_PROJECT_ID) return null;
   if (EXCLUDED_PREFIXES.some(p => pathname.startsWith(p))) return null;
+  // No behavioural analytics without explicit opt-in consent
+  if (!consented) return null;
 
   return (
     <Script

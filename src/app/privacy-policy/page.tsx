@@ -47,8 +47,8 @@ export default function PrivacyPolicy() {
             <p>In the event of a personal data breach likely to result in risk to your rights or freedoms, LetLoyal will notify affected users and the Data Protection Board of India within the timeframe prescribed under the DPDP Act 2023. Notifications will be sent to the email address registered on your account.</p>
           </section>
           <section>
-            <h2 className="font-jakarta font-bold text-xl text-text-dark mb-3">8. Data Storage & Localisation</h2>
-            <p>All personal data collected by LetLoyal is stored on servers located in India. We do not transfer personal data outside India except as required by law or with your explicit consent. All cross-border transfers, if any, are conducted consistent with the DPDP Act 2023.</p>
+            <h2 className="font-jakarta font-bold text-xl text-text-dark mb-3">8. Data Storage & International Transfers</h2>
+            <p>Your personal data is hosted on secure servers located in the European Union. Some service providers we rely on (for example, optional usage-analytics tools) may process data on servers outside India. Under the Digital Personal Data Protection Act 2023, personal data may be transferred to any country that has not been restricted by the Government of India; no such restriction currently applies to the jurisdictions we use. We do not sell your personal data, and all transfers are carried out consistent with the DPDP Act 2023.</p>
           </section>
           <section>
             <h2 className="font-jakarta font-bold text-xl text-text-dark mb-3">9. Your Rights Under DPDP Act 2023</h2>

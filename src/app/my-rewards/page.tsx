@@ -14,6 +14,7 @@ import {
   clearCustomerSession, getCustomerToken,
 } from '@/lib/customerSession';
 import Logo, { LogoIcon } from '@/components/ui/Logo';
+import { hasAnalyticsConsent, setAnalyticsConsent } from '@/lib/analyticsConsent';
 import type { ReactNode } from 'react';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -242,6 +243,8 @@ function MyRewardsContent() {
   const [email,     setEmail]     = useState('');
   const [password,  setPassword]  = useState('');
   const [showPw,    setShowPw]    = useState(false);
+  const [analyticsOptIn, setAnalyticsOptIn] = useState(false);
+  const [analyticsEnabled, setAnalyticsEnabled] = useState(false);
   const [forgotEmail, setForgotEmail] = useState('');
   const [forgotSent, setForgotSent]   = useState(false);
   const [customer,  setCustomer]  = useState<CustomerData | null>(null);
@@ -330,6 +333,15 @@ function MyRewardsContent() {
     }
   }, [phase, cards, highlightSlug]);
 
+  // Reflect persisted analytics consent in the settings toggle
+  useEffect(() => { setAnalyticsEnabled(hasAnalyticsConsent()); }, [customer]);
+
+  function toggleAnalytics() {
+    const next = !analyticsEnabled;
+    setAnalyticsConsent(next);
+    setAnalyticsEnabled(next);
+  }
+
   async function handleLogin(e: FormEvent) {
     e.preventDefault(); setError('');
     const digits = phone.replace(/\D/g, '');
@@ -371,6 +383,7 @@ function MyRewardsContent() {
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error || 'Registration failed.'); return; }
+      setAnalyticsConsent(analyticsOptIn);
       saveCustomerSession(data.customer.phone, data.customer.name, data.token);
       setCustomer(data.customer);
       await loadCards(data.customer.phone, data.customer.name);
@@ -581,10 +594,20 @@ function MyRewardsContent() {
                     className="mt-0.5 h-4 w-4 rounded border-brand-border text-primary focus:ring-primary shrink-0"
                   />
                   <span>
-                    I agree to LetLoyal collecting my name, phone number, and optional date of birth and gender
-                    to operate my loyalty account, as described in the{' '}
+                    I agree to LetLoyal collecting my name, phone number, email address, and optional date of
+                    birth and gender to operate my loyalty account, as described in the{' '}
                     <a href="/privacy-policy" target="_blank" className="text-primary underline">Privacy Policy</a>.
                   </span>
+                </label>
+                {/* DPDP 2023 — separate, optional analytics consent (default off) */}
+                <label className="flex items-start gap-2 text-xs text-text-light cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={analyticsOptIn}
+                    onChange={e => setAnalyticsOptIn(e.target.checked)}
+                    className="mt-0.5 h-4 w-4 rounded border-brand-border text-primary focus:ring-primary shrink-0"
+                  />
+                  <span>Optional: allow anonymous usage analytics to help improve the app. You can turn this off anytime below.</span>
                 </label>
                 <button type="submit" disabled={fetching}
                   className="w-full bg-primary hover:bg-primary/90 disabled:opacity-50 text-white font-semibold py-3 rounded-xl transition-colors mt-1">
@@ -819,6 +842,22 @@ function MyRewardsContent() {
                     <span className="text-sm text-text-dark">Privacy Policy</span>
                     <span className="text-xs text-text-light">→</span>
                   </a>
+                  {/* DPDP 2023 — withdraw/grant optional analytics consent */}
+                  <div className="flex items-center justify-between px-4 py-3 border-b border-brand-border">
+                    <div className="min-w-0 pr-3">
+                      <span className="text-sm text-text-dark">Usage analytics</span>
+                      <p className="text-xs text-text-light mt-0.5">Anonymous analytics to help improve the app. Optional.</p>
+                    </div>
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={analyticsEnabled}
+                      onClick={toggleAnalytics}
+                      className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors ${analyticsEnabled ? 'bg-primary' : 'bg-gray-300'}`}
+                    >
+                      <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${analyticsEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
+                    </button>
+                  </div>
                   <button
                     onClick={async () => {
                       if (!confirm('Are you sure you want to permanently delete your account and all your loyalty data? This cannot be undone.')) return;
