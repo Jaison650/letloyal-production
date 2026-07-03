@@ -485,8 +485,14 @@ function MyRewardsContent() {
           setNearbyLoading(false);
         }
       },
-      () => {
-        setNearbyError('Location access denied. Please allow location access in your browser and try again.');
+      (err) => {
+        if (err.code === err.PERMISSION_DENIED) {
+          setNearbyError('Location access denied. Please allow location access in your browser and try again.');
+        } else if (err.code === err.POSITION_UNAVAILABLE) {
+          setNearbyError('Your location could not be determined. Please try again.');
+        } else {
+          setNearbyError('Location request timed out. Please try again.');
+        }
         setNearbyLoading(false);
       },
     );

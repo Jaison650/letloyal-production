@@ -24,14 +24,15 @@ export default function LocationPicker({ initialLat, initialLng, onChange }: Pro
 
     (async () => {
       const L = (await import('leaflet')).default;
+      await import('leaflet/dist/leaflet.css'); // bundled, versioned — avoids CDN link in JSX
 
       // Fix default icon paths (broken in webpack/turbopack bundlers)
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       delete (L.Icon.Default.prototype as any)._getIconUrl;
       L.Icon.Default.mergeOptions({
-        iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-        iconUrl:       'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-        shadowUrl:     'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+        iconRetinaUrl: '/leaflet/marker-icon-2x.png',
+        iconUrl:       '/leaflet/marker-icon.png',
+        shadowUrl:     '/leaflet/marker-shadow.png',
       });
 
       const defaultLat = initialLat ?? 20.5937;
@@ -70,7 +71,7 @@ export default function LocationPicker({ initialLat, initialLng, onChange }: Pro
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (map as any)?.remove();
     };
-  }, [mounted]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [mounted]); // intentional: map initializes once on mount; initialLat/initialLng are read once as seed values
 
   if (!mounted) {
     return <div className="h-64 rounded-xl bg-bg-muted animate-pulse" />;
@@ -78,9 +79,6 @@ export default function LocationPicker({ initialLat, initialLng, onChange }: Pro
 
   return (
     <>
-      {/* Load Leaflet CSS from CDN to avoid bundle issues */}
-      {/* eslint-disable-next-line @next/next/no-css-tags */}
-      <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
       <div ref={mapRef} className="h-64 rounded-xl border border-border-light" style={{ zIndex: 0 }} />
       <p className="text-xs text-text-light mt-1">
         Click the map to pin your store location. Drag the pin to adjust.
