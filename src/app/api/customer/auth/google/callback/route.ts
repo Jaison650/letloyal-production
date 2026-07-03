@@ -12,7 +12,7 @@ interface GoogleTokenResponse {
 interface GoogleUserInfo {
   sub:   string;
   email: string;
-  name:  string;
+  name?: string;
 }
 
 export async function GET(req: NextRequest) {
@@ -20,8 +20,19 @@ export async function GET(req: NextRequest) {
   const error = req.nextUrl.searchParams.get('error');
   const base  = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
 
+  if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
+    return NextResponse.redirect(new URL('/my-rewards?auth_error=google_failed', base));
+  }
+
   if (error || !code) {
     return NextResponse.redirect(new URL('/my-rewards?auth_error=google_cancelled', base));
+  }
+
+  // CSRF state verification
+  const state       = req.nextUrl.searchParams.get('state');
+  const storedState = req.cookies.get('google_oauth_state')?.value;
+  if (!state || !storedState || state !== storedState) {
+    return NextResponse.redirect(new URL('/my-rewards?auth_error=google_failed', base));
   }
 
   try {
@@ -64,10 +75,10 @@ export async function GET(req: NextRequest) {
     );
 
     if (!customer) {
-      // Create new customer
+      // INSERT IGNORE handles concurrent requests safely
       await query(
-        'INSERT INTO customers (google_id, email, name, phone_number) VALUES (?, ?, ?, NULL)',
-        [user.sub, user.email, user.name]
+        'INSERT IGNORE INTO customers (google_id, email, name, phone_number) VALUES (?, ?, ?, NULL)',
+        [user.sub, user.email, user.name ?? '']
       );
       customer = await queryOne<{ id: string; phone_number: string | null }>(
         'SELECT id, phone_number FROM customers WHERE google_id = ?',
@@ -96,6 +107,8 @@ export async function GET(req: NextRequest) {
       path:     '/',
       maxAge:   CUSTOMER_SESSION_MAX_AGE,
     });
+    // Clear the CSRF state cookie
+    res.cookies.set('google_oauth_state', '', { maxAge: 0, path: '/' });
     return res;
   } catch (err) {
     console.error('[google/callback]', err);

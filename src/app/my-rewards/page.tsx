@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef, FormEvent, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import {
@@ -259,6 +259,7 @@ function MyRewardsContent() {
 
   // ── Deep-link from push notification: ?merchant=slug ───────────────────
   const searchParams    = useSearchParams();
+  const router          = useRouter();
   const highlightSlug   = searchParams.get('merchant');
   const cardRefs        = useRef<Record<string, HTMLDivElement | null>>({});
 
@@ -335,9 +336,14 @@ function MyRewardsContent() {
   // Handle OAuth error redirects (e.g. Google login cancelled or failed)
   useEffect(() => {
     const authError = searchParams.get('auth_error');
-    if (authError === 'google_cancelled') setError('Google sign-in was cancelled.');
-    else if (authError === 'google_failed') setError('Google sign-in failed. Please try again.');
-  }, [searchParams]);
+    if (authError === 'google_cancelled') {
+      setError('Google sign-in was cancelled.');
+      router.replace('/my-rewards', { scroll: false });
+    } else if (authError === 'google_failed') {
+      setError('Google sign-in failed. Please try again.');
+      router.replace('/my-rewards', { scroll: false });
+    }
+  }, [searchParams, router]);
 
   function toggleAnalytics() {
     const next = !analyticsEnabled;
