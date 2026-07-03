@@ -14,6 +14,7 @@ import {
   Menu,
   X,
   BarChart2,
+  Tag,
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import Logo from '@/components/ui/Logo';
@@ -38,6 +39,7 @@ export default function DashboardShell({ slug, businessName, children }: Dashboa
   const nav: NavItem[] = [
     { label: 'Dashboard',  href: `/m/${slug}`,          icon: <LayoutDashboard size={18} /> },
     { label: 'Campaign',   href: `/m/${slug}/campaign`,  icon: <Megaphone       size={18} /> },
+    { label: 'Offers',     href: `/m/${slug}/offers`,    icon: <Tag             size={18} /> },
     { label: 'QR Code',    href: `/m/${slug}/qr`,        icon: <QrCode          size={18} /> },
     { label: 'Insights',   href: `/m/${slug}/analytics`, icon: <BarChart2       size={18} /> },
     { label: 'Validate',   href: `/m/${slug}/validate`,  icon: <ShieldCheck     size={18} /> },
