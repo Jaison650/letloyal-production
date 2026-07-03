@@ -10,6 +10,7 @@ import {
   ChevronDown, ChevronUp, Calendar, Users, Tag,
 } from 'lucide-react';
 import Logo, { LogoIcon } from '@/components/ui/Logo';
+import QRScanner from '@/components/QRScanner';
 import { hasAnalyticsConsent, setAnalyticsConsent } from '@/lib/analyticsConsent';
 import type { ReactNode } from 'react';
 
@@ -291,6 +292,11 @@ function MyRewardsContent() {
   const [pwSaving,  setPwSaving]  = useState(false);
   const [pwDone,    setPwDone]    = useState(false);
 
+  // ── QR scan ────────────────────────────────────────────────────────────
+  const [scanResult,  setScanResult]  = useState<{ points_added: number; progress: number; threshold: number; reward_unlocked: boolean; reward_description: string; business_name: string } | null>(null);
+  const [scanLoading, setScanLoading] = useState(false);
+  const [scanError,   setScanError]   = useState('');
+
   // ── Nearby stores ──────────────────────────────────────────────────────
   const [nearbyStores,  setNearbyStores]  = useState<Array<{ id: string; business_name: string; slug: string; logo_url: string | null; distance_km: number }> | null>(null);
   const [nearbyLoading, setNearbyLoading] = useState(false);
@@ -496,6 +502,56 @@ function MyRewardsContent() {
     setCards([]);
     setStores([]);
     setPhase('login');
+  }
+
+  function extractTokenFromQR(data: string): string | null {
+    try {
+      const url = new URL(data);
+      const t = url.searchParams.get('t');
+      if (t) return t;
+      return null;
+    } catch {
+      // Not a URL — treat as raw token if it looks like a UUID
+      return /^[0-9a-f-]{36}$/i.test(data) ? data : null;
+    }
+  }
+
+  async function handleQRScan(data: string) {
+    setScanResult(null);
+    setScanError('');
+
+    const token = extractTokenFromQR(data);
+    if (!token) {
+      setScanError('Invalid QR code. Please scan a LetLoyal store QR code.');
+      return;
+    }
+
+    if (!phone) {
+      setScanError('Could not identify your account. Please sign out and back in.');
+      return;
+    }
+
+    setScanLoading(true);
+    try {
+      const res = await fetch('/api/scan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ token, phone_number: phone }),
+      });
+      const d = await res.json();
+      if (res.ok && d.ok) {
+        setScanResult(d);
+        // Refresh cards in background to reflect new progress
+        loadCards(phone, customer?.name ?? null);
+      } else {
+        setScanError(d.error || 'Scan failed. Please try again.');
+      }
+    } catch {
+      setScanError('Network error. Please try again.');
+    } finally {
+      setScanLoading(false);
+    }
   }
 
   function handleFindNearby() {
@@ -858,20 +914,52 @@ function MyRewardsContent() {
 
           {/* ── Scan tab ── */}
           {tab === 'scan' && (
-            <div className="bg-white rounded-2xl border border-border-light p-8 text-center space-y-4">
-              <div className="w-20 h-20 rounded-2xl bg-primary-light flex items-center justify-center mx-auto">
-                <ScanLine size={40} className="text-primary" />
-              </div>
-              <div>
-                <p className="font-bold text-text-dark text-lg">Scan a Store QR Code</p>
-                <p className="text-sm text-text-light mt-1">Ask the merchant to show their QR code, then scan it with your camera to earn rewards.</p>
-              </div>
-              <div className="bg-bg-muted rounded-xl p-4 text-sm text-text-medium text-left space-y-1.5">
-                <p className="font-semibold text-text-dark text-xs uppercase tracking-wide mb-2">How it works</p>
-                <p>1. Ask the merchant to open their QR</p>
-                <p>2. Scan with your phone camera</p>
-                <p>3. Your stamp is added automatically!</p>
-              </div>
+            <div className="space-y-4">
+              {!scanResult && (
+                <>
+                  <p className="text-sm text-text-medium text-center">Point your camera at a LetLoyal store QR code.</p>
+                  <QRScanner
+                    active={tab === 'scan'}
+                    onScan={handleQRScan}
+                    onError={(msg) => setScanError(msg)}
+                  />
+                  {scanLoading && (
+                    <div className="flex items-center justify-center gap-2 py-2">
+                      <Spinner sm />
+                      <p className="text-sm text-text-medium">Processing…</p>
+                    </div>
+                  )}
+                  {scanError && (
+                    <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-600 text-center">
+                      {scanError}
+                      <button
+                        onClick={() => setScanError('')}
+                        className="block mx-auto mt-2 text-red-400 hover:text-red-600 text-xs"
+                      >
+                        Try again
+                      </button>
+                    </div>
+                  )}
+                </>
+              )}
+              {scanResult && (
+                <div className="bg-white rounded-2xl border border-border-light p-8 text-center space-y-2">
+                  <div className="text-5xl mb-3">{scanResult.reward_unlocked ? '🏆' : '🎉'}</div>
+                  <p className="text-xl font-bold text-text-dark">+{scanResult.points_added} {scanResult.points_added === 1 ? 'stamp' : 'stamps'}!</p>
+                  <p className="text-text-medium text-sm">{scanResult.business_name}</p>
+                  {scanResult.reward_unlocked ? (
+                    <p className="text-sm font-semibold text-primary mt-1">🎁 Reward unlocked: {scanResult.reward_description}</p>
+                  ) : (
+                    <p className="text-text-light text-sm mt-1">{scanResult.progress} / {scanResult.threshold} towards your reward</p>
+                  )}
+                  <button
+                    onClick={() => { setScanResult(null); setScanError(''); }}
+                    className="mt-6 w-full bg-primary hover:bg-primary/90 text-white font-semibold py-3 rounded-xl transition-colors"
+                  >
+                    Scan another store
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
