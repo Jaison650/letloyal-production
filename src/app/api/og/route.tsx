@@ -79,7 +79,7 @@ export async function GET(req: NextRequest) {
           fontSize: 20,
           fontWeight: 600,
         }}>
-          pilot.letloyal.com
+          letloyal.in
         </div>
       </div>
     ),

@@ -1,6 +1,6 @@
 import nodemailer from 'nodemailer';
 
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://pilot.letloyal.com';
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://letloyal.in';
 
 const transporter = nodemailer.createTransport({
   host:   process.env.SMTP_HOST   || 'smtp-relay.brevo.com',

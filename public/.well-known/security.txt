@@ -1,4 +1,4 @@
 Contact: mailto:admin@letloyal.com
 Preferred-Languages: en
-Policy: https://pilot.letloyal.com/privacy-policy
+Policy: https://letloyal.in/privacy-policy
 Expires: 2027-06-09T00:00:00.000Z

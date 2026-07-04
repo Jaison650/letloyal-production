@@ -6,7 +6,7 @@ import { PoweredBy } from '@/components/ui/Logo';
 import ScanClient from '@/components/customer/ScanClient';
 import { MapPin, Instagram, Star } from 'lucide-react';
 
-const BASE_URL = 'https://pilot.letloyal.com';
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://letloyal.in';
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;

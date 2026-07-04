@@ -9,4 +9,4 @@ Disallow: /customer/
 Allow: /s/
 Allow: /
 
-Sitemap: https://pilot.letloyal.com/sitemap.xml
+Sitemap: https://letloyal.in/sitemap.xml

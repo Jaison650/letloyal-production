@@ -4,7 +4,7 @@ import ClarityScript from '@/components/ClarityScript';
 import ConsentBanner from '@/components/ConsentBanner';
 import ServiceWorkerRegistrar from '@/components/ServiceWorkerRegistrar';
 
-const BASE_URL = 'https://pilot.letloyal.com';
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://letloyal.in';
 const OG_IMAGE = `${BASE_URL}/api/og`;
 
 export const metadata: Metadata = {

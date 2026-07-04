@@ -1,7 +1,7 @@
 import { MetadataRoute } from 'next';
 import { query } from '@/lib/db';
 
-const BASE = 'https://pilot.letloyal.com';
+const BASE = process.env.NEXT_PUBLIC_BASE_URL || 'https://letloyal.in';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const merchants = await query<{ slug: string; updated_at: string }>(

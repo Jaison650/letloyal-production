@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
         [customer.id, tokenHash, expiresAt]
       );
 
-      const base     = process.env.NEXT_PUBLIC_BASE_URL || 'https://pilot.letloyal.com';
+      const base     = process.env.NEXT_PUBLIC_BASE_URL || 'https://letloyal.in';
       const resetUrl = `${base}/customer/reset-password?token=${rawToken}`;
       const name     = customer.name ?? 'there';
 

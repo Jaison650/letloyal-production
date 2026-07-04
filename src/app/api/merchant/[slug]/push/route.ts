@@ -75,7 +75,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
     );
     const bizName   = merchantRow?.business_name ?? slug;
     const fullTitle = `${bizName}: ${title.trim()}`;
-    const scanUrl   = `${process.env.NEXT_PUBLIC_BASE_URL ?? 'https://pilot.letloyal.com'}/my-rewards?merchant=${slug}`;
+    const scanUrl   = `${process.env.NEXT_PUBLIC_BASE_URL ?? 'https://letloyal.in'}/my-rewards?merchant=${slug}`;
 
     const sent = await pushBlastToCustomers(auth.sub, fullTitle, body.trim(), scanUrl);
 
