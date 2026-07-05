@@ -15,6 +15,7 @@ import {
   X,
   BarChart2,
   Tag,
+  Bell,
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import Logo from '@/components/ui/Logo';
@@ -44,6 +45,7 @@ export default function DashboardShell({ slug, businessName, children }: Dashboa
     { label: 'Insights',   href: `/m/${slug}/analytics`, icon: <BarChart2       size={18} /> },
     { label: 'Validate',   href: `/m/${slug}/validate`,  icon: <ShieldCheck     size={18} /> },
     { label: 'Feedback',   href: `/m/${slug}/feedback`,  icon: <MessageSquare   size={18} /> },
+    { label: 'Notify',     href: `/m/${slug}/push`,      icon: <Bell            size={18} /> },
     { label: 'Settings',   href: `/m/${slug}/settings`,  icon: <Settings        size={18} /> },
   ];
 

@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireMerchant } from '@/lib/auth';
 import { query, queryOne } from '@/lib/db';
-import { pushBlastToCustomers, countCustomerSubs } from '@/lib/webpush';
+import { Segment, pushBlastSegmented, countSegmentSubs } from '@/lib/webpush';
 
 type RouteContext = { params: Promise<{ slug: string }> };
 
 const BLAST_LIMIT = 4; // per rolling 30-day window
+const VALID_SEGMENTS: Segment[] = ['all', 'near_milestone', 'loyal', 'one_time', 'inactive'];
 
 async function blastsThisMonth(merchantId: string): Promise<number> {
   const row = await queryOne<{ cnt: number }>(
@@ -16,14 +17,19 @@ async function blastsThisMonth(merchantId: string): Promise<number> {
   return Number(row?.cnt ?? 0);
 }
 
-// GET — returns subscriber count + blast quota + recent blasts
+// GET — returns subscriber count + segment count + blast quota + recent blasts
 export async function GET(req: NextRequest, { params }: RouteContext) {
   try {
     const { slug } = await params;
     const auth = requireMerchant(req, slug);
 
-    const [subCount, blasts, used] = await Promise.all([
-      countCustomerSubs(auth.sub),
+    const url      = new URL(req.url);
+    const segParam = url.searchParams.get('segment') as Segment | null;
+    const segment: Segment = segParam && VALID_SEGMENTS.includes(segParam) ? segParam : 'all';
+
+    const [subCount, segCount, blasts, used] = await Promise.all([
+      countSegmentSubs(auth.sub, 'all'),
+      countSegmentSubs(auth.sub, segment),
       query<{ id: string; title: string; body: string; recipient_count: number; sent_at: string }>(
         `SELECT id, title, body, recipient_count, sent_at
            FROM push_blasts WHERE merchant_id = ?
@@ -35,6 +41,7 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
 
     return NextResponse.json({
       subscriber_count: subCount,
+      segment_count:    segCount,
       blasts,
       blasts_used:  used,
       blast_limit:  BLAST_LIMIT,
@@ -61,7 +68,9 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
       );
     }
 
-    const { title, body } = await req.json();
+    const { title, body, segment: segParam } = await req.json();
+    const segment: Segment = VALID_SEGMENTS.includes(segParam) ? segParam : 'all';
+
     if (!title?.trim() || !body?.trim()) {
       return NextResponse.json({ error: 'Title and body are required.' }, { status: 400 });
     }
@@ -77,7 +86,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
     const fullTitle = `${bizName}: ${title.trim()}`;
     const scanUrl   = `${process.env.NEXT_PUBLIC_BASE_URL ?? 'https://letloyal.in'}/my-rewards?merchant=${slug}`;
 
-    const sent = await pushBlastToCustomers(auth.sub, fullTitle, body.trim(), scanUrl);
+    const sent = await pushBlastSegmented(auth.sub, segment, fullTitle, body.trim(), scanUrl);
 
     // Log the blast
     await query(

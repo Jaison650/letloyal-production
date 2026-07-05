@@ -7,7 +7,27 @@ webpush.setVapidDetails(
   process.env.VAPID_PRIVATE_KEY!,
 );
 
+export type Segment = 'all' | 'near_milestone' | 'loyal' | 'one_time' | 'inactive';
+
 interface PushSub { endpoint: string; p256dh: string; auth: string; }
+
+// Returns JOIN + extra WHERE clause for a customer segment filter.
+// Joins: push_subscriptions -> customers -> customer_merchant -> campaigns
+// (India stores phone_number as raw digits, no leading '+', matching owner_id directly.)
+function segmentSQL(segment: Segment): { join: string; where: string } {
+  if (segment === 'all') return { join: '', where: '' };
+  const join = `
+    JOIN customers c ON c.phone_number = ps.owner_id
+    JOIN customer_merchant cm ON cm.customer_id = c.id
+    JOIN campaigns camp ON camp.id = cm.campaign_id AND camp.merchant_id = ps.merchant_id`;
+  const where: Record<Exclude<Segment, 'all'>, string> = {
+    near_milestone: 'AND cm.progress >= GREATEST(1, camp.reward_threshold - 2) AND cm.progress < camp.reward_threshold',
+    loyal:          'AND cm.cycle_number >= 2',
+    one_time:       'AND cm.progress = 1 AND cm.cycle_number = 1',
+    inactive:       'AND cm.last_scan_at < NOW() - INTERVAL 21 DAY',
+  };
+  return { join, where: where[segment as Exclude<Segment, 'all'>] ?? '' };
+}
 
 async function sendToSubs(subs: PushSub[], payload: object) {
   const results = await Promise.allSettled(
@@ -44,23 +64,43 @@ export async function pushToMerchant(merchantId: string, title: string, body: st
   return sendToSubs(subs, { title, body, url: url ?? '/', tag: 'merchant-alert' });
 }
 
-export async function pushBlastToCustomers(merchantId: string, title: string, body: string, url?: string): Promise<number> {
+export async function pushBlastSegmented(
+  merchantId: string,
+  segment: Segment,
+  title: string,
+  body: string,
+  url?: string,
+): Promise<number> {
+  const { join, where } = segmentSQL(segment);
   const subs = await query<PushSub>(
-    `SELECT endpoint, p256dh, auth FROM push_subscriptions
-      WHERE owner_type = 'customer' AND merchant_id = ?`,
+    `SELECT DISTINCT ps.endpoint, ps.p256dh, ps.auth
+       FROM push_subscriptions ps${join}
+      WHERE ps.owner_type = 'customer' AND ps.merchant_id = ?${where ? ' ' + where : ''}`,
     [merchantId],
   );
   if (!subs.length) return 0;
   return sendToSubs(subs, { title, body, url: url ?? '/', tag: 'merchant-blast' });
 }
 
-export async function countCustomerSubs(merchantId: string): Promise<number> {
+// Kept for backwards compat with any callers that send to all customers
+export async function pushBlastToCustomers(merchantId: string, title: string, body: string, url?: string): Promise<number> {
+  return pushBlastSegmented(merchantId, 'all', title, body, url);
+}
+
+export async function countSegmentSubs(merchantId: string, segment: Segment = 'all'): Promise<number> {
+  const { join, where } = segmentSQL(segment);
   const rows = await query<{ cnt: number }>(
-    `SELECT COUNT(*) AS cnt FROM push_subscriptions
-      WHERE owner_type = 'customer' AND merchant_id = ?`,
+    `SELECT COUNT(DISTINCT ps.id) AS cnt
+       FROM push_subscriptions ps${join}
+      WHERE ps.owner_type = 'customer' AND ps.merchant_id = ?${where ? ' ' + where : ''}`,
     [merchantId],
   );
   return Number(rows[0]?.cnt ?? 0);
+}
+
+// Kept for backwards compat
+export async function countCustomerSubs(merchantId: string): Promise<number> {
+  return countSegmentSubs(merchantId, 'all');
 }
 
 /** Push to a single customer who opted in while scanning a specific merchant. */
