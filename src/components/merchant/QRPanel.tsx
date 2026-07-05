@@ -5,17 +5,17 @@ import Image from 'next/image';
 import Button from '@/components/ui/Button';
 import { RefreshCw, X, QrCode, IndianRupee, Pencil, Plus, Trash2, Check, ArrowUp, ArrowDown } from 'lucide-react';
 import { clsx } from 'clsx';
-import type { SpeedDial } from '@/lib/constants';
-import { SPEED_DIAL_ICON_MAP, getSpeedDialIcon } from '@/lib/speedDialIcons';
+import { MENU_EMOJI_PRESETS, type NamedDial } from '@/lib/constants';
 
 interface QRPanelProps {
   slug:          string;
   campaignType:  'visit_based' | 'spend_based';
-  speedDials:    SpeedDial[];
+  speedDials:    NamedDial[];
 }
 
 type PanelState =
   | 'idle'
+  | 'managing'
   | 'generating'
   | 'ready'
   | 'scanned'
@@ -27,26 +27,46 @@ interface ActiveQR {
   qrDataUrl:    string;
   safetyExpiry: string;
   amountRupees: number | null;
+  itemName:     string | null;
+  quantity:     number;
 }
 
 const POLL_INTERVAL_MS = 2000;
 const MAX_DIALS = 6;
 
+const TILE_PALETTE = [
+  { bg: '#FEF3C7', text: '#92400E' },
+  { bg: '#FFF7ED', text: '#9A3412' },
+  { bg: '#FFF1F2', text: '#9F1239' },
+  { bg: '#EDE9FE', text: '#5B21B6' },
+  { bg: '#E0F2FE', text: '#0C4A6E' },
+  { bg: '#ECFDF5', text: '#064E3B' },
+];
+
+function formatINR(amount: number): string {
+  return `₹${amount.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
+}
+
 export default function QRPanel({ slug, campaignType, speedDials: initialDials }: QRPanelProps) {
-  const [state,       setState]       = useState<PanelState>(
-    campaignType === 'visit_based' ? 'generating' : 'idle',
-  );
+  const autoGen = campaignType === 'visit_based' && initialDials.length === 0;
+
+  const [state,       setState]       = useState<PanelState>(autoGen ? 'generating' : 'idle');
   const [activeQR,    setActiveQR]    = useState<ActiveQR | null>(null);
   const [customAmt,   setCustomAmt]   = useState('');
   const [errorMsg,    setErrorMsg]    = useState('');
+  const [dials,       setDials]       = useState<NamedDial[]>(initialDials);
 
-  // ── Speed-dial editing ────────────────────────────────────────────────
-  interface EditRow { amount: string; label: string; icon: string | null; }
-  const [dials,       setDials]       = useState<SpeedDial[]>(initialDials);
-  const [editMode,    setEditMode]    = useState(false);
-  const [editValues,  setEditValues]  = useState<EditRow[]>([]);
-  const [saveStatus,  setSaveStatus]  = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
-  const [iconPickerFor, setIconPickerFor] = useState<number | null>(null);
+  // Per-tile cart counts (spend_based only)
+  const [dialCounts,  setDialCounts]  = useState<number[]>(() => initialDials.map(() => 0));
+
+  // ── Managing state ─────────────────────────────────────────────────────
+  const [editDials,  setEditDials]  = useState<NamedDial[]>([]);
+  const [editIdx,    setEditIdx]    = useState<number | 'new' | null>(null);
+  const [formName,   setFormName]   = useState('');
+  const [formPrice,  setFormPrice]  = useState('');
+  const [formEmoji,  setFormEmoji]  = useState('');
+  const [emojiOpen,  setEmojiOpen]  = useState(false);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
 
   const pollRef    = useRef<ReturnType<typeof setInterval> | null>(null);
   const mountedRef = useRef(true);
@@ -60,7 +80,7 @@ export default function QRPanel({ slug, campaignType, speedDials: initialDials }
   }, []);
 
   useEffect(() => {
-    if (campaignType === 'visit_based') generateQR();
+    if (autoGen) generateQR();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -80,7 +100,7 @@ export default function QRPanel({ slug, campaignType, speedDials: initialDials }
           stopPolling();
           if (!mountedRef.current) return;
           setState('scanned');
-          if (campaignType === 'visit_based') {
+          if (campaignType === 'visit_based' && dials.length === 0) {
             setTimeout(() => { if (mountedRef.current) generateQR(); }, 1500);
           } else {
             setTimeout(() => { if (mountedRef.current) { setActiveQR(null); setState('idle'); } }, 2000);
@@ -94,9 +114,9 @@ export default function QRPanel({ slug, campaignType, speedDials: initialDials }
       } catch { /* silent */ }
     }, POLL_INTERVAL_MS);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [slug, campaignType]);
+  }, [slug, campaignType, dials.length]);
 
-  async function generateQR(amountRupees?: number) {
+  async function generateQR(amountRupees?: number, itemName?: string, qty?: number) {
     stopPolling();
     setState('generating');
     setErrorMsg('');
@@ -104,13 +124,22 @@ export default function QRPanel({ slug, campaignType, speedDials: initialDials }
     try {
       const body: Record<string, unknown> = {};
       if (campaignType === 'spend_based' && amountRupees) body.amount_rupees = amountRupees;
+      if (itemName) body.item_name = itemName;
+      if (qty && qty > 1) body.quantity = qty;
       const res  = await fetch(`/api/merchant/${slug}/qr/generate`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
       });
       if (!mountedRef.current) return;
       const data = await res.json();
       if (!res.ok) { setState('error'); setErrorMsg(data.error || "Couldn't generate QR — try again."); return; }
-      const qr: ActiveQR = { token: data.token, qrDataUrl: data.qr_data_url, safetyExpiry: data.safety_expiry, amountRupees: data.amount_rupees ?? null };
+      const qr: ActiveQR = {
+        token:        data.token,
+        qrDataUrl:    data.qr_data_url,
+        safetyExpiry: data.safety_expiry,
+        amountRupees: data.amount_rupees ?? null,
+        itemName:     data.item_name ?? null,
+        quantity:     data.quantity ?? 1,
+      };
       setActiveQR(qr);
       setState('ready');
       startPolling(qr.token);
@@ -126,82 +155,189 @@ export default function QRPanel({ slug, campaignType, speedDials: initialDials }
     stopPolling();
     await fetch(`/api/merchant/${slug}/qr/${activeQR.token}`, { method: 'DELETE' }).catch(() => {});
     setActiveQR(null);
-    if (campaignType === 'visit_based') generateQR(); else setState('idle');
+    if (campaignType === 'visit_based' && dials.length === 0) generateQR(); else setState('idle');
   }
 
-  // ── Speed-dial edit helpers ───────────────────────────────────────────
-  function startEdit() {
-    setEditValues(dials.map(d => ({ amount: String(d.amount), label: d.label ?? '', icon: d.icon ?? null })));
-    setEditMode(true);
+  // ── Tile cart helpers (spend_based) ───────────────────────────────────
+  function tileAdd(i: number) {
+    setDialCounts(prev => { const n = [...prev]; n[i] = (n[i] || 0) + 1; return n; });
+  }
+  function tileDec(i: number) {
+    setDialCounts(prev => { const n = [...prev]; n[i] = Math.max(0, (n[i] || 0) - 1); return n; });
+  }
+  function clearCart() {
+    setDialCounts(dials.map(() => 0));
+  }
+  function cartTotal() {
+    return dials.reduce((sum, d, i) => sum + d.price * (dialCounts[i] || 0), 0);
+  }
+  function cartQty() {
+    return dialCounts.reduce((a, b) => a + b, 0);
+  }
+  function cartItemName() {
+    const active = dials.filter((_, i) => dialCounts[i] > 0);
+    return active.length === 1 ? active[0].name || undefined : undefined;
+  }
+  function cartSingleQty() {
+    if (cartQty() === 0) return undefined;
+    const activeIdx = dialCounts.findIndex(c => c > 0);
+    const isOnly = dialCounts.filter(c => c > 0).length === 1;
+    return isOnly ? dialCounts[activeIdx] : undefined;
+  }
+
+  // ── Managing helpers ───────────────────────────────────────────────────
+  function enterManaging() {
+    setEditDials([...dials]);
+    setEditIdx(null);
     setSaveStatus('idle');
-    setIconPickerFor(null);
+    setEmojiOpen(false);
+    setState('managing');
   }
 
-  function cancelEdit() {
-    setEditMode(false);
-    setSaveStatus('idle');
-    setIconPickerFor(null);
+  function cancelEditItem() {
+    setEditIdx(null);
+    setEmojiOpen(false);
   }
 
-  function updateEditValue(i: number, val: string) {
-    setEditValues(prev => { const n = [...prev]; n[i] = { ...n[i], amount: val }; return n; });
+  function startEditItem(i: number) {
+    const item = editDials[i];
+    setFormName(item.name);
+    setFormPrice(String(item.price));
+    setFormEmoji(item.emoji);
+    setEditIdx(i);
+    setEmojiOpen(false);
   }
 
-  function updateEditLabel(i: number, val: string) {
-    setEditValues(prev => { const n = [...prev]; n[i] = { ...n[i], label: val }; return n; });
+  function startAddItem() {
+    setFormName('');
+    setFormPrice('');
+    setFormEmoji('');
+    setEditIdx('new');
+    setEmojiOpen(false);
   }
 
-  function updateEditIcon(i: number, icon: string) {
-    setEditValues(prev => { const n = [...prev]; n[i] = { ...n[i], icon }; return n; });
-    setIconPickerFor(null);
+  function confirmEditItem() {
+    const price = parseFloat(formPrice);
+    if (!formName.trim() || isNaN(price) || price <= 0) return;
+    const item: NamedDial = { name: formName.trim().slice(0, 40), price, emoji: formEmoji };
+    if (editIdx === 'new') {
+      setEditDials(prev => [...prev, item]);
+    } else if (typeof editIdx === 'number') {
+      setEditDials(prev => { const n = [...prev]; n[editIdx] = item; return n; });
+    }
+    setEditIdx(null);
+    setEmojiOpen(false);
   }
 
-  function removeDial(i: number) {
-    setEditValues(prev => prev.filter((_, idx) => idx !== i));
+  function removeItem(i: number) {
+    setEditDials(prev => prev.filter((_, idx) => idx !== i));
+    if (editIdx === i) { setEditIdx(null); setEmojiOpen(false); }
   }
 
-  function moveDial(i: number, dir: -1 | 1) {
-    setEditValues(prev => {
+  function moveItem(i: number, dir: -1 | 1) {
+    setEditDials(prev => {
       const j = i + dir;
       if (j < 0 || j >= prev.length) return prev;
       const n = [...prev];
       [n[i], n[j]] = [n[j], n[i]];
       return n;
     });
+    if (editIdx === i) setEditIdx(i + dir);
+    else if (editIdx === i + dir) setEditIdx(i);
   }
 
-  function addDial() {
-    if (editValues.length < MAX_DIALS) setEditValues(prev => [...prev, { amount: '', label: '', icon: null }]);
-  }
-
-  async function saveDials() {
-    const parsed: SpeedDial[] = editValues
-      .map(row => ({
-        amount: parseInt(row.amount, 10),
-        label:  row.label.trim() ? row.label.trim().slice(0, 24) : null,
-        icon:   row.icon,
-      }))
-      .filter(d => !isNaN(d.amount) && d.amount > 0);
-
-    if (parsed.length === 0) return;
-
+  async function saveManaged() {
     setSaveStatus('saving');
     try {
       const res = await fetch(`/api/merchant/${slug}/profile`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ speed_dials: parsed }),
+        body: JSON.stringify({ speed_dials: editDials }),
       });
       if (!res.ok) throw new Error('save failed');
-      setDials(parsed);
+      setDials(editDials);
+      setDialCounts(editDials.map(() => 0));
       setSaveStatus('saved');
-      setTimeout(() => { setEditMode(false); setSaveStatus('idle'); }, 800);
+      setTimeout(() => { setState('idle'); setSaveStatus('idle'); setEditIdx(null); }, 700);
     } catch {
       setSaveStatus('error');
     }
   }
 
-  // ── Scanned flash ─────────────────────────────────────────────────────
+  // ── Edit form (used in both editing existing and adding new) ──────────
+  function EditForm({ forNew }: { forNew: boolean }) {
+    return (
+      <div className={clsx('px-3 py-3 space-y-2 bg-bg-muted', forNew ? 'rounded-xl border-2 border-primary' : 'border-t border-border-light')}>
+        <div className="flex gap-2">
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setEmojiOpen(o => !o)}
+              className="w-11 h-11 rounded-xl border-2 border-border-light text-xl flex items-center justify-center hover:border-primary transition-colors bg-white flex-shrink-0"
+            >
+              {formEmoji || '✚'}
+            </button>
+            {emojiOpen && (
+              <div className="absolute top-12 left-0 z-30 bg-white border border-border-light rounded-2xl shadow-lg p-2 grid grid-cols-8 gap-0.5 w-64 max-h-36 overflow-y-auto">
+                {MENU_EMOJI_PRESETS.map(e => (
+                  <button
+                    key={e}
+                    type="button"
+                    onClick={() => { setFormEmoji(e); setEmojiOpen(false); }}
+                    className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-bg-muted text-base"
+                  >
+                    {e}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          <input
+            type="text"
+            value={formName}
+            onChange={e => setFormName(e.target.value)}
+            placeholder="Item name"
+            maxLength={40}
+            className="form-input flex-1 py-2 text-sm"
+            autoFocus
+          />
+        </div>
+        <div className="relative">
+          <IndianRupee size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-light" />
+          <input
+            type="number"
+            value={formPrice}
+            onChange={e => setFormPrice(e.target.value)}
+            placeholder="Price"
+            min={0.01}
+            step={0.01}
+            className="form-input pl-8 py-2 text-sm"
+          />
+        </div>
+        <div className="flex gap-2">
+          <button
+            onClick={cancelEditItem}
+            className="flex-1 py-2 text-sm text-text-medium border border-border-light rounded-xl hover:bg-border-light transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={confirmEditItem}
+            disabled={!formName.trim() || !formPrice || Number(formPrice) <= 0}
+            className="flex-1 py-2 text-sm font-semibold bg-primary text-white rounded-xl hover:bg-primary/90 transition-colors disabled:opacity-40 flex items-center justify-center gap-1"
+          >
+            <Check size={13} />
+            {forNew ? 'Add Item' : 'Save'}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────────────────
+  // STATE RENDERS
+  // ─────────────────────────────────────────────────────────────────────
+
   if (state === 'scanned') {
     return (
       <div className="flex flex-col items-center justify-center py-16 gap-4">
@@ -209,7 +345,7 @@ export default function QRPanel({ slug, campaignType, speedDials: initialDials }
           <span className="text-4xl">✓</span>
         </div>
         <p className="text-xl font-bold text-green-700">Scanned!</p>
-        {campaignType === 'visit_based' && <p className="text-sm text-text-medium">Generating next QR…</p>}
+        {campaignType === 'visit_based' && dials.length === 0 && <p className="text-sm text-text-medium">Generating next QR…</p>}
       </div>
     );
   }
@@ -246,7 +382,10 @@ export default function QRPanel({ slug, campaignType, speedDials: initialDials }
         </div>
         <p className="font-semibold text-text-dark">QR expired</p>
         <p className="text-sm text-text-medium">This QR was not scanned in time.</p>
-        <Button onClick={() => campaignType === 'visit_based' ? generateQR() : setState('idle')} size="sm">
+        <Button
+          onClick={() => campaignType === 'visit_based' && dials.length === 0 ? generateQR() : setState('idle')}
+          size="sm"
+        >
           <RefreshCw size={14} /> Generate New QR
         </Button>
       </div>
@@ -256,10 +395,18 @@ export default function QRPanel({ slug, campaignType, speedDials: initialDials }
   if (state === 'ready' && activeQR) {
     return (
       <div className="flex flex-col items-center gap-5">
-        {activeQR.amountRupees && (
+        {(activeQR.amountRupees || activeQR.itemName) && (
           <div className="flex items-center gap-1.5 px-5 py-2 bg-primary text-white rounded-full text-lg font-bold shadow-btn">
-            <IndianRupee size={18} />
-            {activeQR.amountRupees.toLocaleString('en-IN')}
+            {activeQR.itemName && (
+              <span>{activeQR.itemName}{activeQR.quantity > 1 ? ` ×${activeQR.quantity}` : ''}</span>
+            )}
+            {activeQR.amountRupees != null && (
+              <span className="flex items-center gap-1">
+                {activeQR.itemName && <span className="opacity-60">·</span>}
+                <IndianRupee size={18} />
+                {activeQR.amountRupees.toLocaleString('en-IN')}
+              </span>
+            )}
           </div>
         )}
         <div className="relative rounded-2xl overflow-hidden shadow-lg border border-border-light bg-white p-3">
@@ -280,207 +427,244 @@ export default function QRPanel({ slug, campaignType, speedDials: initialDials }
     );
   }
 
-  // ── Idle: amount selector (spend-based) ───────────────────────────────
+  // ── Managing state ─────────────────────────────────────────────────────
+  if (state === 'managing') {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between pb-4 border-b border-border-light">
+          <button
+            onClick={() => { setEditIdx(null); setEmojiOpen(false); setState('idle'); }}
+            className="text-sm text-text-medium hover:text-text-dark transition-colors"
+          >
+            Back
+          </button>
+          <p className="font-bold text-text-dark">Menu Items</p>
+          <button
+            onClick={saveManaged}
+            disabled={saveStatus === 'saving'}
+            className={clsx(
+              'text-sm font-semibold px-3 py-1.5 rounded-lg transition-colors',
+              saveStatus === 'saving' && 'bg-primary/50 text-white cursor-not-allowed',
+              saveStatus === 'saved'  && 'bg-green-500 text-white',
+              saveStatus === 'error'  && 'bg-red-500 text-white',
+              saveStatus === 'idle'   && 'bg-primary text-white hover:bg-primary/90',
+            )}
+          >
+            {saveStatus === 'saving' ? 'Saving…' : saveStatus === 'saved' ? 'Saved!' : 'Save'}
+          </button>
+        </div>
+
+        <div className="space-y-2">
+          {editDials.map((dial, i) => {
+            const isEditing = editIdx === i;
+            const palette = TILE_PALETTE[i % TILE_PALETTE.length];
+            return (
+              <div key={i} className="rounded-xl border border-border-light overflow-visible">
+                <div className="flex items-center gap-3 px-3 py-2.5">
+                  <div
+                    className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
+                    style={{ background: palette.bg }}
+                  >
+                    {dial.emoji || '🛒'}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-text-dark truncate">{dial.name || '—'}</p>
+                    <p className="text-xs text-text-medium">{formatINR(dial.price)}</p>
+                  </div>
+                  <div className="flex flex-col">
+                    <button
+                      onClick={() => moveItem(i, -1)}
+                      disabled={i === 0}
+                      className="p-0.5 rounded text-text-light hover:text-primary disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
+                      aria-label="Move up"
+                    >
+                      <ArrowUp size={13} />
+                    </button>
+                    <button
+                      onClick={() => moveItem(i, 1)}
+                      disabled={i === editDials.length - 1}
+                      className="p-0.5 rounded text-text-light hover:text-primary disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
+                      aria-label="Move down"
+                    >
+                      <ArrowDown size={13} />
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => isEditing ? cancelEditItem() : startEditItem(i)}
+                      className="p-1.5 rounded-lg text-text-light hover:text-primary hover:bg-primary/10 transition-colors"
+                    >
+                      <Pencil size={14} />
+                    </button>
+                    <button
+                      onClick={() => removeItem(i)}
+                      className="p-1.5 rounded-lg text-text-light hover:text-status-error hover:bg-red-50 transition-colors"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                </div>
+                {isEditing && <EditForm forNew={false} />}
+              </div>
+            );
+          })}
+        </div>
+
+        {editDials.length < MAX_DIALS && editIdx !== 'new' && (
+          <button
+            onClick={startAddItem}
+            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border-2 border-dashed border-border-light text-text-light hover:border-primary hover:text-primary transition-colors text-sm font-medium"
+          >
+            <Plus size={14} /> Add item
+          </button>
+        )}
+
+        {editIdx === 'new' && <EditForm forNew={true} />}
+
+        {saveStatus === 'error' && (
+          <p className="text-xs text-status-error text-center">Could not save — try again.</p>
+        )}
+      </div>
+    );
+  }
+
+  // ── Idle state ──────────────────────────────────────────────────────────
   return (
     <div className="space-y-6">
-
-      {/* Quick amounts header + edit toggle */}
+      {/* Named tile grid */}
       <div>
         <div className="flex items-center justify-between mb-3">
-          <p className="text-sm font-semibold text-text-dark">Quick amounts</p>
-          {!editMode ? (
+          <p className="text-sm font-semibold text-text-dark">Menu Items</p>
+          {dials.length > 0 && (
             <button
-              onClick={startEdit}
+              onClick={enterManaging}
               className="flex items-center gap-1 text-xs text-primary hover:text-primary/70 transition-colors font-medium"
             >
-              <Pencil size={12} /> Edit
+              <Pencil size={12} /> Manage
             </button>
-          ) : (
-            <div className="flex items-center gap-2">
-              <button
-                onClick={cancelEdit}
-                className="text-xs text-text-light hover:text-text-medium transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={saveDials}
-                disabled={saveStatus === 'saving'}
-                className={clsx(
-                  'flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-lg transition-colors',
-                  saveStatus === 'saving' && 'bg-primary/50 text-white cursor-not-allowed',
-                  saveStatus === 'saved'  && 'bg-green-500 text-white',
-                  saveStatus === 'error'  && 'bg-red-500 text-white',
-                  saveStatus === 'idle'   && 'bg-primary text-white hover:bg-primary/90',
-                )}
-              >
-                {saveStatus === 'saving' && <RefreshCw size={11} className="animate-spin" />}
-                {saveStatus === 'saved'  && <Check size={11} />}
-                {saveStatus === 'error'  && 'Error'}
-                {saveStatus === 'idle'   && 'Save'}
-                {saveStatus === 'saving' && 'Saving…'}
-                {saveStatus === 'saved'  && 'Saved!'}
-              </button>
-            </div>
           )}
         </div>
 
-        {/* Normal dial buttons */}
-        {!editMode && (
-          <div className="grid grid-cols-2 gap-3">
-            {dials.map((dial, i) => {
-              const DialIcon = getSpeedDialIcon(dial.icon);
-              return (
-                <button
-                  key={i}
-                  type="button"
-                  onClick={() => generateQR(dial.amount)}
-                  className={clsx(
-                    'flex flex-col items-center justify-center gap-1 py-4 rounded-xl border-2 border-primary',
-                    'text-primary font-bold transition-all',
-                    'hover:bg-primary hover:text-white active:scale-95',
-                  )}
-                >
-                  <div className="flex items-center gap-1.5 text-lg">
-                    <DialIcon size={16} />
-                    <IndianRupee size={16} />
-                    {dial.amount.toLocaleString('en-IN')}
-                  </div>
-                  {dial.label && <span className="text-xs font-medium opacity-80">{dial.label}</span>}
-                </button>
-              );
-            })}
-          </div>
-        )}
-
-        {/* Edit mode: inputs */}
-        {editMode && (
-          <div className="space-y-2">
-            {editValues.map((row, i) => {
-              const RowIcon = getSpeedDialIcon(row.icon);
-              return (
-                <div key={i} className="space-y-1.5 p-2.5 rounded-xl border border-border-light">
-                  <div className="flex items-center gap-2">
-                    <div className="relative">
+        {dials.length > 0 ? (
+          <>
+            <div className="grid grid-cols-2 gap-3">
+              {dials.map((dial, i) => {
+                const palette = TILE_PALETTE[i % TILE_PALETTE.length];
+                const count   = dialCounts[i] || 0;
+                if (campaignType === 'visit_based') {
+                  return (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => generateQR(undefined, dial.name || undefined, 1)}
+                      className="rounded-xl p-3 text-left active:scale-95 transition-transform"
+                      style={{ background: palette.bg }}
+                    >
+                      {dial.emoji && <div className="text-2xl mb-1.5">{dial.emoji}</div>}
+                      <p className={clsx('font-semibold leading-tight', dial.emoji ? 'text-sm' : 'text-base')} style={{ color: palette.text }}>
+                        {dial.name || formatINR(dial.price)}
+                      </p>
+                      {dial.name && <p className="text-xs font-bold mt-0.5" style={{ color: palette.text }}>{formatINR(dial.price)}</p>}
+                    </button>
+                  );
+                }
+                return (
+                  <div key={i} className="relative rounded-xl overflow-hidden" style={{ background: palette.bg }}>
+                    {count > 0 && (
                       <button
                         type="button"
-                        onClick={() => setIconPickerFor(iconPickerFor === i ? null : i)}
-                        className="w-9 h-9 flex items-center justify-center rounded-lg border border-border-light hover:border-primary text-text-medium hover:text-primary transition-colors flex-shrink-0"
-                        aria-label="Choose icon"
+                        onClick={() => tileDec(i)}
+                        className="absolute top-2 left-2 w-6 h-6 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center text-sm font-bold leading-none z-10"
+                        style={{ color: palette.text }}
                       >
-                        <RowIcon size={16} />
+                        −
                       </button>
-                      {iconPickerFor === i && (
-                        <div className="absolute z-10 top-full left-0 mt-1 p-2 grid grid-cols-5 gap-1 bg-white rounded-xl border border-border-light shadow-lg">
-                          {(Object.entries(SPEED_DIAL_ICON_MAP) as [string, typeof RowIcon][]).map(([key, Icon]) => (
-                            <button
-                              key={key}
-                              type="button"
-                              onClick={() => updateEditIcon(i, key)}
-                              className={clsx(
-                                'w-8 h-8 flex items-center justify-center rounded-lg transition-colors',
-                                row.icon === key ? 'bg-primary text-white' : 'text-text-medium hover:bg-bg-muted',
-                              )}
-                            >
-                              <Icon size={15} />
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                    <div className="relative flex-1">
-                      <IndianRupee size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-light" />
-                      <input
-                        type="number"
-                        value={row.amount}
-                        min={1}
-                        step={1}
-                        placeholder="Amount"
-                        onChange={(e) => updateEditValue(i, e.target.value)}
-                        className="form-input pl-8 py-2 text-sm"
-                        autoFocus={i === editValues.length - 1}
-                      />
-                    </div>
-                    <div className="flex flex-col">
-                      <button
-                        onClick={() => moveDial(i, -1)}
-                        disabled={i === 0}
-                        className="p-0.5 rounded text-text-light hover:text-primary disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
-                        aria-label="Move up"
-                      >
-                        <ArrowUp size={14} />
-                      </button>
-                      <button
-                        onClick={() => moveDial(i, 1)}
-                        disabled={i === editValues.length - 1}
-                        className="p-0.5 rounded text-text-light hover:text-primary disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
-                        aria-label="Move down"
-                      >
-                        <ArrowDown size={14} />
-                      </button>
-                    </div>
+                    )}
+                    {count > 0 && (
+                      <div className="absolute top-2 right-2 min-w-[1.25rem] h-5 rounded-full bg-primary text-white text-[11px] font-bold flex items-center justify-center px-1 z-10">
+                        ×{count}
+                      </div>
+                    )}
                     <button
-                      onClick={() => removeDial(i)}
-                      disabled={editValues.length <= 1}
-                      className="p-2 rounded-lg text-text-light hover:text-status-error hover:bg-red-50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                      type="button"
+                      onClick={() => tileAdd(i)}
+                      className="w-full p-3 text-left active:scale-95 transition-transform"
                     >
-                      <Trash2 size={15} />
+                      {dial.emoji && <div className="text-2xl mb-1.5">{dial.emoji}</div>}
+                      <p className={clsx('font-semibold leading-tight', dial.emoji ? 'text-sm' : 'text-base')} style={{ color: palette.text }}>
+                        {dial.name || formatINR(dial.price)}
+                      </p>
+                      {dial.name && <p className="text-xs font-bold mt-0.5" style={{ color: palette.text }}>{formatINR(dial.price)}</p>}
                     </button>
                   </div>
-                  <input
-                    type="text"
-                    value={row.label}
-                    maxLength={24}
-                    placeholder="Label (optional), e.g. Coffee"
-                    onChange={(e) => updateEditLabel(i, e.target.value)}
-                    className="form-input text-sm py-1.5 w-full"
-                  />
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
 
-            {editValues.length < MAX_DIALS && (
+            {/* Sticky cart bar */}
+            {campaignType === 'spend_based' && cartQty() > 0 && (
               <button
-                onClick={addDial}
-                className="w-full flex items-center justify-center gap-1.5 py-2.5 rounded-xl border-2 border-dashed border-border-light text-text-light hover:border-primary hover:text-primary transition-colors text-sm"
+                onClick={() => { generateQR(cartTotal(), cartItemName(), cartSingleQty()); clearCart(); }}
+                className="w-full flex items-center justify-between py-4 px-5 rounded-2xl bg-primary text-white font-bold shadow-btn active:scale-95 transition-transform mt-3"
               >
-                <Plus size={14} /> Add amount
+                <span className="flex items-center gap-2 text-sm">
+                  <QrCode size={16} />
+                  Generate · {cartQty()} item{cartQty() === 1 ? '' : 's'}
+                </span>
+                <span className="text-lg">{formatINR(cartTotal())}</span>
               </button>
             )}
-
-            {saveStatus === 'error' && (
-              <p className="text-xs text-status-error text-center mt-1">Could not save — try again.</p>
-            )}
-          </div>
+          </>
+        ) : (
+          <button
+            onClick={enterManaging}
+            className="w-full flex flex-col items-center gap-2 py-8 rounded-xl border-2 border-dashed border-border-light hover:border-primary hover:bg-primary/5 transition-colors"
+          >
+            <Plus size={20} className="text-text-light" />
+            <p className="text-sm text-text-medium">No menu items yet</p>
+            <p className="text-xs font-semibold text-primary">Add item</p>
+          </button>
         )}
       </div>
 
-      {/* Custom amount */}
-      <div>
-        <p className="text-sm font-semibold text-text-dark mb-2">Custom amount</p>
-        <div className="flex gap-2">
-          <div className="relative flex-1">
-            <IndianRupee size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-light" />
-            <input
-              type="number"
-              value={customAmt}
-              onChange={(e) => setCustomAmt(e.target.value)}
-              placeholder="Enter amount"
-              min={1}
-              step={1}
-              className="form-input pl-9"
-              onKeyDown={(e) => { if (e.key === 'Enter' && customAmt && Number(customAmt) > 0) generateQR(Number(customAmt)); }}
-            />
+      {/* Generic visit QR (visit-based with named dials) */}
+      {campaignType === 'visit_based' && dials.length > 0 && (
+        <button
+          onClick={() => generateQR()}
+          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 border-border-light text-sm font-medium text-text-medium hover:border-primary hover:text-primary transition-all"
+        >
+          <QrCode size={14} /> Generic visit QR
+        </button>
+      )}
+
+      {/* Custom amount (spend-based only) */}
+      {campaignType === 'spend_based' && (
+        <div>
+          <p className="text-sm font-semibold text-text-dark mb-2">Custom amount</p>
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <IndianRupee size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-light" />
+              <input
+                type="number"
+                value={customAmt}
+                onChange={(e) => setCustomAmt(e.target.value)}
+                placeholder="Enter amount"
+                min={1}
+                step={1}
+                className="form-input pl-9"
+                onKeyDown={(e) => { if (e.key === 'Enter' && customAmt && Number(customAmt) > 0) generateQR(Number(customAmt)); }}
+              />
+            </div>
+            <Button
+              onClick={() => { const amt = Number(customAmt); if (amt > 0) generateQR(amt); }}
+              disabled={!customAmt || Number(customAmt) <= 0}
+              size="md"
+            >
+              Generate
+            </Button>
           </div>
-          <Button
-            onClick={() => { const amt = Number(customAmt); if (amt > 0) generateQR(amt); }}
-            disabled={!customAmt || Number(customAmt) <= 0}
-            size="md"
-          >
-            Generate
-          </Button>
         </div>
-      </div>
+      )}
 
       {errorMsg && <p className="text-sm text-status-error text-center">{errorMsg}</p>}
     </div>

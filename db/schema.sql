@@ -49,7 +49,7 @@ CREATE TABLE IF NOT EXISTS merchants (
   gmaps_url           VARCHAR(500)              NULL,
   instagram_url       VARCHAR(500)              NULL,
   google_review_url   VARCHAR(500)              NULL,
-  -- Speed dial presets: JSON array of { amount, label?, icon? }
+  -- Speed dial / menu presets: JSON array of { name, price, emoji }
   -- (legacy rows may still be plain integers, e.g. [100,200,500,1000] — normalized at read time)
   speed_dials         JSON                      NULL,
   -- Status + plan
@@ -208,6 +208,8 @@ CREATE TABLE IF NOT EXISTS qr_tokens (
   merchant_id   VARCHAR(36)                          NOT NULL,
   campaign_id   VARCHAR(36)                          NOT NULL,
   amount_rupees DECIMAL(10,2)                        NULL,              -- NULL = visit_based
+  item_name     VARCHAR(120)                         NULL,              -- set when generated from a single named menu item/cart
+  quantity      INT                                  NOT NULL DEFAULT 1,
   status        ENUM('active','used','revoked')       NOT NULL DEFAULT 'active',
   used_at       TIMESTAMP                            NULL,
   revoked_at    TIMESTAMP                            NULL,

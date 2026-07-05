@@ -16,7 +16,7 @@ interface ActiveCampaign {
 type RouteContext = { params: Promise<{ slug: string }> };
 
 // ── POST /api/merchant/[slug]/qr/generate ────────────────────────────
-// Body: { amount_rupees?: number }
+// Body: { amount_rupees?: number, item_name?: string, quantity?: number }
 // Returns: { token, qr_data_url, safety_expiry, campaign_type, amount_rupees }
 export async function POST(req: NextRequest, { params }: RouteContext) {
   try {
@@ -24,7 +24,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
     const auth = requireMerchant(req, slug);
 
     const body = await req.json().catch(() => ({}));
-    const { amount_rupees } = body as { amount_rupees?: number };
+    const { amount_rupees, item_name, quantity } = body as { amount_rupees?: number; item_name?: string; quantity?: number };
 
     // ── Load active campaign ──────────────────────────────────────────
     const campaign = await queryOne<ActiveCampaign>(
@@ -57,15 +57,20 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
     const token        = crypto.randomBytes(32).toString('hex');
     const safetyExpiry = new Date(Date.now() + SAFETY_EXPIRY_MINUTES * 60 * 1000);
 
+    const safeItemName = typeof item_name === 'string' && item_name.trim() ? item_name.trim().slice(0, 120) : null;
+    const safeQty       = typeof quantity === 'number' && quantity >= 1 && quantity <= 99 ? Math.floor(quantity) : 1;
+
     await query(
       `INSERT INTO qr_tokens
-         (id, token, merchant_id, campaign_id, amount_rupees, safety_expiry)
-       VALUES (UUID(), ?, ?, ?, ?, ?)`,
+         (id, token, merchant_id, campaign_id, amount_rupees, item_name, quantity, safety_expiry)
+       VALUES (UUID(), ?, ?, ?, ?, ?, ?, ?)`,
       [
         token,
         auth.sub,
         campaign.id,
         campaign.campaign_type === 'spend_based' ? (amount_rupees ?? null) : null,
+        safeItemName,
+        safeQty,
         safetyExpiry,
       ],
     );
@@ -81,6 +86,8 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
       safety_expiry: safetyExpiry.toISOString(),
       campaign_type: campaign.campaign_type,
       amount_rupees: campaign.campaign_type === 'spend_based' ? amount_rupees : null,
+      item_name:     safeItemName,
+      quantity:      safeQty,
     });
   } catch (err) {
     if (err instanceof Response) return err;

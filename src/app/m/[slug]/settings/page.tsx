@@ -62,7 +62,7 @@ export default async function SettingsPage({ params }: PageProps) {
     <div>
       <h1 className="text-2xl font-bold text-text-dark mb-1">Settings</h1>
       <p className="text-text-medium text-sm mb-6">
-        Manage your store profile, branding, and speed dial amounts.
+        Manage your store profile, branding, and menu items.
       </p>
 
       <ProfileEditor slug={slug} initialData={initialData} />

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireMerchant } from '@/lib/auth';
 import { queryOne, query } from '@/lib/db';
-import { MAX_URL_LENGTH, SPEED_DIAL_ICON_KEYS, normalizeSpeedDials, type SpeedDial } from '@/lib/constants';
+import { MAX_URL_LENGTH, normalizeSpeedDials, type NamedDial } from '@/lib/constants';
 
 interface MerchantProfileRow {
   id:                string;
@@ -111,40 +111,42 @@ export async function PUT(req: NextRequest, { params }: RouteContext) {
       }
     }
 
-    // ── Validate speed dials — each item is either a plain positive
-    // integer (legacy) or { amount, label?, icon? } ────────────────────
-    let cleanedDials: SpeedDial[] | undefined;
+    // ── Validate speed dials / menu items — each item is either a plain
+    // positive number (legacy) or { name, price, emoji? } ──────────────
+    let cleanedDials: NamedDial[] | undefined;
     if (speed_dials !== undefined) {
-      const invalid = 'Speed dials must be 1–6 entries, each a positive whole ₹ amount with an optional label (max 24 chars) and icon.';
-      if (!Array.isArray(speed_dials) || speed_dials.length < 1 || speed_dials.length > 6) {
-        return NextResponse.json({ error: invalid }, { status: 400 });
+      if (!Array.isArray(speed_dials) || speed_dials.length > 6) {
+        return NextResponse.json({ error: 'Speed dials must be an array of 0–6 items.' }, { status: 400 });
       }
       cleanedDials = [];
-      for (const item of speed_dials) {
+      for (const item of speed_dials as unknown[]) {
         if (typeof item === 'number') {
-          if (!Number.isInteger(item) || item <= 0) {
-            return NextResponse.json({ error: invalid }, { status: 400 });
+          if (item <= 0) {
+            return NextResponse.json({ error: 'Speed dial amounts must be positive.' }, { status: 400 });
           }
-          cleanedDials.push({ amount: item, label: null, icon: null });
+          cleanedDials.push({ name: '', price: item, emoji: '' });
           continue;
         }
-        if (!item || typeof item !== 'object' || typeof (item as { amount?: unknown }).amount !== 'number') {
-          return NextResponse.json({ error: invalid }, { status: 400 });
+        if (!item || typeof item !== 'object') {
+          return NextResponse.json({ error: 'Invalid speed dial format.' }, { status: 400 });
         }
-        const { amount, label, icon } = item as { amount: number; label?: unknown; icon?: unknown };
-        if (!Number.isInteger(amount) || amount <= 0) {
-          return NextResponse.json({ error: invalid }, { status: 400 });
+        const { name, price, emoji } = item as Record<string, unknown>;
+        if (typeof price !== 'number' || price <= 0) {
+          return NextResponse.json({ error: 'Speed dial price must be a positive number.' }, { status: 400 });
         }
-        if (label !== undefined && label !== null && (typeof label !== 'string' || label.length > 24)) {
-          return NextResponse.json({ error: invalid }, { status: 400 });
+        if (typeof name !== 'string') {
+          return NextResponse.json({ error: 'Speed dial name must be a string.' }, { status: 400 });
         }
-        if (icon !== undefined && icon !== null && (typeof icon !== 'string' || !(SPEED_DIAL_ICON_KEYS as readonly string[]).includes(icon))) {
-          return NextResponse.json({ error: invalid }, { status: 400 });
+        if (name.trim().length > 40) {
+          return NextResponse.json({ error: 'Speed dial name is too long (max 40 chars).' }, { status: 400 });
+        }
+        if (emoji !== undefined && emoji !== null && typeof emoji !== 'string') {
+          return NextResponse.json({ error: 'Speed dial emoji must be a string.' }, { status: 400 });
         }
         cleanedDials.push({
-          amount,
-          label: typeof label === 'string' && label.trim() ? label.trim() : null,
-          icon:  typeof icon === 'string' ? icon : null,
+          name:  name.trim().slice(0, 40),
+          price,
+          emoji: typeof emoji === 'string' ? emoji.slice(0, 8) : '',
         });
       }
     }
