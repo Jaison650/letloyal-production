@@ -188,16 +188,7 @@ async function seedMerchant(conn: mysql.Connection, spec: MerchantSpec) {
   const mId = merchantRows[0].id as string;
   console.log(`✓ Merchant upserted: ${spec.slug} (${mId})`);
 
-  // ── Skip customer seeding if already done ──────────────────────────────
-  const [existingCustomers] = await conn.execute<mysql.RowDataPacket[]>(
-    'SELECT COUNT(*) AS cnt FROM customer_merchant WHERE merchant_id = ?', [mId],
-  );
-  if (Number(existingCustomers[0].cnt) > 0) {
-    console.log(`  → ${spec.slug} already has customers seeded — skipping customer/visit generation.`);
-    return;
-  }
-
-  // ── Campaign ────────────────────────────────────────────────────────────
+  // ── Campaign — always ensure one exists (cheap, idempotent) ────────────
   const [existingCampaign] = await conn.execute<mysql.RowDataPacket[]>(
     `SELECT id FROM campaigns WHERE merchant_id = ? AND status = 'active' LIMIT 1`, [mId],
   );
@@ -220,143 +211,160 @@ async function seedMerchant(conn: mysql.Connection, spec: MerchantSpec) {
   const threshold = spec.campaign.reward_threshold;
   const pointsPerRupee = spec.campaign.points_per_rupee ?? 1;
 
-  // ── Customer distribution across 32 customers ──────────────────────────
-  // 3 unlocked (ready to redeem) · 5 close to reward · 8 one-time visitors
-  // 6 inactive (21+ days) · 4 loyal repeats (cycle 2+) · 6 mid-range random
-  type Band = 'unlocked' | 'close' | 'one_time' | 'inactive' | 'loyal' | 'mid';
-  const bands: Band[] = [
-    ...Array(3).fill('unlocked'),
-    ...Array(5).fill('close'),
-    ...Array(8).fill('one_time'),
-    ...Array(6).fill('inactive'),
-    ...Array(4).fill('loyal'),
-    ...Array(6).fill('mid'),
-  ];
+  // ── Skip customer/visit generation if already done ──────────────────────
+  const [existingCustomers] = await conn.execute<mysql.RowDataPacket[]>(
+    'SELECT COUNT(*) AS cnt FROM customer_merchant WHERE merchant_id = ?', [mId],
+  );
+  if (Number(existingCustomers[0].cnt) > 0) {
+    console.log(`  → ${spec.slug} already has customers seeded — skipping customer/visit generation.`);
+  } else {
+    // ── Customer distribution across 32 customers ────────────────────────
+    // 3 unlocked (ready to redeem) · 5 close to reward · 8 one-time visitors
+    // 6 inactive (21+ days) · 4 loyal repeats (cycle 2+) · 6 mid-range random
+    type Band = 'unlocked' | 'close' | 'one_time' | 'inactive' | 'loyal' | 'mid';
+    const bands: Band[] = [
+      ...Array(3).fill('unlocked'),
+      ...Array(5).fill('close'),
+      ...Array(8).fill('one_time'),
+      ...Array(6).fill('inactive'),
+      ...Array(4).fill('loyal'),
+      ...Array(6).fill('mid'),
+    ];
 
-  for (let i = 0; i < 32; i++) {
-    const band = bands[i];
-    const person = NAMES[i % NAMES.length];
-    const phone = `${spec.phonePrefix}${String(i + 1).padStart(2, '0')}`;
-    const customerId = crypto.randomUUID();
+    for (let i = 0; i < 32; i++) {
+      const band = bands[i];
+      const person = NAMES[i % NAMES.length];
+      const phone = `${spec.phonePrefix}${String(i + 1).padStart(2, '0')}`;
+      const customerId = crypto.randomUUID();
 
-    const birthday = Math.random() < 0.7
-      ? randomBirthday(20, 55, i < 4) // first few get near-future birthdays for the "upcoming birthdays" widget
-      : null;
-    const gender = Math.random() < 0.05 ? 'other' : person.gender;
-
-    await conn.execute(
-      `INSERT INTO customers (id, phone_number, name, gender, birthday)
-       VALUES (?, ?, ?, ?, ?)
-       ON DUPLICATE KEY UPDATE name = VALUES(name)`,
-      [customerId, phone, person.name, gender, birthday ? toSqlDay(birthday) : null],
-    );
-    const [custRow] = await conn.execute<mysql.RowDataPacket[]>(
-      'SELECT id FROM customers WHERE phone_number = ?', [phone],
-    );
-    const cId = custRow[0].id as string;
-
-    // ── Determine progress / cycle / recency per band ───────────────────
-    let progress: number, cycleNumber = 1, rewardStatus: 'in_progress' | 'unlocked' = 'in_progress';
-    let lastScanDaysAgo: number;
-    let visitCount: number;
-
-    switch (band) {
-      case 'unlocked':
-        progress = threshold; rewardStatus = 'unlocked';
-        lastScanDaysAgo = Math.floor(Math.random() * 3);
-        visitCount = isSpend ? 6 + Math.floor(Math.random() * 3) : threshold;
-        break;
-      case 'close':
-        progress = Math.floor(threshold * (0.78 + Math.random() * 0.18));
-        lastScanDaysAgo = Math.floor(Math.random() * 5);
-        visitCount = isSpend ? 4 + Math.floor(Math.random() * 3) : progress;
-        break;
-      case 'one_time':
-        progress = isSpend ? Math.floor(threshold * (0.05 + Math.random() * 0.1)) : 1;
-        lastScanDaysAgo = 3 + Math.floor(Math.random() * 15);
-        visitCount = 1;
-        break;
-      case 'inactive':
-        progress = Math.floor(threshold * (0.2 + Math.random() * 0.4));
-        lastScanDaysAgo = 25 + Math.floor(Math.random() * 30);
-        visitCount = 2 + Math.floor(Math.random() * 2);
-        break;
-      case 'loyal':
-        cycleNumber = 2 + Math.floor(Math.random() * 2);
-        progress = Math.floor(threshold * (0.3 + Math.random() * 0.5));
-        lastScanDaysAgo = Math.floor(Math.random() * 7);
-        visitCount = isSpend ? 8 + Math.floor(Math.random() * 5) : threshold * (cycleNumber - 1) + progress;
-        break;
-      default: // mid
-        progress = Math.floor(threshold * (0.3 + Math.random() * 0.4));
-        lastScanDaysAgo = 1 + Math.floor(Math.random() * 10);
-        visitCount = isSpend ? 3 + Math.floor(Math.random() * 3) : progress;
-    }
-
-    await conn.execute(
-      `INSERT INTO customer_merchant (id, customer_id, merchant_id, campaign_id, progress, cycle_number, reward_status, last_scan_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [crypto.randomUUID(), cId, mId, campaignId, progress, cycleNumber, rewardStatus, toSqlDate(daysAgo(lastScanDaysAgo))],
-    );
-
-    // ── Visit history (spread from oldest to lastScanDaysAgo) ───────────
-    for (let v = 0; v < visitCount; v++) {
-      const spread = visitCount === 1 ? lastScanDaysAgo : Math.round(lastScanDaysAgo + (v * (60 - lastScanDaysAgo)) / visitCount);
-      const visitDate = v === visitCount - 1 ? daysAgo(lastScanDaysAgo) : daysAgo(Math.min(spread, 60));
-      const menuItem = spec.menu[Math.floor(Math.random() * spec.menu.length)];
-      const amount = isSpend ? menuItem.price + Math.floor(Math.random() * 100) : null;
-      const pointsAdded = isSpend ? Math.round((amount ?? 0) * pointsPerRupee) : 1;
+      const birthday = Math.random() < 0.7
+        ? randomBirthday(20, 55, i < 4) // first few get near-future birthdays for the "upcoming birthdays" widget
+        : null;
+      const gender = Math.random() < 0.05 ? 'other' : person.gender;
 
       await conn.execute(
-        `INSERT INTO visits (id, customer_id, merchant_id, campaign_id, points_added, amount_rupees, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        [crypto.randomUUID(), cId, mId, campaignId, pointsAdded, amount, toSqlDate(visitDate)],
+        `INSERT INTO customers (id, phone_number, name, gender, birthday)
+         VALUES (?, ?, ?, ?, ?)
+         ON DUPLICATE KEY UPDATE name = VALUES(name)`,
+        [customerId, phone, person.name, gender, birthday ? toSqlDay(birthday) : null],
       );
-    }
+      const [custRow] = await conn.execute<mysql.RowDataPacket[]>(
+        'SELECT id FROM customers WHERE phone_number = ?', [phone],
+      );
+      const cId = custRow[0].id as string;
 
-    // ── Redemption for completed prior cycles (loyal customers) ─────────
-    if (cycleNumber > 1) {
-      for (let c = 1; c < cycleNumber; c++) {
+      // ── Determine progress / cycle / recency per band ─────────────────
+      let progress: number, cycleNumber = 1, rewardStatus: 'in_progress' | 'unlocked' = 'in_progress';
+      let lastScanDaysAgo: number;
+      let visitCount: number;
+
+      switch (band) {
+        case 'unlocked':
+          progress = threshold; rewardStatus = 'unlocked';
+          lastScanDaysAgo = Math.floor(Math.random() * 3);
+          visitCount = isSpend ? 6 + Math.floor(Math.random() * 3) : threshold;
+          break;
+        case 'close':
+          progress = Math.floor(threshold * (0.78 + Math.random() * 0.18));
+          lastScanDaysAgo = Math.floor(Math.random() * 5);
+          visitCount = isSpend ? 4 + Math.floor(Math.random() * 3) : progress;
+          break;
+        case 'one_time':
+          progress = isSpend ? Math.floor(threshold * (0.05 + Math.random() * 0.1)) : 1;
+          lastScanDaysAgo = 3 + Math.floor(Math.random() * 15);
+          visitCount = 1;
+          break;
+        case 'inactive':
+          progress = Math.floor(threshold * (0.2 + Math.random() * 0.4));
+          lastScanDaysAgo = 25 + Math.floor(Math.random() * 30);
+          visitCount = 2 + Math.floor(Math.random() * 2);
+          break;
+        case 'loyal':
+          cycleNumber = 2 + Math.floor(Math.random() * 2);
+          progress = Math.floor(threshold * (0.3 + Math.random() * 0.5));
+          lastScanDaysAgo = Math.floor(Math.random() * 7);
+          visitCount = isSpend ? 8 + Math.floor(Math.random() * 5) : threshold * (cycleNumber - 1) + progress;
+          break;
+        default: // mid
+          progress = Math.floor(threshold * (0.3 + Math.random() * 0.4));
+          lastScanDaysAgo = 1 + Math.floor(Math.random() * 10);
+          visitCount = isSpend ? 3 + Math.floor(Math.random() * 3) : progress;
+      }
+
+      await conn.execute(
+        `INSERT INTO customer_merchant (id, customer_id, merchant_id, campaign_id, progress, cycle_number, reward_status, last_scan_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [crypto.randomUUID(), cId, mId, campaignId, progress, cycleNumber, rewardStatus, toSqlDate(daysAgo(lastScanDaysAgo))],
+      );
+
+      // ── Visit history (spread from oldest to lastScanDaysAgo) ─────────
+      for (let v = 0; v < visitCount; v++) {
+        const spread = visitCount === 1 ? lastScanDaysAgo : Math.round(lastScanDaysAgo + (v * (60 - lastScanDaysAgo)) / visitCount);
+        const visitDate = v === visitCount - 1 ? daysAgo(lastScanDaysAgo) : daysAgo(Math.min(spread, 60));
+        const menuItem = spec.menu[Math.floor(Math.random() * spec.menu.length)];
+        const amount = isSpend ? menuItem.price + Math.floor(Math.random() * 100) : null;
+        const pointsAdded = isSpend ? Math.round((amount ?? 0) * pointsPerRupee) : 1;
+
         await conn.execute(
-          `INSERT INTO redemptions (id, customer_id, merchant_id, campaign_id, cycle_number, points_spent, redeemed_at)
+          `INSERT INTO visits (id, customer_id, merchant_id, campaign_id, points_added, amount_rupees, created_at)
            VALUES (?, ?, ?, ?, ?, ?, ?)`,
-          [crypto.randomUUID(), cId, mId, campaignId, c, threshold, toSqlDate(daysAgo(lastScanDaysAgo + 20 * (cycleNumber - c)))],
+          [crypto.randomUUID(), cId, mId, campaignId, pointsAdded, amount, toSqlDate(visitDate)],
         );
       }
+
+      // ── Redemption for completed prior cycles (loyal customers) ───────
+      if (cycleNumber > 1) {
+        for (let c = 1; c < cycleNumber; c++) {
+          await conn.execute(
+            `INSERT INTO redemptions (id, customer_id, merchant_id, campaign_id, cycle_number, points_spent, redeemed_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?)`,
+            [crypto.randomUUID(), cId, mId, campaignId, c, threshold, toSqlDate(daysAgo(lastScanDaysAgo + 20 * (cycleNumber - c)))],
+          );
+        }
+      }
+    }
+    console.log(`✓ Seeded 32 customers + visit history for ${spec.slug}`);
+
+    // ── A couple of "today" visits so the dashboard's scans-today isn't 0 ──
+    const [anyCustomer] = await conn.execute<mysql.RowDataPacket[]>(
+      'SELECT customer_id FROM customer_merchant WHERE merchant_id = ? LIMIT 3', [mId],
+    );
+    for (const row of anyCustomer as { customer_id: string }[]) {
+      const menuItem = spec.menu[Math.floor(Math.random() * spec.menu.length)];
+      const amount = isSpend ? menuItem.price : null;
+      await conn.execute(
+        `INSERT INTO visits (id, customer_id, merchant_id, campaign_id, points_added, amount_rupees, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, NOW())`,
+        [crypto.randomUUID(), row.customer_id, mId, campaignId, isSpend ? Math.round((amount ?? 0) * pointsPerRupee) : 1, amount],
+      );
     }
   }
-  console.log(`✓ Seeded 32 customers + visit history for ${spec.slug}`);
 
-  // ── A couple of "today" visits so the dashboard's scans-today isn't 0 ──
-  const [anyCustomer] = await conn.execute<mysql.RowDataPacket[]>(
-    'SELECT customer_id FROM customer_merchant WHERE merchant_id = ? LIMIT 3', [mId],
+  // ── Feedback — independent idempotency check, so it backfills even if ──
+  // customer seeding already ran in a previous (possibly failed) attempt.
+  const [existingFeedback] = await conn.execute<mysql.RowDataPacket[]>(
+    'SELECT COUNT(*) AS cnt FROM feedback WHERE merchant_id = ?', [mId],
   );
-  for (const row of anyCustomer as { customer_id: string }[]) {
-    const menuItem = spec.menu[Math.floor(Math.random() * spec.menu.length)];
-    const amount = isSpend ? menuItem.price : null;
-    await conn.execute(
-      `INSERT INTO visits (id, customer_id, merchant_id, campaign_id, points_added, amount_rupees, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, NOW())`,
-      [crypto.randomUUID(), row.customer_id, mId, campaignId, isSpend ? Math.round((amount ?? 0) * pointsPerRupee) : 1, amount],
+  if (Number(existingFeedback[0].cnt) > 0) {
+    console.log(`  → ${spec.slug} already has feedback seeded — skipping.`);
+  } else {
+    const feedbackLimit = Math.max(1, Math.min(spec.feedback.length, 20));
+    const [feedbackCustomers] = await conn.execute<mysql.RowDataPacket[]>(
+      `SELECT customer_id FROM customer_merchant WHERE merchant_id = ? LIMIT ${feedbackLimit}`,
+      [mId],
     );
+    const fbCustomers = feedbackCustomers as { customer_id: string }[];
+    for (let i = 0; i < spec.feedback.length; i++) {
+      const fb = spec.feedback[i];
+      const custId = fbCustomers[i % fbCustomers.length]?.customer_id ?? null;
+      await conn.execute(
+        `INSERT INTO feedback (id, merchant_id, customer_id, message, rating, is_anonymous, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [crypto.randomUUID(), mId, fb.anonymous ? null : custId, fb.message, fb.rating, fb.anonymous, toSqlDate(daysAgo(Math.floor(Math.random() * 20)))],
+      );
+    }
+    console.log(`✓ Seeded ${spec.feedback.length} feedback entries for ${spec.slug}`);
   }
-
-  // ── Feedback ─────────────────────────────────────────────────────────
-  const [feedbackCustomers] = await conn.execute<mysql.RowDataPacket[]>(
-    'SELECT customer_id FROM customer_merchant WHERE merchant_id = ? LIMIT ?',
-    [mId, spec.feedback.length],
-  );
-  const fbCustomers = feedbackCustomers as { customer_id: string }[];
-  for (let i = 0; i < spec.feedback.length; i++) {
-    const fb = spec.feedback[i];
-    const custId = fbCustomers[i % fbCustomers.length]?.customer_id ?? null;
-    await conn.execute(
-      `INSERT INTO feedback (id, merchant_id, customer_id, message, rating, is_anonymous, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [crypto.randomUUID(), mId, fb.anonymous ? null : custId, fb.message, fb.rating, fb.anonymous, toSqlDate(daysAgo(Math.floor(Math.random() * 20)))],
-    );
-  }
-  console.log(`✓ Seeded ${spec.feedback.length} feedback entries for ${spec.slug}`);
 }
 
 async function main() {
