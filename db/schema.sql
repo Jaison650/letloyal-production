@@ -27,6 +27,11 @@ SET time_zone = '+00:00';
 -- ALTER TABLE customers ADD COLUMN birthday DATE NULL;
 -- ALTER TABLE customers ADD COLUMN gender VARCHAR(20) NULL;
 -- ALTER TABLE customers ADD CONSTRAINT chk_customers_identity CHECK (phone_number IS NOT NULL OR google_id IS NOT NULL);
+-- ALTER TABLE qr_tokens ADD COLUMN item_name VARCHAR(120) NULL AFTER amount_rupees;
+-- ALTER TABLE qr_tokens ADD COLUMN quantity INT NOT NULL DEFAULT 1 AFTER item_name;
+-- ALTER TABLE campaigns ADD INDEX idx_campaigns_merchant_status (merchant_id, status);
+-- ALTER TABLE customer_merchant ADD INDEX idx_cm_merchant_reward (merchant_id, reward_status);
+-- ALTER TABLE visits ADD INDEX idx_visits_merchant_created (merchant_id, created_at);
 -- ─────────────────────────────────────────────────────────────────────────────
 
 -- ─────────────────────────────────────────────────────────────────────────────
@@ -87,7 +92,8 @@ CREATE TABLE IF NOT EXISTS campaigns (
   updated_at          TIMESTAMP                            NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (merchant_id) REFERENCES merchants(id) ON DELETE CASCADE,
   INDEX idx_campaigns_merchant (merchant_id),
-  INDEX idx_campaigns_status   (status)
+  INDEX idx_campaigns_status   (status),
+  INDEX idx_campaigns_merchant_status (merchant_id, status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ─────────────────────────────────────────────────────────────────────────────
@@ -127,7 +133,8 @@ CREATE TABLE IF NOT EXISTS customer_merchant (
   FOREIGN KEY (merchant_id) REFERENCES merchants(id)  ON DELETE CASCADE,
   FOREIGN KEY (campaign_id) REFERENCES campaigns(id)  ON DELETE CASCADE,
   INDEX idx_cm_merchant (merchant_id),
-  INDEX idx_cm_reward   (reward_status)
+  INDEX idx_cm_reward   (reward_status),
+  INDEX idx_cm_merchant_reward (merchant_id, reward_status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ─────────────────────────────────────────────────────────────────────────────
@@ -146,7 +153,8 @@ CREATE TABLE IF NOT EXISTS visits (
   FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE,
   INDEX idx_visits_merchant  (merchant_id),
   INDEX idx_visits_customer  (customer_id),
-  INDEX idx_visits_created   (created_at)
+  INDEX idx_visits_created   (created_at),
+  INDEX idx_visits_merchant_created (merchant_id, created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ─────────────────────────────────────────────────────────────────────────────

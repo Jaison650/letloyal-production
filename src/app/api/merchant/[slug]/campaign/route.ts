@@ -127,7 +127,10 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
     );
 
     const created = await queryOne<CampaignRow>(
-      `SELECT * FROM campaigns
+      `SELECT id, merchant_id, name, campaign_type, status, reward_threshold,
+              reward_description, points_per_rupee, streak_enabled, streak_period,
+              streak_days, streak_multiplier, created_at, updated_at
+         FROM campaigns
         WHERE merchant_id = ? AND status = 'active'
         ORDER BY created_at DESC LIMIT 1`,
       [auth.sub],

@@ -47,9 +47,10 @@ async function sendToSubs(subs: PushSub[], payload: object) {
     }
   });
   if (expired.length > 0) {
-    for (const ep of expired) {
-      await query('DELETE FROM push_subscriptions WHERE endpoint = ?', [ep]);
-    }
+    await query(
+      `DELETE FROM push_subscriptions WHERE endpoint IN (${expired.map(() => '?').join(',')})`,
+      expired,
+    );
   }
   return results.filter(r => r.status === 'fulfilled').length;
 }

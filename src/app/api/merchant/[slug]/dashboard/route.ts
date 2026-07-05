@@ -27,7 +27,9 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
       }>(`
         SELECT
           (SELECT COUNT(*) FROM visits
-            WHERE merchant_id = ? AND DATE(created_at) = CURDATE())         AS scans_today,
+            WHERE merchant_id = ?
+              AND created_at >= CURDATE()
+              AND created_at <  CURDATE() + INTERVAL 1 DAY)                   AS scans_today,
           (SELECT COUNT(DISTINCT customer_id) FROM customer_merchant
             WHERE merchant_id = ?)                                           AS active_customers,
           (SELECT COUNT(*) FROM redemptions
