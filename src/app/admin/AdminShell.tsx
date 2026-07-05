@@ -3,7 +3,7 @@
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Logo from '@/components/ui/Logo';
-import { LayoutDashboard, Users, LogOut, CreditCard, Activity, KeyRound, ChevronDown } from 'lucide-react';
+import { LayoutDashboard, Users, LogOut, CreditCard, Activity, KeyRound, ChevronDown, Eye, EyeOff } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useState, FormEvent } from 'react';
 
@@ -17,6 +17,8 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
   const [pwMsg,      setPwMsg]        = useState('');
   const [pwErr,      setPwErr]        = useState('');
   const [pwSaving,   setPwSaving]     = useState(false);
+  const [showCurPw,  setShowCurPw]    = useState(false);
+  const [showNewPw,  setShowNewPw]    = useState(false);
 
   // Don't wrap the login page
   if (pathname === '/admin/login') return <>{children}</>;
@@ -98,22 +100,44 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
 
           {showPwForm && (
             <form onSubmit={handleChangePassword} className="px-2 pb-2 space-y-2">
-              <input
-                type="password"
-                placeholder="Current password"
-                value={curPw}
-                onChange={(e) => setCurPw(e.target.value)}
-                required
-                className="w-full text-xs px-3 py-2 rounded-lg border border-border-light bg-bg-muted outline-none focus:border-primary transition-colors"
-              />
-              <input
-                type="password"
-                placeholder="New password (min 8)"
-                value={newPw}
-                onChange={(e) => setNewPw(e.target.value)}
-                required
-                className="w-full text-xs px-3 py-2 rounded-lg border border-border-light bg-bg-muted outline-none focus:border-primary transition-colors"
-              />
+              <div className="relative">
+                <input
+                  type={showCurPw ? 'text' : 'password'}
+                  placeholder="Current password"
+                  value={curPw}
+                  onChange={(e) => setCurPw(e.target.value)}
+                  required
+                  className="w-full text-xs px-3 py-2 pr-9 rounded-lg border border-border-light bg-bg-muted outline-none focus:border-primary transition-colors"
+                />
+                <button
+                  type="button"
+                  tabIndex={-1}
+                  onClick={() => setShowCurPw(v => !v)}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-text-light hover:text-text-medium"
+                  aria-label={showCurPw ? 'Hide password' : 'Show password'}
+                >
+                  {showCurPw ? <EyeOff size={14} /> : <Eye size={14} />}
+                </button>
+              </div>
+              <div className="relative">
+                <input
+                  type={showNewPw ? 'text' : 'password'}
+                  placeholder="New password (min 8)"
+                  value={newPw}
+                  onChange={(e) => setNewPw(e.target.value)}
+                  required
+                  className="w-full text-xs px-3 py-2 pr-9 rounded-lg border border-border-light bg-bg-muted outline-none focus:border-primary transition-colors"
+                />
+                <button
+                  type="button"
+                  tabIndex={-1}
+                  onClick={() => setShowNewPw(v => !v)}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-text-light hover:text-text-medium"
+                  aria-label={showNewPw ? 'Hide password' : 'Show password'}
+                >
+                  {showNewPw ? <EyeOff size={14} /> : <Eye size={14} />}
+                </button>
+              </div>
               {pwErr && <p className="text-xs text-status-error">{pwErr}</p>}
               {pwMsg && <p className="text-xs text-green-600">{pwMsg}</p>}
               <button

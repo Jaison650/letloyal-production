@@ -41,6 +41,10 @@ export const metadata: Metadata = {
     title: 'LetLoyal',
   },
   icons: {
+    icon: [
+      { url: '/icon.svg', type: 'image/svg+xml' },
+      { url: '/icons/icon-192.png', type: 'image/png', sizes: '192x192' },
+    ],
     apple: '/icons/apple-touch-icon.png',
   },
   other: {

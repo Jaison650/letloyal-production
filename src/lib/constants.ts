@@ -5,8 +5,50 @@ export const POWERED_BY = 'Powered by LetLoyal';
 export const MERCHANT_SESSION_MAX_AGE = 60 * 60 * 24 * 7;
 export const ADMIN_SESSION_MAX_AGE = 60 * 60 * 24 * 7; // 7 days
 
+// Speed-dial preset shown on the merchant's QR screen. `label`/`icon` are
+// optional — a plain ₹ amount is shown when either is unset.
+export interface SpeedDial {
+  amount: number;
+  label?: string | null;
+  icon?:  string | null;
+}
+
 // Default editable speed-dial presets (₹), used when a merchant has none set.
-export const DEFAULT_SPEED_DIALS = [100, 200, 500, 1000];
+export const DEFAULT_SPEED_DIALS: SpeedDial[] = [
+  { amount: 100,  label: null, icon: null },
+  { amount: 200,  label: null, icon: null },
+  { amount: 500,  label: null, icon: null },
+  { amount: 1000, label: null, icon: null },
+];
+
+// Valid icon keys for speed dials — must match keys in src/lib/speedDialIcons.tsx
+export const SPEED_DIAL_ICON_KEYS = [
+  'coffee', 'utensils', 'pizza', 'ice-cream', 'shopping-bag',
+  'scissors', 'dumbbell', 'sparkles', 'shirt', 'gift',
+] as const;
+export type SpeedDialIconKey = typeof SPEED_DIAL_ICON_KEYS[number];
+
+/** Normalize a stored speed_dials JSON value (legacy number[] or new SpeedDial[]) into SpeedDial[]. */
+export function normalizeSpeedDials(raw: unknown): SpeedDial[] {
+  if (!Array.isArray(raw) || raw.length === 0) return DEFAULT_SPEED_DIALS;
+  const normalized = raw
+    .map((item): SpeedDial | null => {
+      if (typeof item === 'number' && Number.isFinite(item)) {
+        return { amount: item, label: null, icon: null };
+      }
+      if (item && typeof item === 'object' && typeof (item as { amount?: unknown }).amount === 'number') {
+        const obj = item as { amount: number; label?: unknown; icon?: unknown };
+        return {
+          amount: obj.amount,
+          label:  typeof obj.label === 'string' && obj.label.trim() ? obj.label.trim().slice(0, 24) : null,
+          icon:   typeof obj.icon === 'string' && (SPEED_DIAL_ICON_KEYS as readonly string[]).includes(obj.icon) ? obj.icon : null,
+        };
+      }
+      return null;
+    })
+    .filter((v): v is SpeedDial => v !== null);
+  return normalized.length > 0 ? normalized : DEFAULT_SPEED_DIALS;
+}
 
 // Currency for the India pilot.
 export const CURRENCY_SYMBOL = '₹';

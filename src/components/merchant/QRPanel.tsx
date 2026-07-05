@@ -3,13 +3,15 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Image from 'next/image';
 import Button from '@/components/ui/Button';
-import { RefreshCw, X, QrCode, IndianRupee, Pencil, Plus, Trash2, Check } from 'lucide-react';
+import { RefreshCw, X, QrCode, IndianRupee, Pencil, Plus, Trash2, Check, ArrowUp, ArrowDown } from 'lucide-react';
 import { clsx } from 'clsx';
+import type { SpeedDial } from '@/lib/constants';
+import { SPEED_DIAL_ICON_MAP, getSpeedDialIcon } from '@/lib/speedDialIcons';
 
 interface QRPanelProps {
   slug:          string;
   campaignType:  'visit_based' | 'spend_based';
-  speedDials:    number[];
+  speedDials:    SpeedDial[];
 }
 
 type PanelState =
@@ -39,10 +41,12 @@ export default function QRPanel({ slug, campaignType, speedDials: initialDials }
   const [errorMsg,    setErrorMsg]    = useState('');
 
   // ── Speed-dial editing ────────────────────────────────────────────────
-  const [dials,       setDials]       = useState<number[]>(initialDials);
+  interface EditRow { amount: string; label: string; icon: string | null; }
+  const [dials,       setDials]       = useState<SpeedDial[]>(initialDials);
   const [editMode,    setEditMode]    = useState(false);
-  const [editValues,  setEditValues]  = useState<string[]>([]);
+  const [editValues,  setEditValues]  = useState<EditRow[]>([]);
   const [saveStatus,  setSaveStatus]  = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [iconPickerFor, setIconPickerFor] = useState<number | null>(null);
 
   const pollRef    = useRef<ReturnType<typeof setInterval> | null>(null);
   const mountedRef = useRef(true);
@@ -127,32 +131,57 @@ export default function QRPanel({ slug, campaignType, speedDials: initialDials }
 
   // ── Speed-dial edit helpers ───────────────────────────────────────────
   function startEdit() {
-    setEditValues(dials.map(String));
+    setEditValues(dials.map(d => ({ amount: String(d.amount), label: d.label ?? '', icon: d.icon ?? null })));
     setEditMode(true);
     setSaveStatus('idle');
+    setIconPickerFor(null);
   }
 
   function cancelEdit() {
     setEditMode(false);
     setSaveStatus('idle');
+    setIconPickerFor(null);
   }
 
   function updateEditValue(i: number, val: string) {
-    setEditValues(prev => { const n = [...prev]; n[i] = val; return n; });
+    setEditValues(prev => { const n = [...prev]; n[i] = { ...n[i], amount: val }; return n; });
+  }
+
+  function updateEditLabel(i: number, val: string) {
+    setEditValues(prev => { const n = [...prev]; n[i] = { ...n[i], label: val }; return n; });
+  }
+
+  function updateEditIcon(i: number, icon: string) {
+    setEditValues(prev => { const n = [...prev]; n[i] = { ...n[i], icon }; return n; });
+    setIconPickerFor(null);
   }
 
   function removeDial(i: number) {
     setEditValues(prev => prev.filter((_, idx) => idx !== i));
   }
 
+  function moveDial(i: number, dir: -1 | 1) {
+    setEditValues(prev => {
+      const j = i + dir;
+      if (j < 0 || j >= prev.length) return prev;
+      const n = [...prev];
+      [n[i], n[j]] = [n[j], n[i]];
+      return n;
+    });
+  }
+
   function addDial() {
-    if (editValues.length < MAX_DIALS) setEditValues(prev => [...prev, '']);
+    if (editValues.length < MAX_DIALS) setEditValues(prev => [...prev, { amount: '', label: '', icon: null }]);
   }
 
   async function saveDials() {
-    const parsed = editValues
-      .map(v => parseInt(v, 10))
-      .filter(v => !isNaN(v) && v > 0);
+    const parsed: SpeedDial[] = editValues
+      .map(row => ({
+        amount: parseInt(row.amount, 10),
+        label:  row.label.trim() ? row.label.trim().slice(0, 24) : null,
+        icon:   row.icon,
+      }))
+      .filter(d => !isNaN(d.amount) && d.amount > 0);
 
     if (parsed.length === 0) return;
 
@@ -299,51 +328,116 @@ export default function QRPanel({ slug, campaignType, speedDials: initialDials }
         {/* Normal dial buttons */}
         {!editMode && (
           <div className="grid grid-cols-2 gap-3">
-            {dials.map((amount) => (
-              <button
-                key={amount}
-                type="button"
-                onClick={() => generateQR(amount)}
-                className={clsx(
-                  'flex items-center justify-center gap-1.5 py-4 rounded-xl border-2 border-primary',
-                  'text-primary font-bold text-lg transition-all',
-                  'hover:bg-primary hover:text-white active:scale-95',
-                )}
-              >
-                <IndianRupee size={16} />
-                {amount.toLocaleString('en-IN')}
-              </button>
-            ))}
+            {dials.map((dial, i) => {
+              const DialIcon = getSpeedDialIcon(dial.icon);
+              return (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => generateQR(dial.amount)}
+                  className={clsx(
+                    'flex flex-col items-center justify-center gap-1 py-4 rounded-xl border-2 border-primary',
+                    'text-primary font-bold transition-all',
+                    'hover:bg-primary hover:text-white active:scale-95',
+                  )}
+                >
+                  <div className="flex items-center gap-1.5 text-lg">
+                    <DialIcon size={16} />
+                    <IndianRupee size={16} />
+                    {dial.amount.toLocaleString('en-IN')}
+                  </div>
+                  {dial.label && <span className="text-xs font-medium opacity-80">{dial.label}</span>}
+                </button>
+              );
+            })}
           </div>
         )}
 
         {/* Edit mode: inputs */}
         {editMode && (
           <div className="space-y-2">
-            {editValues.map((val, i) => (
-              <div key={i} className="flex items-center gap-2">
-                <div className="relative flex-1">
-                  <IndianRupee size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-light" />
+            {editValues.map((row, i) => {
+              const RowIcon = getSpeedDialIcon(row.icon);
+              return (
+                <div key={i} className="space-y-1.5 p-2.5 rounded-xl border border-border-light">
+                  <div className="flex items-center gap-2">
+                    <div className="relative">
+                      <button
+                        type="button"
+                        onClick={() => setIconPickerFor(iconPickerFor === i ? null : i)}
+                        className="w-9 h-9 flex items-center justify-center rounded-lg border border-border-light hover:border-primary text-text-medium hover:text-primary transition-colors flex-shrink-0"
+                        aria-label="Choose icon"
+                      >
+                        <RowIcon size={16} />
+                      </button>
+                      {iconPickerFor === i && (
+                        <div className="absolute z-10 top-full left-0 mt-1 p-2 grid grid-cols-5 gap-1 bg-white rounded-xl border border-border-light shadow-lg">
+                          {(Object.entries(SPEED_DIAL_ICON_MAP) as [string, typeof RowIcon][]).map(([key, Icon]) => (
+                            <button
+                              key={key}
+                              type="button"
+                              onClick={() => updateEditIcon(i, key)}
+                              className={clsx(
+                                'w-8 h-8 flex items-center justify-center rounded-lg transition-colors',
+                                row.icon === key ? 'bg-primary text-white' : 'text-text-medium hover:bg-bg-muted',
+                              )}
+                            >
+                              <Icon size={15} />
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <div className="relative flex-1">
+                      <IndianRupee size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-light" />
+                      <input
+                        type="number"
+                        value={row.amount}
+                        min={1}
+                        step={1}
+                        placeholder="Amount"
+                        onChange={(e) => updateEditValue(i, e.target.value)}
+                        className="form-input pl-8 py-2 text-sm"
+                        autoFocus={i === editValues.length - 1}
+                      />
+                    </div>
+                    <div className="flex flex-col">
+                      <button
+                        onClick={() => moveDial(i, -1)}
+                        disabled={i === 0}
+                        className="p-0.5 rounded text-text-light hover:text-primary disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
+                        aria-label="Move up"
+                      >
+                        <ArrowUp size={14} />
+                      </button>
+                      <button
+                        onClick={() => moveDial(i, 1)}
+                        disabled={i === editValues.length - 1}
+                        className="p-0.5 rounded text-text-light hover:text-primary disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
+                        aria-label="Move down"
+                      >
+                        <ArrowDown size={14} />
+                      </button>
+                    </div>
+                    <button
+                      onClick={() => removeDial(i)}
+                      disabled={editValues.length <= 1}
+                      className="p-2 rounded-lg text-text-light hover:text-status-error hover:bg-red-50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                  </div>
                   <input
-                    type="number"
-                    value={val}
-                    min={1}
-                    step={1}
-                    placeholder="Amount"
-                    onChange={(e) => updateEditValue(i, e.target.value)}
-                    className="form-input pl-8 py-2 text-sm"
-                    autoFocus={i === editValues.length - 1}
+                    type="text"
+                    value={row.label}
+                    maxLength={24}
+                    placeholder="Label (optional), e.g. Coffee"
+                    onChange={(e) => updateEditLabel(i, e.target.value)}
+                    className="form-input text-sm py-1.5 w-full"
                   />
                 </div>
-                <button
-                  onClick={() => removeDial(i)}
-                  disabled={editValues.length <= 1}
-                  className="p-2 rounded-lg text-text-light hover:text-status-error hover:bg-red-50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                >
-                  <Trash2 size={15} />
-                </button>
-              </div>
-            ))}
+              );
+            })}
 
             {editValues.length < MAX_DIALS && (
               <button

@@ -49,7 +49,8 @@ CREATE TABLE IF NOT EXISTS merchants (
   gmaps_url           VARCHAR(500)              NULL,
   instagram_url       VARCHAR(500)              NULL,
   google_review_url   VARCHAR(500)              NULL,
-  -- Speed dial presets (JSON array of ₹ integers, e.g. [100,200,500,1000])
+  -- Speed dial presets: JSON array of { amount, label?, icon? }
+  -- (legacy rows may still be plain integers, e.g. [100,200,500,1000] — normalized at read time)
   speed_dials         JSON                      NULL,
   -- Status + plan
   status              ENUM('active','suspended') NOT NULL DEFAULT 'active',

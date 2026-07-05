@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import { getMerchantAuthFromCookies } from '@/lib/auth';
 import { queryOne } from '@/lib/db';
-import { DEFAULT_SPEED_DIALS } from '@/lib/constants';
+import { normalizeSpeedDials } from '@/lib/constants';
 import ProfileEditor from '@/components/merchant/ProfileEditor';
 
 interface MerchantProfile {
@@ -49,11 +49,13 @@ export default async function SettingsPage({ params }: PageProps) {
     google_review_url: merchant.google_review_url,
     latitude:          merchant.latitude,
     longitude:         merchant.longitude,
-    speed_dials:       !merchant.speed_dials
-      ? DEFAULT_SPEED_DIALS
-      : Array.isArray(merchant.speed_dials)
-        ? (merchant.speed_dials as unknown as number[])
-        : (JSON.parse(merchant.speed_dials as unknown as string) as number[]),
+    speed_dials:       normalizeSpeedDials(
+      !merchant.speed_dials
+        ? null
+        : Array.isArray(merchant.speed_dials)
+          ? merchant.speed_dials
+          : JSON.parse(merchant.speed_dials as unknown as string),
+    ),
   };
 
   return (

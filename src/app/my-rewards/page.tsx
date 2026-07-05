@@ -10,6 +10,7 @@ import {
   ChevronDown, ChevronUp, Calendar, Users, Tag,
 } from 'lucide-react';
 import Logo, { LogoIcon } from '@/components/ui/Logo';
+import Input from '@/components/ui/Input';
 import QRScanner from '@/components/QRScanner';
 import { hasAnalyticsConsent, setAnalyticsConsent } from '@/lib/analyticsConsent';
 import type { ReactNode } from 'react';
@@ -1095,21 +1096,12 @@ function MyRewardsContent() {
                       <p className="text-center text-sm font-semibold text-primary py-4">✓ Password updated!</p>
                     ) : (
                       <form onSubmit={handleChangePassword} className="space-y-3 pt-3">
-                        <div>
-                          <label className="form-label">Current Password</label>
-                          <input type="password" value={curPw} onChange={e => setCurPw(e.target.value)}
-                            placeholder="••••••••" className="form-input" />
-                        </div>
-                        <div>
-                          <label className="form-label">New Password</label>
-                          <input type="password" value={newPw} onChange={e => setNewPw(e.target.value)}
-                            placeholder="Min 8 characters" className="form-input" />
-                        </div>
-                        <div>
-                          <label className="form-label">Confirm New Password</label>
-                          <input type="password" value={confirmPw} onChange={e => setConfirmPw(e.target.value)}
-                            placeholder="Repeat new password" className="form-input" />
-                        </div>
+                        <Input label="Current Password" type="password" value={curPw}
+                          onChange={e => setCurPw(e.target.value)} placeholder="••••••••" />
+                        <Input label="New Password" type="password" value={newPw}
+                          onChange={e => setNewPw(e.target.value)} placeholder="Min 8 characters" />
+                        <Input label="Confirm New Password" type="password" value={confirmPw}
+                          onChange={e => setConfirmPw(e.target.value)} placeholder="Repeat new password" />
                         {pwError && <p className="text-sm text-status-error">{pwError}</p>}
                         <button type="submit" disabled={pwSaving}
                           className="w-full bg-primary text-white font-semibold py-2.5 rounded-xl disabled:opacity-50 transition-colors">

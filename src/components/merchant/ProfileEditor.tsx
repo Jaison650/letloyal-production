@@ -5,8 +5,10 @@ import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
-import { Upload, X, Plus, Trash2, Globe, Instagram, MapPin, Star } from 'lucide-react';
+import { Upload, X, Plus, Trash2, Globe, Instagram, MapPin, Star, ArrowUp, ArrowDown } from 'lucide-react';
 import { clsx } from 'clsx';
+import type { SpeedDial } from '@/lib/constants';
+import { SPEED_DIAL_ICON_MAP, getSpeedDialIcon } from '@/lib/speedDialIcons';
 
 const LocationPicker = dynamic(() => import('@/components/LocationPicker'), { ssr: false });
 
@@ -20,7 +22,7 @@ interface ProfileData {
   google_review_url: string | null;
   latitude:          number | null;
   longitude:         number | null;
-  speed_dials:       number[];
+  speed_dials:       SpeedDial[];
 }
 
 interface ProfileEditorProps {
@@ -142,6 +144,7 @@ export default function ProfileEditor({ slug, initialData }: ProfileEditorProps)
   const [saving,  setSaving]  = useState(false);
   const [saved,   setSaved]   = useState(false);
   const [error,   setError]   = useState('');
+  const [iconPickerFor, setIconPickerFor] = useState<number | null>(null);
 
   // Re-sync if initialData changes (e.g. page re-fetch)
   useEffect(() => { setForm(initialData); }, [initialData]);
@@ -149,6 +152,14 @@ export default function ProfileEditor({ slug, initialData }: ProfileEditorProps)
   function setField<K extends keyof ProfileData>(key: K, value: ProfileData[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
     setSaved(false);
+  }
+
+  function moveSpeedDial(i: number, dir: -1 | 1) {
+    const j = i + dir;
+    if (j < 0 || j >= form.speed_dials.length) return;
+    const updated = [...form.speed_dials];
+    [updated[i], updated[j]] = [updated[j], updated[i]];
+    setField('speed_dials', updated);
   }
 
   async function handleSave() {
@@ -299,41 +310,110 @@ export default function ProfileEditor({ slug, initialData }: ProfileEditorProps)
       {tab === 'speed_dials' && (
         <div className="space-y-4">
           <p className="text-sm text-text-medium">
-            Set preset ₹ amounts shown on your QR screen. Tap one to instantly generate a spend QR.
-            Add up to 6.
+            Set preset ₹ amounts shown on your QR screen. Give each one an optional label and icon
+            (e.g. ☕ &quot;Coffee&quot;) so staff can recognize them at a glance. Add up to 6.
           </p>
 
           <div className="space-y-2">
-            {form.speed_dials.map((amount, i) => (
-              <div key={i} className="flex items-center gap-2">
-                <span className="text-text-medium text-sm w-4">₹</span>
-                <input
-                  type="number"
-                  value={amount}
-                  min={1}
-                  step={1}
-                  onChange={(e) => {
-                    const updated = [...form.speed_dials];
-                    updated[i] = Math.max(1, parseInt(e.target.value) || 1);
-                    setField('speed_dials', updated);
-                  }}
-                  className="form-input flex-1"
-                />
-                <button
-                  type="button"
-                  onClick={() => setField('speed_dials', form.speed_dials.filter((_, j) => j !== i))}
-                  className="p-2 rounded-lg hover:bg-red-50 text-text-light hover:text-status-error transition-colors"
-                >
-                  <Trash2 size={16} />
-                </button>
-              </div>
-            ))}
+            {form.speed_dials.map((dial, i) => {
+              const DialIcon = getSpeedDialIcon(dial.icon);
+              return (
+                <div key={i} className="space-y-2 p-3 rounded-xl border border-border-light">
+                  <div className="flex items-center gap-2">
+                    <div className="relative">
+                      <button
+                        type="button"
+                        onClick={() => setIconPickerFor(iconPickerFor === i ? null : i)}
+                        className="w-9 h-9 flex items-center justify-center rounded-lg border border-border-light hover:border-primary text-text-medium hover:text-primary transition-colors flex-shrink-0"
+                        aria-label="Choose icon"
+                      >
+                        <DialIcon size={16} />
+                      </button>
+                      {iconPickerFor === i && (
+                        <div className="absolute z-10 top-full left-0 mt-1 p-2 grid grid-cols-5 gap-1 bg-white rounded-xl border border-border-light shadow-lg">
+                          {(Object.entries(SPEED_DIAL_ICON_MAP) as [string, typeof DialIcon][]).map(([key, Icon]) => (
+                            <button
+                              key={key}
+                              type="button"
+                              onClick={() => {
+                                const updated = [...form.speed_dials];
+                                updated[i] = { ...updated[i], icon: key };
+                                setField('speed_dials', updated);
+                                setIconPickerFor(null);
+                              }}
+                              className={clsx(
+                                'w-8 h-8 flex items-center justify-center rounded-lg transition-colors',
+                                dial.icon === key ? 'bg-primary text-white' : 'text-text-medium hover:bg-bg-muted',
+                              )}
+                            >
+                              <Icon size={15} />
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <span className="text-text-medium text-sm">₹</span>
+                    <input
+                      type="number"
+                      value={dial.amount}
+                      min={1}
+                      step={1}
+                      onChange={(e) => {
+                        const updated = [...form.speed_dials];
+                        updated[i] = { ...updated[i], amount: Math.max(1, parseInt(e.target.value) || 1) };
+                        setField('speed_dials', updated);
+                      }}
+                      className="form-input flex-1 w-0"
+                    />
+                    <div className="flex flex-col">
+                      <button
+                        type="button"
+                        onClick={() => moveSpeedDial(i, -1)}
+                        disabled={i === 0}
+                        className="p-0.5 rounded text-text-light hover:text-primary disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
+                        aria-label="Move up"
+                      >
+                        <ArrowUp size={14} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => moveSpeedDial(i, 1)}
+                        disabled={i === form.speed_dials.length - 1}
+                        className="p-0.5 rounded text-text-light hover:text-primary disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
+                        aria-label="Move down"
+                      >
+                        <ArrowDown size={14} />
+                      </button>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setField('speed_dials', form.speed_dials.filter((_, j) => j !== i))}
+                      className="p-2 rounded-lg hover:bg-red-50 text-text-light hover:text-status-error transition-colors"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                  <input
+                    type="text"
+                    value={dial.label ?? ''}
+                    maxLength={24}
+                    placeholder="Label (optional), e.g. Coffee"
+                    onChange={(e) => {
+                      const updated = [...form.speed_dials];
+                      updated[i] = { ...updated[i], label: e.target.value || null };
+                      setField('speed_dials', updated);
+                    }}
+                    className="form-input text-sm py-1.5 w-full"
+                  />
+                </div>
+              );
+            })}
           </div>
 
           {form.speed_dials.length < 6 && (
             <button
               type="button"
-              onClick={() => setField('speed_dials', [...form.speed_dials, 100])}
+              onClick={() => setField('speed_dials', [...form.speed_dials, { amount: 100, label: null, icon: null }])}
               className="flex items-center gap-2 text-sm text-primary font-medium hover:underline"
             >
               <Plus size={16} /> Add amount

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireMerchant } from '@/lib/auth';
 import { queryOne, query } from '@/lib/db';
-import { MAX_URL_LENGTH } from '@/lib/constants';
+import { MAX_URL_LENGTH, SPEED_DIAL_ICON_KEYS, normalizeSpeedDials, type SpeedDial } from '@/lib/constants';
 
 interface MerchantProfileRow {
   id:                string;
@@ -49,13 +49,15 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
       return NextResponse.json({ error: 'Merchant not found.' }, { status: 404 });
     }
 
+    const rawDials = !merchant.speed_dials
+      ? null
+      : Array.isArray(merchant.speed_dials)
+        ? merchant.speed_dials
+        : JSON.parse(merchant.speed_dials as unknown as string);
+
     return NextResponse.json({
       ...merchant,
-      speed_dials: !merchant.speed_dials
-        ? [100, 200, 500, 1000]
-        : Array.isArray(merchant.speed_dials)
-          ? merchant.speed_dials
-          : JSON.parse(merchant.speed_dials as unknown as string),
+      speed_dials: normalizeSpeedDials(rawDials),
     });
   } catch (err) {
     if (err instanceof Response) return err;
@@ -109,18 +111,41 @@ export async function PUT(req: NextRequest, { params }: RouteContext) {
       }
     }
 
-    // ── Validate speed dials ──────────────────────────────────────────
+    // ── Validate speed dials — each item is either a plain positive
+    // integer (legacy) or { amount, label?, icon? } ────────────────────
+    let cleanedDials: SpeedDial[] | undefined;
     if (speed_dials !== undefined) {
-      if (
-        !Array.isArray(speed_dials) ||
-        speed_dials.length < 1 ||
-        speed_dials.length > 6 ||
-        speed_dials.some((v: unknown) => typeof v !== 'number' || v <= 0 || !Number.isInteger(v))
-      ) {
-        return NextResponse.json(
-          { error: 'Speed dials must be 1–6 positive integers.' },
-          { status: 400 },
-        );
+      const invalid = 'Speed dials must be 1–6 entries, each a positive whole ₹ amount with an optional label (max 24 chars) and icon.';
+      if (!Array.isArray(speed_dials) || speed_dials.length < 1 || speed_dials.length > 6) {
+        return NextResponse.json({ error: invalid }, { status: 400 });
+      }
+      cleanedDials = [];
+      for (const item of speed_dials) {
+        if (typeof item === 'number') {
+          if (!Number.isInteger(item) || item <= 0) {
+            return NextResponse.json({ error: invalid }, { status: 400 });
+          }
+          cleanedDials.push({ amount: item, label: null, icon: null });
+          continue;
+        }
+        if (!item || typeof item !== 'object' || typeof (item as { amount?: unknown }).amount !== 'number') {
+          return NextResponse.json({ error: invalid }, { status: 400 });
+        }
+        const { amount, label, icon } = item as { amount: number; label?: unknown; icon?: unknown };
+        if (!Number.isInteger(amount) || amount <= 0) {
+          return NextResponse.json({ error: invalid }, { status: 400 });
+        }
+        if (label !== undefined && label !== null && (typeof label !== 'string' || label.length > 24)) {
+          return NextResponse.json({ error: invalid }, { status: 400 });
+        }
+        if (icon !== undefined && icon !== null && (typeof icon !== 'string' || !(SPEED_DIAL_ICON_KEYS as readonly string[]).includes(icon))) {
+          return NextResponse.json({ error: invalid }, { status: 400 });
+        }
+        cleanedDials.push({
+          amount,
+          label: typeof label === 'string' && label.trim() ? label.trim() : null,
+          icon:  typeof icon === 'string' ? icon : null,
+        });
       }
     }
 
@@ -143,9 +168,9 @@ export async function PUT(req: NextRequest, { params }: RouteContext) {
     addField('instagram_url',     instagram_url);
     addField('google_review_url', google_review_url);
 
-    if (speed_dials !== undefined) {
+    if (cleanedDials !== undefined) {
       updates.push('speed_dials = ?');
-      values.push(JSON.stringify(speed_dials));
+      values.push(JSON.stringify(cleanedDials));
     }
 
     // ── Validate and store lat/lng (null clears the pin) ─────────────

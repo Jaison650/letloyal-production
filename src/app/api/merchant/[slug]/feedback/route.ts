@@ -20,9 +20,13 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
     const { slug } = await params;
     const auth = requireMerchant(req, slug);
 
-    const url    = new URL(req.url);
-    const limit  = Math.min(Number(url.searchParams.get('limit')  ?? 50), 100);
-    const offset = Number(url.searchParams.get('offset') ?? 0);
+    const url       = new URL(req.url);
+    const limitRaw  = Number(url.searchParams.get('limit')  ?? 50);
+    const offsetRaw = Number(url.searchParams.get('offset') ?? 0);
+    // mysql2's execute() (prepared statements) fails on bound LIMIT/OFFSET
+    // params, so these are validated as safe integers and inlined directly.
+    const limit  = Number.isFinite(limitRaw)  ? Math.min(Math.max(Math.trunc(limitRaw), 1), 100) : 50;
+    const offset = Number.isFinite(offsetRaw) ? Math.max(Math.trunc(offsetRaw), 0) : 0;
 
     const rows = await query<FeedbackRow>(
       `SELECT
@@ -38,8 +42,8 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
        LEFT JOIN customers cu ON f.customer_id = cu.id
       WHERE f.merchant_id = ?
       ORDER BY f.created_at DESC
-      LIMIT ? OFFSET ?`,
-      [auth.sub, limit, offset],
+      LIMIT ${limit} OFFSET ${offset}`,
+      [auth.sub],
     );
 
     // Compute average rating

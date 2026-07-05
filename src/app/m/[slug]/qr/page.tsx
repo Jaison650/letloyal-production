@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import { getMerchantAuthFromCookies } from '@/lib/auth';
 import { queryOne } from '@/lib/db';
-import { DEFAULT_SPEED_DIALS } from '@/lib/constants';
+import { normalizeSpeedDials, type SpeedDial } from '@/lib/constants';
 import QRPanel from '@/components/merchant/QRPanel';
 import { QrCode } from 'lucide-react';
 
@@ -47,11 +47,12 @@ export default async function QRPage({ params }: PageProps) {
   );
 
   const rawDials = merchant?.speed_dials;
-  const speedDials: number[] = !rawDials
-    ? DEFAULT_SPEED_DIALS
+  const parsedDials = !rawDials
+    ? null
     : Array.isArray(rawDials)
-      ? (rawDials as number[])
-      : (JSON.parse(rawDials as string) as number[]);
+      ? rawDials
+      : JSON.parse(rawDials as string);
+  const speedDials: SpeedDial[] = normalizeSpeedDials(parsedDials);
 
   return (
     <div>
