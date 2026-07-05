@@ -18,7 +18,8 @@ import {
   Bell,
 } from 'lucide-react';
 import { clsx } from 'clsx';
-import Logo from '@/components/ui/Logo';
+import Image from 'next/image';
+import { PoweredBy } from '@/components/ui/Logo';
 
 interface NavItem {
   label: string;
@@ -29,10 +30,35 @@ interface NavItem {
 interface DashboardShellProps {
   slug:          string;
   businessName:  string;
+  logoUrl:       string | null;
   children:      React.ReactNode;
 }
 
-export default function DashboardShell({ slug, businessName, children }: DashboardShellProps) {
+// ── Merchant brand mark — their logo, or a letter avatar if none set ──────
+function MerchantMark({ businessName, logoUrl, size }: { businessName: string; logoUrl: string | null; size: number }) {
+  if (logoUrl) {
+    return (
+      <div
+        className="rounded-lg overflow-hidden border border-border-light flex-shrink-0"
+        style={{ width: size, height: size }}
+      >
+        <Image src={logoUrl} alt={businessName} width={size} height={size} className="object-cover w-full h-full" unoptimized />
+      </div>
+    );
+  }
+  return (
+    <div
+      className="rounded-lg bg-primary-light flex items-center justify-center flex-shrink-0"
+      style={{ width: size, height: size }}
+    >
+      <span className="font-extrabold text-primary" style={{ fontSize: size * 0.45 }}>
+        {businessName[0]?.toUpperCase() ?? '?'}
+      </span>
+    </div>
+  );
+}
+
+export default function DashboardShell({ slug, businessName, logoUrl, children }: DashboardShellProps) {
   const pathname   = usePathname();
   const router     = useRouter();
   const [open, setOpen] = useState(false);
@@ -56,10 +82,10 @@ export default function DashboardShell({ slug, businessName, children }: Dashboa
 
   const SidebarContent = () => (
     <div className="flex flex-col h-full">
-      {/* Logo + business name */}
-      <div className="px-5 py-6 border-b border-border-light">
-        <Logo size={22} />
-        <p className="mt-2 text-xs font-semibold text-text-light truncate">{businessName}</p>
+      {/* Merchant logo + business name */}
+      <div className="flex items-center gap-3 px-5 py-6 border-b border-border-light">
+        <MerchantMark businessName={businessName} logoUrl={logoUrl} size={36} />
+        <p className="text-sm font-bold text-text-dark truncate">{businessName}</p>
       </div>
 
       {/* Nav links */}
@@ -86,7 +112,7 @@ export default function DashboardShell({ slug, businessName, children }: Dashboa
       </nav>
 
       {/* Logout */}
-      <div className="px-3 py-4 border-t border-border-light">
+      <div className="px-3 py-4 border-t border-border-light space-y-3">
         <button
           onClick={handleLogout}
           className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-medium text-text-medium hover:bg-red-50 hover:text-status-error transition-colors"
@@ -94,6 +120,9 @@ export default function DashboardShell({ slug, businessName, children }: Dashboa
           <LogOut size={18} />
           Sign Out
         </button>
+        <div className="flex justify-center">
+          <PoweredBy />
+        </div>
       </div>
     </div>
   );
@@ -121,8 +150,11 @@ export default function DashboardShell({ slug, businessName, children }: Dashboa
         )}
       >
         <div className="flex items-center justify-between px-4 py-4 border-b border-border-light">
-          <Logo size={22} />
-          <button onClick={() => setOpen(false)} className="p-1 rounded-lg hover:bg-bg-muted">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <MerchantMark businessName={businessName} logoUrl={logoUrl} size={28} />
+            <p className="text-sm font-bold text-text-dark truncate">{businessName}</p>
+          </div>
+          <button onClick={() => setOpen(false)} className="p-1 rounded-lg hover:bg-bg-muted flex-shrink-0">
             <X size={20} className="text-text-medium" />
           </button>
         </div>
@@ -141,7 +173,7 @@ export default function DashboardShell({ slug, businessName, children }: Dashboa
           >
             <Menu size={22} className="text-text-medium" />
           </button>
-          <Logo size={22} />
+          <MerchantMark businessName={businessName} logoUrl={logoUrl} size={26} />
           <span className="text-sm font-semibold text-text-dark truncate ml-auto">{businessName}</span>
         </header>
 

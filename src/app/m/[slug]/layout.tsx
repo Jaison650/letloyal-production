@@ -7,6 +7,7 @@ interface MerchantProfile {
   id:            string;
   slug:          string;
   business_name: string;
+  logo_url:      string | null;
 }
 
 interface LayoutProps {
@@ -30,7 +31,7 @@ export default async function MerchantDashboardLayout({ children, params }: Layo
 
   // 3. Load merchant profile
   const merchant = await queryOne<MerchantProfile>(
-    'SELECT id, slug, business_name FROM merchants WHERE id = ? AND status = ?',
+    'SELECT id, slug, business_name, logo_url FROM merchants WHERE id = ? AND status = ?',
     [auth.sub, 'active'],
   );
 
@@ -39,7 +40,7 @@ export default async function MerchantDashboardLayout({ children, params }: Layo
   }
 
   return (
-    <DashboardShell slug={slug} businessName={merchant.business_name}>
+    <DashboardShell slug={slug} businessName={merchant.business_name} logoUrl={merchant.logo_url}>
       {children}
     </DashboardShell>
   );
