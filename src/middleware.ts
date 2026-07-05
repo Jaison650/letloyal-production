@@ -42,8 +42,32 @@ const CUSTOMER_AUTH_WHITELIST = [
   '/api/customer/nearby',
 ];
 
+// Optional IP allowlist for the entire admin surface (pages + API, including
+// login). Comma-separated in ADMIN_ALLOWED_IPS; unset/empty = no restriction.
+function getClientIp(req: NextRequest): string {
+  return (
+    req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+    req.headers.get('x-real-ip') ||
+    ''
+  );
+}
+
+function isAdminIpAllowed(req: NextRequest): boolean {
+  const allowlist = (process.env.ADMIN_ALLOWED_IPS ?? '')
+    .split(',')
+    .map(ip => ip.trim())
+    .filter(Boolean);
+  if (allowlist.length === 0) return true; // not configured — no restriction
+  return allowlist.includes(getClientIp(req));
+}
+
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
+
+  // ── Guard: admin IP allowlist (applies to pages + API, incl. login) ──
+  if ((pathname.startsWith('/admin') || pathname.startsWith('/api/admin/')) && !isAdminIpAllowed(req)) {
+    return NextResponse.json({ error: 'Access denied.' }, { status: 403 });
+  }
 
   // ── Guard: /api/merchant/* (except auth) ──────────────────────────
   if (pathname.startsWith('/api/merchant/') && !MERCHANT_AUTH_WHITELIST.includes(pathname)) {

@@ -3,8 +3,16 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireCustomer } from '@/lib/customerAuth';
 import { comparePassword, hashPassword } from '@/lib/auth';
 import { queryOne, query } from '@/lib/db';
+import { checkRateLimit, rateLimitKey } from '@/lib/rateLimit';
 
 export async function PUT(req: NextRequest) {
+  const rl = checkRateLimit(rateLimitKey(req, 'cust-change-pw'), 5, 15 * 60 * 1000);
+  if (rl.limited) {
+    return NextResponse.json(
+      { error: 'Too many attempts. Please try again later.' },
+      { status: 429, headers: { 'Retry-After': String(rl.retryAfter) } },
+    );
+  }
   try {
     const auth = requireCustomer(req);
     const { current_password, new_password } = await req.json();

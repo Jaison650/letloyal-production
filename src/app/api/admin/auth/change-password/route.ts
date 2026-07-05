@@ -1,8 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin, comparePassword, hashPassword } from '@/lib/auth';
 import { queryOne, query } from '@/lib/db';
+import { checkRateLimit, rateLimitKey } from '@/lib/rateLimit';
 
 export async function POST(req: NextRequest) {
+  const rl = checkRateLimit(rateLimitKey(req, 'admin-change-pw'), 5, 15 * 60 * 1000);
+  if (rl.limited) {
+    return NextResponse.json(
+      { error: 'Too many attempts. Please try again later.' },
+      { status: 429, headers: { 'Retry-After': String(rl.retryAfter) } },
+    );
+  }
   try {
     const admin = requireAdmin(req);
     const { current_password, new_password } = await req.json();
