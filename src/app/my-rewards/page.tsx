@@ -48,7 +48,7 @@ function MerchantAvatar({ logo_url, name, size = 44 }: { logo_url: string | null
     <div className="rounded-xl overflow-hidden bg-primary-light flex items-center justify-center flex-shrink-0"
       style={{ width: size, height: size }}>
       {logo_url
-        ? <Image src={logo_url} alt={name} width={size} height={size} className="object-cover w-full h-full" unoptimized />
+        ? <Image src={logo_url} alt={name} width={size} height={size} className="object-cover w-full h-full" />
         : <span className="font-bold text-primary" style={{ fontSize: size * 0.4 }}>{name[0]}</span>}
     </div>
   );
