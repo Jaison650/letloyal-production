@@ -156,11 +156,13 @@ function LoyaltyCardItem({ card, phone }: { card: LoyaltyCard; phone: string }) 
   return (
     <div className={`bg-white rounded-2xl overflow-hidden shadow-sm border ${isUnlocked ? 'border-primary' : 'border-border-light'}`}>
       <div className="flex items-center gap-3 px-4 pt-4 pb-2">
-        <MerchantAvatar logo_url={card.logo_url} name={card.business_name} size={44} />
-        <div className="flex-1 min-w-0">
-          <p className="font-bold text-text-dark truncate">{card.business_name}</p>
-          <p className="text-xs text-text-light">{isSpend ? 'Spend-based' : 'Visit-based'} · {card.campaign_name}</p>
-        </div>
+        <Link href={`/s/${card.merchant_slug}`} className="flex items-center gap-3 flex-1 min-w-0 hover:opacity-80 transition-opacity">
+          <MerchantAvatar logo_url={card.logo_url} name={card.business_name} size={44} />
+          <div className="flex-1 min-w-0">
+            <p className="font-bold text-text-dark truncate">{card.business_name}</p>
+            <p className="text-xs text-text-light">{isSpend ? 'Spend-based' : 'Visit-based'} · {card.campaign_name}</p>
+          </div>
+        </Link>
         {isUnlocked && <span className="text-xs font-bold bg-primary text-white px-2 py-1 rounded-full flex-shrink-0">🎉 Ready!</span>}
       </div>
       <div className="px-4 pb-4">
