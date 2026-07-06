@@ -24,10 +24,10 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   return {
     title,
     description: desc,
-    alternates:  { canonical: `${BASE_URL}/s/${slug}` },
+    alternates:  { canonical: `${BASE_URL}/p/${slug}` },
     openGraph: {
       title, description: desc,
-      url:    `${BASE_URL}/s/${slug}`,
+      url:    `${BASE_URL}/p/${slug}`,
       images: [{ url: ogImage, width: 1200, height: 630, alt: title }],
     },
     twitter: { card: 'summary_large_image', title, description: desc, images: [ogImage] },

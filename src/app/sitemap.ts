@@ -9,7 +9,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ).catch(() => [] as { slug: string; updated_at: string }[]);
 
   const merchantUrls: MetadataRoute.Sitemap = merchants.map(m => ({
-    url:             `${BASE}/s/${m.slug}`,
+    url:             `${BASE}/p/${m.slug}`,
     lastModified:    new Date(m.updated_at),
     changeFrequency: 'weekly' as const,
     priority:        0.8,
