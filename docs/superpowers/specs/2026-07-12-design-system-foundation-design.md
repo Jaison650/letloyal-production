@@ -78,7 +78,9 @@ This replaces Plus Jakarta Sans + Inter everywhere, including the wordmark in `L
 - `class-variance-authority` (CVA)
 - (Existing `clsx` + `tailwind-merge` kept; a `cn()` helper added if not present.)
 
-### Components built in `src/components/ui/`
+### Components built in `src/components/ds/`
+
+(Not `src/components/ui/` — that directory already contains legacy components with live importers, e.g. `Button.tsx` with 11 consumers. The new design-system library lives in `src/components/ds/` so nothing existing changes; surfaces switch imports when they migrate.)
 
 | Component | Base | Variants (CVA) |
 |---|---|---|
