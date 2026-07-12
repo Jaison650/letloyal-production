@@ -59,7 +59,7 @@ export default function Logo({ variant = 'light', size = 26, className = '' }: L
       <StandaloneIcon lColor={lColor} arrowColor={arrowColor} size={size} />
       <span
         style={{
-          fontFamily: "'Plus Jakarta Sans', sans-serif",
+          fontFamily: "var(--font-display), 'Plus Jakarta Sans', sans-serif",
           fontSize,
           fontWeight: 700,
           letterSpacing: '-0.02em',
@@ -94,8 +94,8 @@ export function PoweredBy({ className = '' }: { className?: string }) {
   return (
     <span className={`inline-flex items-center gap-1.5 text-xs text-text-light opacity-60 hover:opacity-90 transition-opacity ${className}`}>
       <FaviconIcon size={14} />
-      <span style={{ fontFamily: "'Inter', sans-serif", fontWeight: 500 }}>
-        Powered by <span style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700, letterSpacing: '-0.01em' }}>LetLoyal</span>
+      <span style={{ fontFamily: "var(--font-body), 'Inter', sans-serif", fontWeight: 500 }}>
+        Powered by <span style={{ fontFamily: "var(--font-display), 'Plus Jakarta Sans', sans-serif", fontWeight: 700, letterSpacing: '-0.01em' }}>LetLoyal</span>
       </span>
     </span>
   );
