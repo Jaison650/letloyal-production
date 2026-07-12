@@ -13,20 +13,22 @@ const badgeVariants = cva(
         teal: 'bg-teal-subtle text-teal',
         reward: 'bg-reward-subtle text-reward-deep',
       },
-      dot: { true: '', false: '' },
     },
-    defaultVariants: { intent: 'neutral', dot: true },
+    defaultVariants: { intent: 'neutral' },
   }
 );
 
 export interface BadgeProps
   extends React.HTMLAttributes<HTMLSpanElement>,
-    VariantProps<typeof badgeVariants> {}
+    VariantProps<typeof badgeVariants> {
+  dot?: boolean;
+}
 
 export function Badge({ className, intent, dot, children, ...props }: BadgeProps) {
+  const showDot = dot ?? true;
   return (
-    <span className={cn(badgeVariants({ intent, dot }), className)} {...props}>
-      {dot && <i aria-hidden className="h-1 w-1 rounded-full bg-current" />}
+    <span className={cn(badgeVariants({ intent }), className)} {...props}>
+      {showDot && <i aria-hidden className="h-1 w-1 rounded-full bg-current" />}
       {children}
     </span>
   );

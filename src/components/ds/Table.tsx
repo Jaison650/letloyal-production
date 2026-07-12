@@ -1,10 +1,6 @@
 import { cn } from '@/lib/cn';
 
 type Density = 'comfortable' | 'compact';
-const cellPad: Record<Density, string> = {
-  comfortable: 'px-3.5 py-3',
-  compact: 'px-3 py-2',
-};
 
 export function Table({
   density = 'comfortable',
@@ -13,9 +9,8 @@ export function Table({
   ...props
 }: React.TableHTMLAttributes<HTMLTableElement> & { density?: Density }) {
   return (
-    <div className="w-full overflow-x-auto">
+    <div className="group w-full overflow-x-auto" data-density={density}>
       <table
-        data-density={density}
         className={cn('w-full border-collapse text-body-sm [font-variant-numeric:tabular-nums]', className)}
         {...props}
       >
@@ -33,7 +28,7 @@ export function TH({ className, ...props }: React.ThHTMLAttributes<HTMLTableCell
   return (
     <th
       className={cn(
-        'px-3.5 py-2 text-left text-label uppercase text-ink-faint first:rounded-l-lg last:rounded-r-lg',
+        'px-3.5 py-2 group-data-[density=compact]:px-3 group-data-[density=compact]:py-1.5 text-left text-label uppercase text-ink-sub first:rounded-l-lg last:rounded-r-lg',
         className
       )}
       {...props}
@@ -49,10 +44,15 @@ export function TR({ className, ...props }: React.HTMLAttributes<HTMLTableRowEle
   return <tr className={cn('border-b border-stroke last:border-b-0', className)} {...props} />;
 }
 
-export function TD({
-  density = 'comfortable',
-  className,
-  ...props
-}: React.TdHTMLAttributes<HTMLTableCellElement> & { density?: Density }) {
-  return <td className={cn(cellPad[density], 'text-ink-sub', className)} {...props} />;
+export function TD({ className, ...props }: React.TdHTMLAttributes<HTMLTableCellElement>) {
+  return (
+    <td
+      className={cn(
+        'px-3.5 py-3 group-data-[density=compact]:px-3 group-data-[density=compact]:py-2',
+        'text-ink-sub',
+        className
+      )}
+      {...props}
+    />
+  );
 }

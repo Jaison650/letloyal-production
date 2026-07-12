@@ -8,6 +8,10 @@ export const DrawerTrigger = DialogPrimitive.Trigger;
 export const DrawerClose = DialogPrimitive.Close;
 export const DrawerTitle = DialogPrimitive.Title;
 
+/**
+ * DrawerContent requires a <DrawerTitle> child for its accessible name
+ * (render it visually-hidden with the `sr-only` class if the design has no visible title).
+ */
 export const DrawerContent = forwardRef<
   React.ComponentRef<typeof DialogPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & { side?: 'right' | 'bottom' }
@@ -20,7 +24,7 @@ export const DrawerContent = forwardRef<
         'fixed z-50 border-stroke bg-surface-1 p-6 shadow-ds focus-visible:outline-none',
         side === 'right'
           ? 'inset-y-0 right-0 w-full max-w-sm border-l'
-          : 'inset-x-0 bottom-0 max-h-[85vh] rounded-t-[16px] border-t',
+          : 'inset-x-0 bottom-0 max-h-[85vh] overflow-y-auto rounded-t-[16px] border-t',
         className
       )}
       {...props}

@@ -43,6 +43,7 @@ const checks = [
   ['light warn on surface-1', light.warn, light.s1, 4.5],
   ['light bad on surface-1', light.bad, light.s1, 4.5],
   ['light info on surface-1', light.info, light.s1, 4.5],
+  ['light text-secondary on surface-2', light.textS, light.s2, 4.5],
 
   ['dark text-primary on page', dark.textP, dark.page, 4.5],
   ['dark text-primary on surface-1', dark.textP, dark.s1, 4.5],
@@ -55,6 +56,7 @@ const checks = [
   ['dark warn on surface-1', dark.warn, dark.s1, 4.5],
   ['dark bad on surface-1', dark.bad, dark.s1, 4.5],
   ['dark info on surface-1', dark.info, dark.s1, 4.5],
+  ['dark text-secondary on surface-2', dark.textS, dark.s2, 4.5],
 ];
 
 let failed = 0;

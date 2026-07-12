@@ -146,6 +146,9 @@
   }
 }
 
+/* DEPRECATED: the component classes below (.card, .btn-*, .form-*, .badge-*, .progress-*, .skeleton)
+   are superseded by src/components/ds/*. Do not use in new code; they remain only until
+   legacy surfaces migrate to the design system. */
 @layer components {
   .card {
     @apply bg-white rounded-xl p-4 sm:p-5 md:p-6 border border-brand-border shadow-card;

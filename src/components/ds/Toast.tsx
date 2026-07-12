@@ -16,7 +16,7 @@ export function useToast() {
 }
 
 const rootVariants = cva(
-  'flex items-start gap-3 rounded-xl border bg-surface-1 p-4 shadow-ds data-[state=closed]:animate-out data-[state=closed]:fade-out',
+  'flex items-start gap-3 rounded-xl border bg-surface-1 p-4 shadow-ds',
   {
     variants: {
       intent: {

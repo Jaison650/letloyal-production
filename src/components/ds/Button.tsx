@@ -41,16 +41,23 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       <Comp
         ref={ref}
         className={cn(buttonVariants({ intent, size, fullWidth }), className)}
-        disabled={disabled || loading}
+        aria-busy={loading || undefined}
+        {...(!asChild ? { disabled: disabled || loading } : {})}
         {...props}
       >
-        {loading && (
-          <span
-            aria-hidden
-            className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"
-          />
+        {asChild ? (
+          children
+        ) : (
+          <>
+            {loading && (
+              <span
+                aria-hidden
+                className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"
+              />
+            )}
+            {children}
+          </>
         )}
-        {children}
       </Comp>
     );
   }
