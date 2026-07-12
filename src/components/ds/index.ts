@@ -16,3 +16,5 @@ export { Dialog, DialogTrigger, DialogClose, DialogContent, DialogHeader } from 
 export { Drawer, DrawerTrigger, DrawerClose, DrawerTitle, DrawerContent } from './Drawer';
 export { ToastProvider, useToast } from './Toast';
 export { Table, THead, TH, TBody, TR, TD } from './Table';
+export { ThemeProvider, useTheme } from './ThemeProvider';
+export { ThemeToggle } from './ThemeToggle';
