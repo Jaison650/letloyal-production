@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "seed": "DOTENV_CONFIG_PATH=.env.local ts-node --project tsconfig.seed.json -r tsconfig-paths/register db/seed.ts",
-    "seed:demo": "DOTENV_CONFIG_PATH=.env.local ts-node --project tsconfig.seed.json -r tsconfig-paths/register db/seed-demo.ts"
+    "seed:demo": "DOTENV_CONFIG_PATH=.env.local ts-node --project tsconfig.seed.json -r tsconfig-paths/register db/seed-demo.ts",
+    "check:contrast": "node scripts/check-contrast.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1061.0",
