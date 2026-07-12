@@ -45,8 +45,11 @@ const config: Config = {
         },
       },
       fontFamily: {
-        jakarta: ['Plus Jakarta Sans', 'sans-serif'],
-        sans: ['Inter', 'sans-serif'],
+        display: ['var(--font-display)', 'system-ui', 'sans-serif'],
+        sans: ['var(--font-body)', 'system-ui', 'sans-serif'],
+        serif: ['var(--font-serif)', 'Georgia', 'serif'],
+        // legacy alias so existing `font-jakarta` classes keep working (now renders Manrope)
+        jakarta: ['var(--font-display)', 'system-ui', 'sans-serif'],
       },
       borderRadius: {
         '2xl': '14px',

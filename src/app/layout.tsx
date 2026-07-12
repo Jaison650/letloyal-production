@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import { fontVariables } from '@/lib/fonts';
 import ClarityScript from '@/components/ClarityScript';
 import ConsentBanner from '@/components/ConsentBanner';
 import ServiceWorkerRegistrar from '@/components/ServiceWorkerRegistrar';
@@ -70,7 +71,7 @@ const jsonLd = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className={fontVariables} suppressHydrationWarning>
       <body>
         {children}
         <ClarityScript />
