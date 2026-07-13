@@ -19,17 +19,17 @@ export default function FaqAccordion() {
   return (
     <div className="space-y-3">
       {FAQS.map((faq, i) => (
-        <div key={i} className="bg-white rounded-2xl border border-brand-border shadow-card overflow-hidden">
-          <button type="button" onClick={() => setOpen(open === i ? null : i)} aria-expanded={open === i} className="w-full flex items-center justify-between px-6 py-5 text-left hover:bg-brand-bg transition-colors">
-            <span className="font-semibold text-text-dark pr-4">{faq.q}</span>
-            <motion.div animate={{ rotate: open === i ? 90 : 0 }} transition={{ duration: 0.2 }} className="shrink-0 text-text-light">
+        <div key={i} className="bg-surface-1 rounded-[16px] border border-stroke shadow-ds overflow-hidden">
+          <button type="button" onClick={() => setOpen(open === i ? null : i)} aria-expanded={open === i} className="w-full flex items-center justify-between px-6 py-5 text-left hover:bg-surface-2 transition-colors">
+            <span className="font-semibold text-ink pr-4">{faq.q}</span>
+            <motion.div animate={{ rotate: open === i ? 90 : 0 }} transition={{ duration: 0.2 }} className={`shrink-0 ${open === i ? 'text-teal' : 'text-ink-faint'}`}>
               <ChevronRight size={18} />
             </motion.div>
           </button>
           <AnimatePresence initial={false}>
             {open === i && (
               <motion.div key="content" initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.28, ease: [0.4, 0, 0.2, 1] }} className="overflow-hidden">
-                <div className="px-6 pb-5 pt-0 text-text-medium text-sm leading-relaxed border-t border-brand-border">
+                <div className="px-6 pb-5 pt-0 text-ink-sub text-sm leading-relaxed border-t border-stroke">
                   <div className="pt-4">{faq.a}</div>
                 </div>
               </motion.div>
