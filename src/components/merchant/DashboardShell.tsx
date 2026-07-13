@@ -39,7 +39,7 @@ function MerchantMark({ businessName, logoUrl, size }: { businessName: string; l
   if (logoUrl) {
     return (
       <div
-        className="rounded-lg overflow-hidden border border-border-light flex-shrink-0"
+        className="rounded-lg overflow-hidden border border-stroke flex-shrink-0"
         style={{ width: size, height: size }}
       >
         <Image src={logoUrl} alt={businessName} width={size} height={size} className="object-cover w-full h-full" unoptimized />
@@ -48,10 +48,10 @@ function MerchantMark({ businessName, logoUrl, size }: { businessName: string; l
   }
   return (
     <div
-      className="rounded-lg bg-primary-light flex items-center justify-center flex-shrink-0"
+      className="rounded-lg bg-teal-subtle flex items-center justify-center flex-shrink-0"
       style={{ width: size, height: size }}
     >
-      <span className="font-extrabold text-primary" style={{ fontSize: size * 0.45 }}>
+      <span className="font-extrabold text-teal" style={{ fontSize: size * 0.45 }}>
         {businessName[0]?.toUpperCase() ?? '?'}
       </span>
     </div>
@@ -83,9 +83,9 @@ export default function DashboardShell({ slug, businessName, logoUrl, children }
   const SidebarContent = () => (
     <div className="flex flex-col h-full">
       {/* Merchant logo + business name */}
-      <div className="flex items-center gap-3 px-5 py-6 border-b border-border-light">
+      <div className="flex items-center gap-3 px-5 py-6 border-b border-stroke">
         <MerchantMark businessName={businessName} logoUrl={logoUrl} size={36} />
-        <p className="text-sm font-bold text-text-dark truncate">{businessName}</p>
+        <p className="text-sm font-bold text-ink truncate">{businessName}</p>
       </div>
 
       {/* Nav links */}
@@ -98,10 +98,10 @@ export default function DashboardShell({ slug, businessName, logoUrl, children }
               href={item.href}
               onClick={() => setOpen(false)}
               className={clsx(
-                'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors',
+                'flex items-center gap-3 px-4 py-2.5 rounded-full text-body-sm font-semibold transition-colors',
                 active
-                  ? 'bg-primary text-white shadow-sm'
-                  : 'text-text-medium hover:bg-primary-light hover:text-primary',
+                  ? 'bg-reward text-reward-fg font-bold'
+                  : 'text-ink-sub hover:bg-surface-2 hover:text-ink',
               )}
             >
               {item.icon}
@@ -112,10 +112,10 @@ export default function DashboardShell({ slug, businessName, logoUrl, children }
       </nav>
 
       {/* Logout */}
-      <div className="px-3 py-4 border-t border-border-light space-y-3">
+      <div className="px-3 py-4 border-t border-stroke space-y-3">
         <button
           onClick={handleLogout}
-          className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-medium text-text-medium hover:bg-red-50 hover:text-status-error transition-colors"
+          className="flex items-center gap-3 w-full px-4 py-2.5 rounded-full text-body-sm font-semibold text-ink-sub hover:bg-bad-subtle hover:text-bad transition-colors"
         >
           <LogOut size={18} />
           Sign Out
@@ -128,9 +128,9 @@ export default function DashboardShell({ slug, businessName, logoUrl, children }
   );
 
   return (
-    <div className="flex h-screen bg-bg-muted overflow-hidden">
+    <div className="flex h-screen bg-surface-page overflow-hidden">
       {/* Desktop sidebar */}
-      <aside className="hidden md:flex md:flex-col w-60 bg-surface border-r border-border-light flex-shrink-0">
+      <aside className="hidden md:flex md:flex-col w-60 bg-surface-1 border-r border-stroke flex-shrink-0">
         <SidebarContent />
       </aside>
 
@@ -145,17 +145,17 @@ export default function DashboardShell({ slug, businessName, logoUrl, children }
       {/* Mobile drawer */}
       <aside
         className={clsx(
-          'fixed inset-y-0 left-0 w-64 bg-white z-50 flex flex-col transition-transform duration-200 md:hidden shadow-2xl',
+          'fixed inset-y-0 left-0 w-64 bg-surface-1 z-50 flex flex-col transition-transform duration-200 md:hidden shadow-2xl',
           open ? 'translate-x-0' : '-translate-x-full',
         )}
       >
-        <div className="flex items-center justify-between px-4 py-4 border-b border-border-light">
+        <div className="flex items-center justify-between px-4 py-4 border-b border-stroke">
           <div className="flex items-center gap-2.5 min-w-0">
             <MerchantMark businessName={businessName} logoUrl={logoUrl} size={28} />
-            <p className="text-sm font-bold text-text-dark truncate">{businessName}</p>
+            <p className="text-sm font-bold text-ink truncate">{businessName}</p>
           </div>
-          <button onClick={() => setOpen(false)} className="p-1 rounded-lg hover:bg-bg-muted flex-shrink-0">
-            <X size={20} className="text-text-medium" />
+          <button onClick={() => setOpen(false)} className="p-1 rounded-lg hover:bg-surface-2 flex-shrink-0">
+            <X size={20} className="text-ink-sub" />
           </button>
         </div>
         <div className="flex-1 overflow-y-auto">
@@ -166,15 +166,15 @@ export default function DashboardShell({ slug, businessName, logoUrl, children }
       {/* Main content */}
       <div className="flex flex-col flex-1 overflow-hidden">
         {/* Mobile top bar */}
-        <header className="md:hidden flex items-center gap-3 px-4 py-3 bg-surface border-b border-border-light">
+        <header className="md:hidden flex items-center gap-3 px-4 py-3 bg-surface-1 border-b border-stroke">
           <button
             onClick={() => setOpen(true)}
-            className="p-2 rounded-lg hover:bg-bg-muted"
+            className="p-2 rounded-lg hover:bg-surface-2"
           >
-            <Menu size={22} className="text-text-medium" />
+            <Menu size={22} className="text-ink-sub" />
           </button>
           <MerchantMark businessName={businessName} logoUrl={logoUrl} size={26} />
-          <span className="text-sm font-semibold text-text-dark truncate ml-auto">{businessName}</span>
+          <span className="text-sm font-semibold text-ink truncate ml-auto">{businessName}</span>
         </header>
 
         {/* Page content */}
