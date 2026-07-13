@@ -2,9 +2,8 @@
 
 import { useState, FormEvent } from 'react';
 import Link from 'next/link';
-import Input from '@/components/ui/Input';
-import Button from '@/components/ui/Button';
-import Logo from '@/components/ui/Logo';
+import { Button } from '@/components/ds';
+import AuthShell, { AuthField } from '@/components/merchant/AuthShell';
 import { Mail } from 'lucide-react';
 
 export default function ForgotPasswordPage() {
@@ -40,70 +39,51 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-bg-muted px-4 py-12">
-      <div className="w-full max-w-sm">
-        {/* Back to home */}
-        <div className="mb-6 text-center">
-          <Link href="/" className="inline-flex items-center gap-1 text-xs text-text-medium hover:text-primary transition-colors">
-            <span>←</span> Back to home
+    <AuthShell title="Forgot password?" subtitle="Enter your email and we'll send you a reset link.">
+      {submitted ? (
+        <div className="text-center py-4">
+          <div className="w-14 h-14 rounded-full bg-teal-subtle flex items-center justify-center mx-auto mb-4">
+            <Mail size={28} className="text-teal" />
+          </div>
+          <h2 className="font-display font-bold text-h4 text-ink mb-2">Check your email</h2>
+          <p className="text-ink-sub text-body-sm mb-6">
+            If <strong>{email}</strong> is registered, we&apos;ve sent a reset link. Check your inbox.
+          </p>
+          <Link href="/merchant/login" className="text-body-sm text-teal font-semibold hover:underline">
+            ← Back to login
           </Link>
         </div>
-        <div className="flex justify-center mb-8">
-          <Logo size={28} />
-        </div>
+      ) : (
+        <>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <AuthField
+              label="Email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@yourbusiness.com"
+              icon={<Mail size={16} />}
+              required
+            />
 
-        <div className="card">
-          {submitted ? (
-            <div className="text-center py-4">
-              <div className="w-14 h-14 rounded-full bg-primary-light flex items-center justify-center mx-auto mb-4">
-                <Mail size={28} className="text-primary" />
+            {error && (
+              <div className="rounded-[11px] bg-bad-subtle px-4 py-3 text-body-sm text-bad font-semibold">
+                {error}
               </div>
-              <h2 className="text-xl font-bold text-text-dark mb-2">Check your email</h2>
-              <p className="text-text-medium text-sm mb-6">
-                If <strong>{email}</strong> is registered, we&apos;ve sent a reset link. Check your inbox.
-              </p>
-              <Link href="/merchant/login" className="text-sm text-primary hover:underline font-medium">
-                ← Back to login
-              </Link>
-            </div>
-          ) : (
-            <>
-              <h1 className="text-2xl font-bold text-text-dark mb-1">Forgot password?</h1>
-              <p className="text-text-light text-sm mb-6">
-                Enter your email and we&apos;ll send you a reset link.
-              </p>
+            )}
 
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <Input
-                  label="Email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@yourbusiness.com"
-                  icon={<Mail size={16} />}
-                  required
-                />
+            <Button type="submit" fullWidth loading={loading}>
+              Send Reset Link
+            </Button>
+          </form>
 
-                {error && (
-                  <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-status-error font-medium">
-                    {error}
-                  </div>
-                )}
-
-                <Button type="submit" fullWidth loading={loading}>
-                  Send Reset Link
-                </Button>
-              </form>
-
-              <div className="mt-5 text-center">
-                <Link href="/merchant/login" className="text-sm text-primary hover:underline font-medium">
-                  ← Back to login
-                </Link>
-              </div>
-            </>
-          )}
-        </div>
-      </div>
-    </main>
+          <div className="mt-5 text-center">
+            <Link href="/merchant/login" className="text-body-sm text-teal font-semibold hover:underline">
+              ← Back to login
+            </Link>
+          </div>
+        </>
+      )}
+    </AuthShell>
   );
 }
