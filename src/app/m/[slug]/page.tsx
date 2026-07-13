@@ -16,6 +16,7 @@ import LiveClock from '@/components/merchant/LiveClock';
 import { getMerchantFromCookies } from '@/lib/session';
 import { query, queryOne } from '@/lib/db';
 import { maskPhone } from '@/lib/utils';
+import { Badge, Card, EmptyState, Table, THead, TH, TBody, TR, TD } from '@/components/ds';
 
 type PageProps = { params: Promise<{ slug: string }> };
 
@@ -32,21 +33,15 @@ function timeAgo(dateStr: string): string {
 }
 
 // ── StatCard ─────────────────────────────────────────────────────────────────
-function StatCard({
-  icon, label, value, color,
-}: {
-  icon: React.ReactNode; label: string; value: number | string; color: string;
-}) {
+function StatCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: number | string }) {
   return (
-    <div className={`card flex items-center gap-4 border-t-4 ${color}`}>
-      <div className="p-2.5 rounded-xl bg-primary-light text-primary flex-shrink-0">
-        {icon}
-      </div>
+    <Card padding="sm" className="flex items-center gap-4">
+      <div className="p-2.5 rounded-xl bg-teal-subtle text-teal flex-shrink-0">{icon}</div>
       <div>
-        <p className="text-2xl font-bold text-text-dark">{value}</p>
-        <p className="text-xs font-medium text-text-light uppercase tracking-wide">{label}</p>
+        <p className="text-2xl font-display font-bold text-ink [font-variant-numeric:tabular-nums]">{value}</p>
+        <p className="text-label uppercase text-ink-faint">{label}</p>
       </div>
-    </div>
+    </Card>
   );
 }
 
@@ -171,41 +166,37 @@ export default async function MerchantDashboardPage({ params }: PageProps) {
           icon={<QrCode size={20} />}
           label="Scans Today"
           value={stats.scans_today}
-          color="border-primary"
         />
         <StatCard
           icon={<Users size={20} />}
           label="Active Customers"
           value={stats.active_customers}
-          color="border-purple-400"
         />
         <StatCard
           icon={<TrendingUp size={20} />}
           label="Visits Today"
           value={stats.scans_today}
-          color="border-amber-400"
         />
         <StatCard
           icon={<Gift size={20} />}
           label="Redeemed This Week"
           value={stats.redeemed_week}
-          color="border-emerald-400"
         />
       </div>
 
       {/* ── Generate QR — always-visible primary action ── */}
       <Link
         href={`/m/${slug}/qr`}
-        className="flex items-center gap-4 bg-primary hover:bg-primary/90 transition-colors text-white rounded-2xl px-5 py-4 shadow-md"
+        className="flex items-center gap-4 bg-teal hover:bg-teal-hover transition-colors text-teal-fg rounded-[16px] px-5 py-4 shadow-ds"
       >
         <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
           <QrCode size={26} />
         </div>
         <div className="flex-1">
-          <p className="font-bold text-lg leading-tight">Generate QR Code</p>
-          <p className="text-white/80 text-sm">Show QR to customer to earn stamps</p>
+          <p className="font-display font-bold text-lg leading-tight">Generate QR Code</p>
+          <p className="opacity-80 text-body-sm">Show QR to customer to earn stamps</p>
         </div>
-        <ArrowRight size={20} className="text-white/70 flex-shrink-0" />
+        <ArrowRight size={20} className="opacity-70 flex-shrink-0" />
       </Link>
 
       {/* ── Middle Row: Campaign + Recent Transactions ── */}
@@ -213,146 +204,138 @@ export default async function MerchantDashboardPage({ params }: PageProps) {
 
         {/* Campaign card */}
         {campaign ? (
-          <div
-            className="card"
-            style={{ background: 'linear-gradient(135deg, #1a2e2a 0%, #2d4a3e 100%)' }}
-          >
-            <p className="text-xs font-semibold text-emerald-400 uppercase tracking-widest mb-2">
-              Running Campaign
-            </p>
+          <div className="rounded-[16px] bg-section-dark p-5 shadow-ds">
+            <p className="text-label uppercase text-[#9FE7CC] mb-2">Running Campaign</p>
             <div className="flex items-start justify-between gap-2">
-              <h2 className="text-xl font-bold text-white">{campaign.name}</h2>
-              <span className="text-2xl font-bold text-white">{campaign.member_count}</span>
+              <h2 className="text-xl font-display font-bold text-white">{campaign.name}</h2>
+              <span className="text-2xl font-display font-bold text-white [font-variant-numeric:tabular-nums]">{campaign.member_count}</span>
             </div>
-            <p className="text-text-light text-sm mt-1 flex items-center gap-1">
-              <Gift size={14} className="text-emerald-400" />
+            <p className="text-[#AEBDB5] text-body-sm mt-1 flex items-center gap-1">
+              <Gift size={14} className="text-[#F2C230]" />
               {campaign.reward_description}
             </p>
-            <p className="text-xs text-text-light mt-1">
+            <p className="text-caption text-[#7C8C84] mt-1">
               {campaign.campaign_type === 'spend_based'
                 ? `₹${campaign.reward_threshold} spend to unlock`
                 : `${campaign.reward_threshold} visits to unlock`}
             </p>
             <div className="flex items-center justify-between mt-4">
-              <span className="text-xs text-text-light">{campaign.member_count} members</span>
-              <span className="text-xs text-emerald-400">{campaign.redeemed_count} redeemed</span>
+              <span className="text-caption text-[#7C8C84]">{campaign.member_count} members</span>
+              <span className="text-caption text-[#F2C230] font-semibold">{campaign.redeemed_count} redeemed</span>
             </div>
           </div>
         ) : (
-          <div className="card flex flex-col items-center justify-center py-10 text-center border-2 border-dashed border-border-light">
-            <Star size={32} className="text-text-light mb-3" />
-            <p className="text-text-medium font-medium">No active campaign</p>
-            <p className="text-sm text-text-light mt-1 mb-4">Create one to start rewarding customers</p>
-            <Link href={`/m/${slug}/campaign`} className="btn-primary text-sm px-4 py-2">
-              Create Campaign
-            </Link>
-          </div>
+          <EmptyState
+            title="No active campaign"
+            description="Create one to start rewarding customers"
+            action={
+              <Link href={`/m/${slug}/campaign`} className="inline-flex items-center rounded-full bg-teal text-teal-fg font-bold text-body-sm px-5 py-2.5 hover:bg-teal-hover transition-colors">
+                Create Campaign
+              </Link>
+            }
+          />
         )}
 
         {/* Recent Transactions */}
-        <div className="card">
+        <Card padding="md">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold text-text-dark">Recent Transactions</h2>
-            <span className="text-xs text-text-light flex items-center gap-1">
+            <h2 className="font-display font-bold text-h4 text-ink">Recent Transactions</h2>
+            <span className="text-caption text-ink-faint flex items-center gap-1">
               <Clock size={12} /> Updated just now
             </span>
           </div>
 
           {recentVisits.length === 0 ? (
-            <div className="text-center py-8 text-text-light">
+            <div className="text-center py-8 text-ink-faint">
               <QrCode size={32} className="mx-auto mb-2 opacity-30" />
-              <p className="text-sm">No transactions yet</p>
-              <p className="text-xs mt-1">Show QR code to start scanning</p>
+              <p className="text-body-sm">No transactions yet</p>
+              <p className="text-caption mt-1">Show QR code to start scanning</p>
             </div>
           ) : (
-            <ul className="space-y-3">
-              {recentVisits.map((v, i) => {
-                const displayName = v.customer_name || maskPhone(v.phone_number);
-                const isEarn = v.points_added > 0;
-                return (
-                  <li key={i} className="flex items-center gap-3">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${isEarn ? 'bg-green-50' : 'bg-red-50'}`}>
-                      <TrendingUp size={14} className={isEarn ? 'text-green-600' : 'text-red-500 rotate-180'} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-text-dark truncate">{displayName}</p>
-                      <p className="text-xs text-text-light">{campaign?.name ?? 'Loyalty'}</p>
-                    </div>
-                    <div className="text-right flex-shrink-0">
-                      <p className={`text-sm font-semibold ${isEarn ? 'text-green-600' : 'text-red-500'}`}>
+            <Table density="compact">
+              <THead>
+                <TR><TH>Customer</TH><TH>Points</TH><TH>When</TH></TR>
+              </THead>
+              <TBody>
+                {recentVisits.map((v, i) => {
+                  const displayName = v.customer_name || maskPhone(v.phone_number);
+                  const isEarn = v.points_added > 0;
+                  return (
+                    <TR key={i}>
+                      <TD className="font-semibold text-ink">{displayName}</TD>
+                      <TD className={isEarn ? 'text-good font-bold' : 'text-bad font-bold'}>
                         {isEarn ? '+' : ''}{v.points_added}
                         {campaign?.campaign_type === 'spend_based' ? 'pt' : ' visit'}
-                      </p>
-                      <p className="text-xs text-text-light">{timeAgo(v.created_at)}</p>
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
+                      </TD>
+                      <TD className="text-ink-faint">{timeAgo(v.created_at)}</TD>
+                    </TR>
+                  );
+                })}
+              </TBody>
+            </Table>
           )}
-        </div>
+        </Card>
       </div>
 
       {/* ── Insights ── */}
       {(closeToReward.length > 0 || pendingRedeems.length > 0) && (
-        <div className="card">
+        <Card padding="md">
           <div className="flex items-center gap-2 mb-4">
-            <Bell size={18} className="text-primary" />
-            <h2 className="font-semibold text-text-dark">Customer Insights</h2>
+            <Bell size={18} className="text-teal" />
+            <h2 className="font-display font-bold text-h4 text-ink">Customer Insights</h2>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-
             {pendingRedeems.length > 0 && (
               <Link href={`/m/${slug}/redeem`}>
-                <div className="flex items-start gap-3 p-3 rounded-xl bg-amber-50 border border-amber-200 hover:bg-amber-100 transition-colors cursor-pointer">
-                  <Gift size={20} className="text-amber-600 mt-0.5 flex-shrink-0" />
+                <div className="flex items-start gap-3 p-3 rounded-[11px] bg-reward-subtle border border-reward/40 hover:brightness-[0.98] transition-[filter] cursor-pointer">
+                  <Gift size={20} className="text-reward-deep mt-0.5 flex-shrink-0" />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <p className="text-sm font-semibold text-amber-800">Rewards Waiting to Redeem</p>
-                      <span className="text-xs font-bold bg-amber-500 text-white px-1.5 py-0.5 rounded-full">HIGH</span>
+                      <p className="text-body-sm font-bold text-reward-deep">Rewards Waiting to Redeem</p>
+                      <Badge intent="reward" dot={false}>HIGH</Badge>
                     </div>
-                    <p className="text-xs text-amber-700 mt-0.5">
+                    <p className="text-caption text-ink-sub mt-0.5">
                       {pendingRedeems.length} customer{pendingRedeems.length > 1 ? 's' : ''} ha{pendingRedeems.length > 1 ? 've' : 's'} an unlocked reward waiting.
                     </p>
                   </div>
-                  <ArrowRight size={16} className="text-amber-500 mt-0.5 flex-shrink-0" />
+                  <ArrowRight size={16} className="text-reward-deep mt-0.5 flex-shrink-0" />
                 </div>
               </Link>
             )}
 
             {closeToReward.length > 0 && (
-              <div className="flex items-start gap-3 p-3 rounded-xl bg-primary-light border border-primary/20">
-                <Star size={20} className="text-primary mt-0.5 flex-shrink-0" />
+              <div className="flex items-start gap-3 p-3 rounded-[11px] bg-teal-subtle border border-teal/20">
+                <Star size={20} className="text-teal mt-0.5 flex-shrink-0" />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <p className="text-sm font-semibold text-primary">Customers Close to Reward</p>
-                    <span className="text-xs font-bold bg-primary text-white px-1.5 py-0.5 rounded-full">HIGH</span>
+                    <p className="text-body-sm font-bold text-teal">Customers Close to Reward</p>
+                    <Badge intent="teal" dot={false}>HIGH</Badge>
                   </div>
-                  <p className="text-xs text-text-medium mt-0.5">
+                  <p className="text-caption text-ink-sub mt-0.5">
                     {closeToReward.length} customer{closeToReward.length > 1 ? 's are' : ' is'} 75%+ of the way to unlocking their reward.
                   </p>
                 </div>
               </div>
             )}
           </div>
-        </div>
+        </Card>
       )}
 
       {/* ── Quick Actions ── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: 'Customers',    href: `/m/${slug}/customers`,  icon: <Users size={18} /> },
-          { label: 'Validate',     href: `/m/${slug}/validate`,   icon: <ShieldCheck size={18} /> },
-          { label: 'Feedback',     href: `/m/${slug}/feedback`,   icon: <Star size={18} /> },
-          { label: 'Campaign',     href: `/m/${slug}/campaign`,   icon: <Gift size={18} /> },
+          { label: 'Customers', href: `/m/${slug}/customers`, icon: <Users size={18} /> },
+          { label: 'Validate',  href: `/m/${slug}/validate`,  icon: <ShieldCheck size={18} /> },
+          { label: 'Feedback',  href: `/m/${slug}/feedback`,  icon: <Star size={18} /> },
+          { label: 'Campaign',  href: `/m/${slug}/campaign`,  icon: <Gift size={18} /> },
         ].map(({ label, href, icon }) => (
           <Link
             key={href}
             href={href}
-            className="card flex flex-col items-center gap-2 py-5 hover:bg-primary-light hover:border-primary/20 transition-colors text-center group"
+            className="rounded-[16px] border border-stroke bg-surface-1 shadow-ds flex flex-col items-center gap-2 py-5 hover:bg-teal-subtle hover:border-teal/20 transition-colors text-center group"
           >
-            <span className="text-primary group-hover:scale-110 transition-transform">{icon}</span>
-            <span className="text-sm font-medium text-text-medium group-hover:text-primary">{label}</span>
+            <span className="text-teal group-hover:scale-110 transition-transform">{icon}</span>
+            <span className="text-body-sm font-semibold text-ink-sub group-hover:text-teal">{label}</span>
           </Link>
         ))}
       </div>
