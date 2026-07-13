@@ -59,6 +59,16 @@ const checks = [
   ['dark text-secondary on surface-2', dark.textS, dark.s2, 4.5],
 ];
 
+// Marketing dark bands (#0E1A17) — theme-independent
+const band = '#0E1A17';
+checks.push(
+  ['band white on section-dark', '#FFFFFF', band, 4.5],
+  ['band secondary #AEBDB5 on section-dark', '#AEBDB5', band, 4.5],
+  ['band tertiary #7C8C84 on section-dark (large/labels)', '#7C8C84', band, 3.0],
+  ['band mint kicker #9FE7CC on section-dark', '#9FE7CC', band, 4.5],
+  ['band honey serif #F2C230 on section-dark (large text)', '#F2C230', band, 3.0],
+);
+
 let failed = 0;
 for (const [name, fg, bg, min] of checks) {
   const r = ratio(fg, bg);
