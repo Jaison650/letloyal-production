@@ -16,12 +16,12 @@ export default async function FeedbackPage({ params }: PageProps) {
   return (
     <div>
       <div className="flex items-center gap-3 mb-6">
-        <div className="w-10 h-10 rounded-xl bg-primary-light flex items-center justify-center">
-          <MessageSquare size={20} className="text-primary" />
+        <div className="w-10 h-10 rounded-xl bg-teal-subtle flex items-center justify-center">
+          <MessageSquare size={20} className="text-teal" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-text-dark">Customer Feedback</h1>
-          <p className="text-sm text-text-medium">
+          <h1 className="text-2xl font-bold text-ink">Customer Feedback</h1>
+          <p className="text-sm text-ink-sub">
             Reviews left by customers after their visit.
           </p>
         </div>

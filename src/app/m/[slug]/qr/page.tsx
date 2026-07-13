@@ -57,12 +57,12 @@ export default async function QRPage({ params }: PageProps) {
   return (
     <div>
       <div className="flex items-center gap-3 mb-6">
-        <div className="w-10 h-10 rounded-xl bg-primary-light flex items-center justify-center">
-          <QrCode size={20} className="text-primary" />
+        <div className="w-10 h-10 rounded-xl bg-teal-subtle flex items-center justify-center">
+          <QrCode size={20} className="text-teal" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-text-dark">QR Code</h1>
-          <p className="text-sm text-text-medium">
+          <h1 className="text-2xl font-bold text-ink">QR Code</h1>
+          <p className="text-sm text-ink-sub">
             {campaign.campaign_type === 'visit_based'
               ? 'Show this QR to customers to stamp their card.'
               : 'Select an amount and show the QR to customers.'}
@@ -71,8 +71,8 @@ export default async function QRPage({ params }: PageProps) {
       </div>
 
       {/* Campaign info pill */}
-      <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary-light text-primary text-xs font-semibold mb-6">
-        <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+      <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-teal-subtle text-teal text-xs font-semibold mb-6">
+        <span className="w-1.5 h-1.5 rounded-full bg-teal" />
         {campaign.name} ·{' '}
         {campaign.campaign_type === 'visit_based' ? 'Visit-based' : 'Spend-based'}
       </div>

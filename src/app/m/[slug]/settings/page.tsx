@@ -60,8 +60,8 @@ export default async function SettingsPage({ params }: PageProps) {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-text-dark mb-1">Settings</h1>
-      <p className="text-text-medium text-sm mb-6">
+      <h1 className="text-2xl font-bold text-ink mb-1">Settings</h1>
+      <p className="text-ink-sub text-sm mb-6">
         Manage your store profile, branding, and menu items.
       </p>
 

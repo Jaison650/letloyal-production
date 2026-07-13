@@ -30,14 +30,14 @@ export default async function CampaignPage({ params }: PageProps) {
   return (
     <div>
       <div className="flex items-center gap-3 mb-6">
-        <div className="w-10 h-10 rounded-xl bg-primary-light flex items-center justify-center">
-          <Megaphone size={20} className="text-primary" />
+        <div className="w-10 h-10 rounded-xl bg-teal-subtle flex items-center justify-center">
+          <Megaphone size={20} className="text-teal" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-text-dark">
+          <h1 className="text-2xl font-bold text-ink">
             {campaign ? 'Your Campaign' : 'Create a Campaign'}
           </h1>
-          <p className="text-sm text-text-medium">
+          <p className="text-sm text-ink-sub">
             {campaign
               ? 'Edit your loyalty campaign settings below.'
               : 'Set up how customers earn and redeem rewards.'}
@@ -47,7 +47,7 @@ export default async function CampaignPage({ params }: PageProps) {
 
       {/* Info card when no campaign exists */}
       {!campaign && (
-        <div className="mb-6 p-4 rounded-xl bg-primary-light/30 border border-primary/20 text-sm text-primary">
+        <div className="mb-6 p-4 rounded-xl bg-teal-subtle/30 border border-teal/20 text-sm text-teal">
           <strong>No active campaign yet.</strong> Choose a type and launch your first campaign.
           Customers won&apos;t be able to earn points until a campaign is active.
         </div>
