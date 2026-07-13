@@ -35,14 +35,18 @@ src/components/marketing/
   LegalLayout.tsx         ← nav + prose shell + footer for the 5 legal pages
   sections/
     Hero.tsx
-    SocialProof.tsx       ← "Trusted by merchants across India" + merchant-type marquee
+    SocialProof.tsx       ← merchant-type marquee strip
+    Problem.tsx           ← "paper stamp cards" 3-card section (lucide icons replace emoji)
     HowItWorks.tsx        ← 3 steps (existing STEPS content, tightened)
     Features.tsx          ← 6 features grid (existing FEATURES content)
-    LiveDemo.tsx          ← 6 DEMO_MERCHANTS as restyled loyalty cards (existing links to /s/[slug] kept)
+    CampaignTypes.tsx     ← visit-based (teal) vs spend-based (honey/reward) model cards
+    LiveDemo.tsx          ← 6 DEMO_MERCHANTS cards on a dark band (existing /merchant/login links kept)
     Testimonials.tsx      ← existing 3 testimonials verbatim (real quotes — do not rewrite)
     Faq.tsx               ← wraps existing FaqAccordion, re-tokened
     FinalCta.tsx          ← dark band CTA
 ```
+
+`MarketingNav` takes a `tone` prop: `onDark` (homepage — glassy over the dark hero, switching to light on scroll) or `light` (legal pages — always the light scrolled style). HomeNav is deleted once the homepage switches (no other importers).
 
 `src/app/page.tsx` becomes a ~30-line composition of these sections. Data constants (`DEMO_MERCHANTS`, `FEATURES`, `STEPS`, `TESTIMONIALS`) move into their consuming section files. The `FadeUp` motion helper moves to `src/components/marketing/motion.tsx` and is shared.
 
@@ -70,7 +74,7 @@ All styling uses Phase-0 tokens and `@/components/ds` primitives. No hardcoded h
 
 ## Legal pages
 
-`LegalLayout` wraps the 5 pages (`cookie-policy`, `privacy-policy`, `terms-of-service`, `merchant-terms`, `merchant-rights`): MarketingNav (scrolled state), a `max-w-3xl` prose column (`text-ink` headings in Manrope, `text-ink-sub` body, token links), MarketingFooter. Page content markup untouched beyond swapping the wrapper.
+`LegalLayout` wraps the 6 pages (`cookie-policy`, `privacy-policy`, `terms-of-service`, `merchant-terms`, `merchant-rights`, `customer-policy`): MarketingNav (scrolled state), a `max-w-3xl` prose column (`text-ink` headings in Manrope, `text-ink-sub` body, token links), MarketingFooter. Page content markup untouched beyond swapping the wrapper.
 
 ## Verification
 
