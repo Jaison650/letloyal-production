@@ -24,11 +24,15 @@ export default function AuthShell({
   subtitle,
   children,
   footer,
+  backHref = '/',
+  backLabel = 'Back to home',
 }: {
   title: string;
   subtitle?: string;
   children: React.ReactNode;
   footer?: React.ReactNode;
+  backHref?: string;
+  backLabel?: string;
 }) {
   return (
     <div className="min-h-screen flex bg-surface-page">
@@ -64,8 +68,8 @@ export default function AuthShell({
             </Link>
           </div>
           <div className="mb-4 text-center">
-            <Link href="/" className="inline-flex items-center gap-1 text-caption text-ink-sub hover:text-teal transition-colors">
-              <span>←</span> Back to home
+            <Link href={backHref} className="inline-flex items-center gap-1 text-caption text-ink-sub hover:text-teal transition-colors">
+              <span>←</span> {backLabel}
             </Link>
           </div>
           <Card padding="lg">

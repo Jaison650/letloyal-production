@@ -2,9 +2,8 @@
 
 import { useState, FormEvent, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import Link from 'next/link';
-import Logo from '@/components/ui/Logo';
-import Button from '@/components/ui/Button';
+import { Button } from '@/components/ds';
+import AuthShell from '@/components/merchant/AuthShell';
 
 function VerifyForm() {
   const router = useRouter();
@@ -64,14 +63,12 @@ function VerifyForm() {
   }
 
   return (
-    <div className="card">
-      <h1 className="text-2xl font-bold text-text-dark mb-1">Verify your email</h1>
-      <p className="text-text-light text-sm mb-2">We sent a 6-digit code to</p>
-      <p className="text-primary font-semibold text-sm mb-6">{email}</p>
+    <>
+      <p className="text-teal font-semibold text-body-sm mb-6 -mt-4">{email}</p>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-text-dark mb-1">Verification Code</label>
+          <label className="block text-body-sm font-semibold text-ink mb-1.5">Verification Code</label>
           <input
             type="text"
             inputMode="numeric"
@@ -80,18 +77,18 @@ function VerifyForm() {
             onChange={e => setOtp(e.target.value.replace(/\D/g, ''))}
             required
             placeholder="000000"
-            className="w-full border border-border-light rounded-xl px-4 py-3 text-lg tracking-widest text-center font-bold focus:outline-none focus:ring-2 focus:ring-primary"
+            className="w-full border-[1.5px] border-stroke-strong bg-surface-1 text-ink rounded-[11px] px-4 py-3 text-lg tracking-widest text-center font-bold placeholder:text-ink-faint focus:outline-none focus:border-teal focus:shadow-ring"
           />
         </div>
 
         {error && (
-          <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-status-error font-medium">
+          <div className="rounded-[11px] bg-bad-subtle px-4 py-3 text-body-sm text-bad font-semibold">
             {error}
           </div>
         )}
 
         {resent && (
-          <div className="rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm text-emerald-700 font-medium">
+          <div className="rounded-[11px] bg-good-subtle px-4 py-3 text-body-sm text-good font-semibold">
             New code sent! Check your inbox.
           </div>
         )}
@@ -107,38 +104,27 @@ function VerifyForm() {
         </Button>
       </form>
 
-      <p className="text-center text-sm text-text-medium mt-5">
+      <p className="text-center text-body-sm text-ink-sub mt-5">
         Didn&apos;t receive it?{' '}
-        <button onClick={handleResend} className="text-primary hover:underline font-semibold">
+        <button onClick={handleResend} className="text-teal hover:underline font-semibold">
           Resend code
         </button>
       </p>
-    </div>
+    </>
   );
 }
 
 export default function VerifyEmailPage() {
   return (
-    <main className="min-h-screen flex items-center justify-center bg-bg-muted px-4 py-12">
-      <div className="w-full max-w-sm">
-        <div className="mb-6 text-center">
-          <Link href="/merchant/register" className="inline-flex items-center gap-1 text-xs text-text-medium hover:text-primary transition-colors">
-            <span>←</span> Back to register
-          </Link>
-        </div>
-
-        <div className="flex justify-center mb-8">
-          <Logo size={28} />
-        </div>
-
-        <Suspense fallback={<div className="card"><p className="text-sm text-text-medium">Loading…</p></div>}>
-          <VerifyForm />
-        </Suspense>
-
-        <p className="mt-6 text-center text-xs text-text-light">
-          Powered by LetLoyal
-        </p>
-      </div>
-    </main>
+    <AuthShell
+      title="Verify your email"
+      subtitle="We sent a 6-digit code to"
+      backHref="/merchant/register"
+      backLabel="Back to register"
+    >
+      <Suspense fallback={<p className="text-body-sm text-ink-sub">Loading…</p>}>
+        <VerifyForm />
+      </Suspense>
+    </AuthShell>
   );
 }
