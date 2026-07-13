@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import { Bell, Users, Send, Clock, Star, Target, UserPlus, Moon } from 'lucide-react';
 import { clsx } from 'clsx';
 import InfoTooltip from '@/components/ui/InfoTooltip';
+import { Button, Card, Input, Textarea } from '@/components/ds';
 
 type Segment = 'all' | 'near_milestone' | 'loyal' | 'one_time' | 'inactive';
 
@@ -52,15 +53,15 @@ function SuggestionChips({ items, onSelect }: {
   return (
     <div>
       <button type="button" onClick={() => setOpen(v => !v)}
-        className="mt-1.5 text-xs text-primary font-medium hover:text-primary/70 transition-colors">
+        className="mt-1.5 text-xs text-teal font-medium hover:text-teal/70 transition-colors">
         Suggest a message
       </button>
       {open && (
-        <div className="flex flex-wrap gap-2 mt-2 p-3 rounded-xl bg-primary-light/30 border border-primary/10">
+        <div className="flex flex-wrap gap-2 mt-2 p-3 rounded-xl bg-teal-subtle/30 border border-teal/10">
           {items.map(item => (
             <button key={item} type="button"
               onClick={() => { onSelect(item); setOpen(false); }}
-              className="px-3 py-1.5 rounded-full bg-white border border-primary/20 text-primary text-xs font-medium hover:bg-primary hover:text-white transition-colors shadow-sm">
+              className="px-3 py-1.5 rounded-full bg-surface-1 border border-teal/20 text-teal text-xs font-medium hover:bg-teal hover:text-teal-fg transition-colors shadow-sm">
               {item}
             </button>
           ))}
@@ -176,52 +177,52 @@ export default function MerchantPushPage() {
     <div className="max-w-lg space-y-6">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-primary-light flex items-center justify-center">
-          <Bell size={20} className="text-primary" />
+        <div className="w-10 h-10 rounded-xl bg-teal-subtle flex items-center justify-center">
+          <Bell size={20} className="text-teal" />
         </div>
         <div>
-          <h1 className="text-xl font-bold text-text-dark">Push Notifications</h1>
-          <p className="text-sm text-text-light">Send a message to customers who&apos;ve opted in.</p>
+          <h1 className="text-xl font-bold text-ink">Push Notifications</h1>
+          <p className="text-sm text-ink-faint">Send a message to customers who&apos;ve opted in.</p>
         </div>
       </div>
 
       {/* Subscriber count card */}
-      <div className="card flex flex-wrap items-center gap-4">
-        <div className="w-12 h-12 rounded-xl bg-primary-light flex items-center justify-center flex-shrink-0">
-          <Users size={22} className="text-primary" />
+      <Card padding="md" className="flex flex-wrap items-center gap-4">
+        <div className="w-12 h-12 rounded-xl bg-teal-subtle flex items-center justify-center flex-shrink-0">
+          <Users size={22} className="text-teal" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-xs font-semibold text-text-medium uppercase tracking-wide">Subscribers</p>
-          <p className="text-3xl font-extrabold text-text-dark mt-0.5">
+          <p className="text-xs font-semibold text-ink-sub uppercase tracking-wide">Subscribers</p>
+          <p className="text-3xl font-extrabold text-ink mt-0.5">
             {loading ? '—' : (subCount ?? 0)}
           </p>
         </div>
         <div className="text-right min-w-0 max-w-full basis-full sm:basis-auto sm:max-w-[140px]">
-          <p className="text-xs text-text-medium">{blastsUsed}/{blastLimit} sent this month</p>
-          <p className="text-xs text-text-light mt-0.5">Resets on a rolling 30-day window</p>
+          <p className="text-xs text-ink-sub">{blastsUsed}/{blastLimit} sent this month</p>
+          <p className="text-xs text-ink-faint mt-0.5">Resets on a rolling 30-day window</p>
         </div>
-      </div>
+      </Card>
 
       {!loading && (subCount ?? 0) === 0 && (
-        <div className="card text-center py-6 text-text-medium">
+        <Card padding="md" className="text-center py-6 text-ink-sub">
           <Bell size={28} className="mx-auto mb-2 opacity-30" />
           <p className="text-sm">No subscribers yet — customers opt in from their rewards page.</p>
-        </div>
+        </Card>
       )}
 
       {!loading && (
-        <form onSubmit={handleSend} className="card space-y-5">
-          <p className="font-semibold text-text-dark">Send a notification</p>
+        <form onSubmit={handleSend} className="rounded-[16px] border border-stroke bg-surface-1 shadow-ds p-5 space-y-5">
+          <p className="font-semibold text-ink">Send a notification</p>
 
           {limitReached && (
-            <div className="bg-yellow-50 border border-yellow-200 rounded-xl px-4 py-3 text-sm text-yellow-800">
+            <div className="bg-warn-subtle rounded-[11px] px-4 py-3 text-sm text-warn">
               Monthly limit reached — available again as older sends roll off.
             </div>
           )}
 
           {/* Audience segment selector */}
           <div>
-            <label className="text-xs font-semibold text-text-medium uppercase tracking-wide mb-3 block">
+            <label className="text-xs font-semibold text-ink-sub uppercase tracking-wide mb-3 block">
               Send to
             </label>
             <div className="grid grid-cols-2 gap-2">
@@ -235,18 +236,18 @@ export default function MerchantPushPage() {
                     onClick={() => { setSegment(id); setSent(null); setFormError(''); }}
                     className={clsx(
                       'flex items-start gap-2.5 p-3 rounded-xl border-2 text-left transition-all disabled:opacity-40',
-                      active ? 'border-primary bg-primary-light/50 text-primary' : 'border-border-light hover:border-primary/40 text-text-medium',
+                      active ? 'border-teal bg-teal-subtle/50 text-teal' : 'border-stroke hover:border-teal/40 text-ink-sub',
                     )}
                   >
                     <span className={clsx(
                       'w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5',
-                      active ? 'bg-primary text-white' : 'bg-bg-muted text-text-light',
+                      active ? 'bg-teal text-teal-fg' : 'bg-surface-2 text-ink-faint',
                     )}>
                       {icon}
                     </span>
                     <div className="min-w-0">
                       <p className="text-xs font-semibold leading-tight">{SEGMENT_LABELS[id]}</p>
-                      <p className={clsx('text-[10px] mt-0.5 leading-tight', active ? 'opacity-80' : 'text-text-light')}>
+                      <p className={clsx('text-[10px] mt-0.5 leading-tight', active ? 'opacity-80' : 'text-ink-faint')}>
                         {SEGMENT_DESCRIPTIONS[id]}
                       </p>
                     </div>
@@ -255,7 +256,7 @@ export default function MerchantPushPage() {
               })}
             </div>
 
-            <p className="text-xs text-text-light mt-2">
+            <p className="text-xs text-ink-faint mt-2">
               {segLoading ? '…' : `Estimated reach: ${segmentCount ?? 0} customer${segmentCount === 1 ? '' : 's'}`}
             </p>
           </div>
@@ -263,18 +264,17 @@ export default function MerchantPushPage() {
           <div>
             <div className="flex items-center justify-between mb-1">
               <div className="flex items-center">
-                <label className="text-xs font-medium text-text-medium">Title</label>
+                <label className="text-xs font-medium text-ink-sub">Title</label>
                 <InfoTooltip text="Shown as the notification headline, prefixed with your business name." />
               </div>
-              <span className="text-xs text-text-light">{title.length}/{TITLE_MAX}</span>
+              <span className="text-xs text-ink-faint">{title.length}/{TITLE_MAX}</span>
             </div>
-            <input
+            <Input
               type="text"
               value={title}
               onChange={e => setTitle(e.target.value.slice(0, TITLE_MAX))}
               placeholder="e.g. Weekend special!"
               disabled={limitReached}
-              className="form-input"
             />
             <SuggestionChips items={TITLE_SUGGESTIONS} onSelect={v => setTitle(v.slice(0, TITLE_MAX))} />
           </div>
@@ -282,53 +282,54 @@ export default function MerchantPushPage() {
           <div>
             <div className="flex items-center justify-between mb-1">
               <div className="flex items-center">
-                <label className="text-xs font-medium text-text-medium">Message</label>
+                <label className="text-xs font-medium text-ink-sub">Message</label>
                 <InfoTooltip text="The main body text of the notification." />
               </div>
-              <span className="text-xs text-text-light">{body.length}/{BODY_MAX}</span>
+              <span className="text-xs text-ink-faint">{body.length}/{BODY_MAX}</span>
             </div>
-            <textarea
+            <Textarea
               value={body}
               onChange={e => setBody(e.target.value.slice(0, BODY_MAX))}
               placeholder="e.g. Visit us today and earn your stamp!"
               disabled={limitReached}
               rows={3}
-              className="form-input resize-none"
+              className="resize-none"
             />
             <SuggestionChips items={BODY_SUGGESTIONS} onSelect={v => setBody(v.slice(0, BODY_MAX))} />
           </div>
 
-          {formError && <p className="text-xs text-status-error">{formError}</p>}
+          {formError && <p className="text-xs text-bad">{formError}</p>}
           {sent !== null && (
-            <p className="text-xs text-green-600 font-medium">Sent to {sent} customer{sent === 1 ? '' : 's'}.</p>
+            <p className="text-xs text-good font-medium">Sent to {sent} customer{sent === 1 ? '' : 's'}.</p>
           )}
 
-          <button
+          <Button
             type="submit"
             disabled={sending || limitReached || noReach}
-            className="btn-primary w-full flex items-center justify-center gap-2 font-bold rounded-full px-8 py-3 transition-all disabled:opacity-50 text-base"
+            fullWidth
+            size="lg"
           >
             <Send size={15} />
             {sending ? 'Sending…' : 'Send Notification'}
-          </button>
+          </Button>
         </form>
       )}
 
       {/* Recent blasts */}
       {!loading && blasts.length > 0 && (
         <div className="space-y-3">
-          <p className="text-xs font-semibold text-text-medium uppercase tracking-wide">Recently sent</p>
+          <p className="text-xs font-semibold text-ink-sub uppercase tracking-wide">Recently sent</p>
           {blasts.map(b => (
-            <div key={b.id} className="card space-y-1">
+            <Card key={b.id} padding="md" className="space-y-1">
               <div className="flex items-start justify-between gap-2">
-                <p className="font-semibold text-text-dark text-sm truncate">{b.title}</p>
-                <span className="flex items-center gap-1 text-xs text-text-light flex-shrink-0 mt-0.5">
+                <p className="font-semibold text-ink text-sm truncate">{b.title}</p>
+                <span className="flex items-center gap-1 text-xs text-ink-faint flex-shrink-0 mt-0.5">
                   <Clock size={11} /> {timeAgo(b.sent_at)}
                 </span>
               </div>
-              <p className="text-xs text-text-medium">{b.body}</p>
-              <p className="text-xs text-text-light">Sent to {b.recipient_count} customer{b.recipient_count === 1 ? '' : 's'}</p>
-            </div>
+              <p className="text-xs text-ink-sub">{b.body}</p>
+              <p className="text-xs text-ink-faint">Sent to {b.recipient_count} customer{b.recipient_count === 1 ? '' : 's'}</p>
+            </Card>
           ))}
         </div>
       )}

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
+import { Button, Badge, Card, Input, Textarea } from '@/components/ds';
 
 interface Offer {
   id: string;
@@ -77,23 +78,23 @@ export default function OffersPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-text-dark">Instant Offers</h1>
-          <p className="text-sm text-text-light mt-1">Time-limited promotions shown to customers.</p>
+          <h1 className="text-2xl font-bold text-ink">Instant Offers</h1>
+          <p className="text-sm text-ink-faint mt-1">Time-limited promotions shown to customers.</p>
         </div>
         {!creating && (
-          <button onClick={() => setCreating(true)} className="btn-primary">+ New Offer</button>
+          <Button onClick={() => setCreating(true)}>+ New Offer</Button>
         )}
       </div>
 
       {creating && (
-        <form onSubmit={handleCreate} className="card mb-6">
-          <h2 className="font-semibold text-text-dark mb-4">New Offer</h2>
-          {formErr && <p className="text-status-error text-sm mb-3">{formErr}</p>}
+        <form onSubmit={handleCreate} className="rounded-[16px] border border-stroke bg-surface-1 shadow-ds p-5 mb-6">
+          <h2 className="font-semibold text-ink mb-4">New Offer</h2>
+          {formErr && <p className="text-bad text-sm mb-3">{formErr}</p>}
           <div className="space-y-3">
             <div>
-              <label className="label">Title</label>
-              <input
-                className="input w-full"
+              <label className="block text-body-sm font-semibold text-ink mb-1.5">Title</label>
+              <Input
+                className="w-full"
                 placeholder="e.g. 20% off all beverages"
                 maxLength={120}
                 value={form.title}
@@ -102,9 +103,9 @@ export default function OffersPage() {
               />
             </div>
             <div>
-              <label className="label">Description (optional)</label>
-              <textarea
-                className="input w-full"
+              <label className="block text-body-sm font-semibold text-ink mb-1.5">Description (optional)</label>
+              <Textarea
+                className="w-full"
                 rows={2}
                 placeholder="More details…"
                 maxLength={500}
@@ -113,10 +114,10 @@ export default function OffersPage() {
               />
             </div>
             <div>
-              <label className="label">Valid Until</label>
-              <input
+              <label className="block text-body-sm font-semibold text-ink mb-1.5">Valid Until</label>
+              <Input
                 type="datetime-local"
-                className="input w-full"
+                className="w-full"
                 value={form.valid_until}
                 min={new Date().toISOString().slice(0, 16)}
                 onChange={e => setForm(f => ({ ...f, valid_until: e.target.value }))}
@@ -125,69 +126,69 @@ export default function OffersPage() {
             </div>
           </div>
           <div className="flex gap-2 mt-4">
-            <button type="submit" disabled={saving} className="btn-primary disabled:opacity-50">
+            <Button type="submit" disabled={saving}>
               {saving ? 'Creating…' : 'Create Offer'}
-            </button>
-            <button type="button" onClick={() => { setCreating(false); setFormErr(''); }} className="btn-secondary">
+            </Button>
+            <Button type="button" intent="secondary" onClick={() => { setCreating(false); setFormErr(''); }}>
               Cancel
-            </button>
+            </Button>
           </div>
         </form>
       )}
 
       {loading ? (
-        <p className="text-text-medium text-sm">Loading…</p>
+        <p className="text-ink-sub text-sm">Loading…</p>
       ) : error ? (
-        <p className="text-status-error text-sm">{error}</p>
+        <p className="text-bad text-sm">{error}</p>
       ) : (
         <div className="space-y-4">
           {active.length === 0 && !creating && (
-            <div className="card text-center py-8 text-text-medium">
+            <Card padding="md" className="text-center py-8 text-ink-sub">
               <p className="font-semibold">No active offers</p>
               <p className="text-sm mt-1">Create an offer to attract customers today.</p>
-            </div>
+            </Card>
           )}
           {active.map(o => (
-            <div key={o.id} className="card flex items-start justify-between gap-4">
+            <Card key={o.id} padding="md" className="flex items-start justify-between gap-4">
               <div>
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="inline-block bg-green-100 text-green-700 text-xs font-semibold px-2 py-0.5 rounded-full">ACTIVE</span>
-                  <p className="font-semibold text-text-dark">{o.title}</p>
+                  <Badge intent="success">ACTIVE</Badge>
+                  <p className="font-semibold text-ink">{o.title}</p>
                 </div>
-                {o.description && <p className="text-sm text-text-medium mt-1">{o.description}</p>}
-                <p className="text-xs text-text-light mt-1">
+                {o.description && <p className="text-sm text-ink-sub mt-1">{o.description}</p>}
+                <p className="text-xs text-ink-faint mt-1">
                   Expires {new Date(o.valid_until).toLocaleString('en-IN')}
                 </p>
               </div>
               <button
                 onClick={() => handleDelete(o.id)}
-                className="text-status-error text-sm hover:underline shrink-0"
+                className="text-bad text-sm hover:underline shrink-0"
               >
                 Delete
               </button>
-            </div>
+            </Card>
           ))}
           {expired.length > 0 && (
             <details className="mt-2">
-              <summary className="text-sm text-text-light cursor-pointer select-none">
+              <summary className="text-sm text-ink-faint cursor-pointer select-none">
                 Show {expired.length} expired offer{expired.length > 1 ? 's' : ''}
               </summary>
               <div className="mt-2 space-y-2">
                 {expired.map(o => (
-                  <div key={o.id} className="card opacity-60 flex items-start justify-between gap-4">
+                  <Card key={o.id} padding="md" className="opacity-60 flex items-start justify-between gap-4">
                     <div>
-                      <p className="font-semibold text-text-dark">{o.title}</p>
-                      <p className="text-xs text-text-light">
+                      <p className="font-semibold text-ink">{o.title}</p>
+                      <p className="text-xs text-ink-faint">
                         Expired {new Date(o.valid_until).toLocaleString('en-IN')}
                       </p>
                     </div>
                     <button
                       onClick={() => handleDelete(o.id)}
-                      className="text-status-error text-sm hover:underline shrink-0"
+                      className="text-bad text-sm hover:underline shrink-0"
                     >
                       Delete
                     </button>
-                  </div>
+                  </Card>
                 ))}
               </div>
             </details>
