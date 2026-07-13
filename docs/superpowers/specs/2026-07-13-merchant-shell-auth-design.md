@@ -59,7 +59,7 @@ Each page keeps its exact form state, field names, validation, fetch calls, erro
 Server component; all four queries and helpers unchanged. Presentation:
 
 - `StatCard` → KPI card: ds-Card look (`border-stroke rounded-[16px] shadow-ds`), teal icon squircle (`bg-teal-subtle text-teal`), value in `font-display font-bold [font-variant-numeric:tabular-nums] text-ink`, label `text-label uppercase text-ink-faint`. Colored top-border variants removed.
-- Insights list ("close to reward" / "pending redeem") → **honey callout card**: `bg-reward-subtle border border-[--reward] /40 rounded-[16px]`; pending-redeem rows get `Badge intent="reward"`, close-to-reward rows `Badge intent="teal"`.
+- Insights list ("close to reward" / "pending redeem") → **honey callout card**: `bg-reward-subtle border border-reward/40 rounded-[16px]`; pending-redeem rows get `Badge intent="reward"`, close-to-reward rows `Badge intent="teal"`.
 - Recent visits → ds `Table` (`THead/TH/TBody/TR/TD`), phone masked as today, `timeAgo` unchanged.
 - Campaign panel → ds Card with teal progress bar (`bg-teal`, track `bg-surface-2`), honey fill when `progress >= threshold`.
 - Quick-action links (`/m/[slug]/qr` etc.) → ds `Button intent="secondary" size="sm"` or ghost, destinations unchanged.
