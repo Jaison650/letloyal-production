@@ -2,8 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Button from '@/components/ui/Button';
-import Input from '@/components/ui/Input';
+import { Button, Badge, Input, Textarea } from '@/components/ds';
 import { Stamp, IndianRupee, Pause, Play, X, Flame } from 'lucide-react';
 import { clsx } from 'clsx';
 
@@ -104,15 +103,11 @@ export default function CampaignForm({ slug, existing }: CampaignFormProps) {
   const StatusBadge = () => {
     if (!existing) return null;
     const cfg = {
-      active: { label: 'Active',  cls: 'bg-green-100 text-green-700'  },
-      paused: { label: 'Paused',  cls: 'bg-yellow-100 text-yellow-700' },
-      ended:  { label: 'Ended',   cls: 'bg-gray-100 text-gray-500'    },
+      active: { label: 'Active',  intent: 'success' as const },
+      paused: { label: 'Paused',  intent: 'warning' as const },
+      ended:  { label: 'Ended',   intent: 'neutral' as const },
     }[existing.status];
-    return (
-      <span className={clsx('text-xs font-semibold px-2.5 py-1 rounded-full', cfg.cls)}>
-        {cfg.label}
-      </span>
-    );
+    return <Badge intent={cfg.intent}>{cfg.label}</Badge>;
   };
 
   return (
@@ -121,7 +116,7 @@ export default function CampaignForm({ slug, existing }: CampaignFormProps) {
       {/* ── Existing campaign header ─────────────────────────────────── */}
       {isEdit && (
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold text-text-dark">Your Campaign</h2>
+          <h2 className="text-lg font-bold text-ink">Your Campaign</h2>
           <StatusBadge />
         </div>
       )}
@@ -129,7 +124,7 @@ export default function CampaignForm({ slug, existing }: CampaignFormProps) {
       {/* ── Campaign type toggle (only for new campaigns) ────────────── */}
       {!isEdit && (
         <div>
-          <p className="form-label mb-2">Campaign Type</p>
+          <p className="text-body-sm font-semibold text-ink mb-2">Campaign Type</p>
           <div className="grid grid-cols-2 gap-3">
             {([
               { id: 'visit_based', icon: <Stamp size={20} />, label: 'Visit-Based', desc: 'A stamp per visit' },
@@ -142,8 +137,8 @@ export default function CampaignForm({ slug, existing }: CampaignFormProps) {
                 className={clsx(
                   'flex flex-col items-start gap-1 p-4 rounded-xl border-2 text-left transition-all',
                   type === opt.id
-                    ? 'border-primary bg-primary-light/40 text-primary'
-                    : 'border-border-light hover:border-primary/40 text-text-medium',
+                    ? 'border-teal bg-teal-subtle text-teal'
+                    : 'border-stroke hover:border-teal/40 text-ink-sub',
                 )}
               >
                 {opt.icon}
@@ -157,15 +152,15 @@ export default function CampaignForm({ slug, existing }: CampaignFormProps) {
 
       {/* ── Edit: show type as read-only ─────────────────────────────── */}
       {isEdit && (
-        <div className="flex items-center gap-3 p-4 rounded-xl bg-bg-muted border border-border-light">
+        <div className="flex items-center gap-3 p-4 rounded-xl bg-surface-2 border border-stroke">
           {type === 'visit_based'
-            ? <Stamp size={20} className="text-primary" />
-            : <IndianRupee size={20} className="text-primary" />}
+            ? <Stamp size={20} className="text-teal" />
+            : <IndianRupee size={20} className="text-teal" />}
           <div>
-            <p className="text-sm font-semibold text-text-dark">
+            <p className="text-sm font-semibold text-ink">
               {type === 'visit_based' ? 'Visit-Based' : 'Spend-Based'}
             </p>
-            <p className="text-xs text-text-light">
+            <p className="text-xs text-ink-faint">
               {type === 'visit_based' ? 'One stamp per visit' : 'Points earned per ₹ spent'}
             </p>
           </div>
@@ -173,48 +168,63 @@ export default function CampaignForm({ slug, existing }: CampaignFormProps) {
       )}
 
       {/* ── Campaign name ─────────────────────────────────────────────── */}
-      <Input
-        label="Campaign Name"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        placeholder={type === 'visit_based' ? 'e.g. Loyalty Stamps' : 'e.g. Points Rewards'}
-        maxLength={120}
-      />
+      <div>
+        <label className="block text-body-sm font-semibold text-ink mb-1.5">Campaign Name</label>
+        <Input
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder={type === 'visit_based' ? 'e.g. Loyalty Stamps' : 'e.g. Points Rewards'}
+          maxLength={120}
+        />
+      </div>
 
       {/* ── Reward threshold ─────────────────────────────────────────── */}
-      <Input
-        label={type === 'visit_based' ? 'Stamps to Earn Reward' : 'Points to Earn Reward'}
-        type="number"
-        value={threshold}
-        onChange={(e) => setThreshold(e.target.value)}
-        placeholder="10"
-        min={1}
-        hint={
-          type === 'visit_based'
+      <div>
+        <label className="block text-body-sm font-semibold text-ink mb-1.5">
+          {type === 'visit_based' ? 'Stamps to Earn Reward' : 'Points to Earn Reward'}
+        </label>
+        <Input
+          type="number"
+          value={threshold}
+          onChange={(e) => setThreshold(e.target.value)}
+          placeholder="10"
+          min={1}
+        />
+        <p className="mt-1.5 text-xs text-ink-faint">
+          {type === 'visit_based'
             ? 'Customer earns a reward after this many stamps'
-            : 'Customer earns a reward after this many points'
-        }
-      />
+            : 'Customer earns a reward after this many points'}
+        </p>
+      </div>
 
       {/* ── Points per ₹ (spend-based only) ──────────────────────────── */}
       {type === 'spend_based' && (
-        <Input
-          label="Points per ₹"
-          type="number"
-          value={ppr}
-          onChange={(e) => setPpr(e.target.value)}
-          placeholder="0.1"
-          step="0.01"
-          min={0.01}
-          hint="e.g. 0.1 = 1 point per ₹10 spent. Customer earns floor(₹ × rate) points."
-          icon={<IndianRupee size={16} />}
-        />
+        <div>
+          <label className="block text-body-sm font-semibold text-ink mb-1.5">Points per ₹</label>
+          <div className="relative">
+            <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-faint">
+              <IndianRupee size={16} />
+            </div>
+            <Input
+              type="number"
+              value={ppr}
+              onChange={(e) => setPpr(e.target.value)}
+              placeholder="0.1"
+              step="0.01"
+              min={0.01}
+              className="pl-9"
+            />
+          </div>
+          <p className="mt-1.5 text-xs text-ink-faint">
+            e.g. 0.1 = 1 point per ₹10 spent. Customer earns floor(₹ × rate) points.
+          </p>
+        </div>
       )}
 
       {/* ── Reward description ───────────────────────────────────────── */}
       <div>
-        <label className="form-label">Reward Description</label>
-        <textarea
+        <label className="block text-body-sm font-semibold text-ink mb-1.5">Reward Description</label>
+        <Textarea
           value={reward}
           onChange={(e) => setReward(e.target.value)}
           placeholder={
@@ -224,33 +234,33 @@ export default function CampaignForm({ slug, existing }: CampaignFormProps) {
           }
           maxLength={200}
           rows={2}
-          className="form-input resize-none mt-1"
+          className="resize-none mt-1 min-h-0"
         />
-        <p className="text-xs text-text-light mt-1">{reward.length}/200</p>
+        <p className="text-xs text-ink-faint mt-1">{reward.length}/200</p>
       </div>
 
       {/* ── Streak Bonus ─────────────────────────────────────────────── */}
-      <div className="rounded-xl border border-border-light overflow-hidden">
+      <div className="rounded-xl border border-stroke overflow-hidden">
         {/* Toggle header */}
         <button
           type="button"
           onClick={() => setStreakEnabled(!streakEnabled)}
-          className="w-full flex items-center justify-between px-4 py-3.5 bg-bg-muted hover:bg-bg-muted/80 transition-colors"
+          className="w-full flex items-center justify-between px-4 py-3.5 bg-surface-2 hover:bg-surface-2/80 transition-colors"
         >
           <div className="flex items-center gap-2.5">
-            <Flame size={18} className={streakEnabled ? 'text-orange-500' : 'text-text-light'} />
+            <Flame size={18} className={streakEnabled ? 'text-reward' : 'text-ink-faint'} />
             <div className="text-left">
-              <p className="text-sm font-semibold text-text-dark">Streak Bonus</p>
-              <p className="text-xs text-text-light">Reward customers who visit on consecutive days</p>
+              <p className="text-sm font-semibold text-ink">Streak Bonus</p>
+              <p className="text-xs text-ink-faint">Reward customers who visit on consecutive days</p>
             </div>
           </div>
           {/* Toggle pill */}
           <div className={clsx(
             'w-10 h-6 rounded-full transition-colors flex-shrink-0 relative',
-            streakEnabled ? 'bg-primary' : 'bg-border-light',
+            streakEnabled ? 'bg-teal' : 'bg-stroke-strong',
           )}>
             <span className={clsx(
-              'absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-transform',
+              'absolute top-1 w-4 h-4 rounded-full bg-surface-1 shadow transition-transform',
               streakEnabled ? 'translate-x-5' : 'translate-x-1',
             )} />
           </div>
@@ -258,11 +268,11 @@ export default function CampaignForm({ slug, existing }: CampaignFormProps) {
 
         {/* Streak config — only shown when enabled */}
         {streakEnabled && (
-          <div className="px-4 py-4 space-y-4 border-t border-border-light bg-white">
+          <div className="px-4 py-4 space-y-4 border-t border-stroke bg-surface-1">
 
             {/* Streak period */}
             <div>
-              <p className="form-label mb-2">Streak Period</p>
+              <p className="text-body-sm font-semibold text-ink mb-2">Streak Period</p>
               <div className="grid grid-cols-3 gap-2">
                 {([
                   { value: 'day',   label: 'Daily',   desc: 'Visit every day'    },
@@ -276,50 +286,58 @@ export default function CampaignForm({ slug, existing }: CampaignFormProps) {
                     className={clsx(
                       'flex flex-col items-start gap-0.5 p-3 rounded-xl border-2 text-left transition-all',
                       streakPeriod === opt.value
-                        ? 'border-primary bg-primary-light/40'
-                        : 'border-border-light hover:border-primary/40',
+                        ? 'border-teal bg-teal-subtle'
+                        : 'border-stroke hover:border-teal/40',
                     )}
                   >
-                    <span className={clsx('text-sm font-semibold', streakPeriod === opt.value ? 'text-primary' : 'text-text-dark')}>
+                    <span className={clsx('text-sm font-semibold', streakPeriod === opt.value ? 'text-teal' : 'text-ink')}>
                       {opt.label}
                     </span>
-                    <span className="text-xs text-text-light">{opt.desc}</span>
+                    <span className="text-xs text-ink-faint">{opt.desc}</span>
                   </button>
                 ))}
               </div>
             </div>
 
             {/* Consecutive periods target */}
-            <Input
-              label={`Consecutive ${streakPeriod === 'day' ? 'Days' : streakPeriod === 'week' ? 'Weeks' : 'Months'} Needed`}
-              type="number"
-              value={streakDays}
-              onChange={(e) => setStreakDays(e.target.value)}
-              placeholder="3"
-              min={2}
-              max={streakPeriod === 'day' ? 30 : streakPeriod === 'week' ? 12 : 6}
-              hint={`Customer earns the bonus after this many consecutive ${streakPeriod}s`}
-            />
+            <div>
+              <label className="block text-body-sm font-semibold text-ink mb-1.5">
+                {`Consecutive ${streakPeriod === 'day' ? 'Days' : streakPeriod === 'week' ? 'Weeks' : 'Months'} Needed`}
+              </label>
+              <Input
+                type="number"
+                value={streakDays}
+                onChange={(e) => setStreakDays(e.target.value)}
+                placeholder="3"
+                min={2}
+                max={streakPeriod === 'day' ? 30 : streakPeriod === 'week' ? 12 : 6}
+              />
+              <p className="mt-1.5 text-xs text-ink-faint">
+                {`Customer earns the bonus after this many consecutive ${streakPeriod}s`}
+              </p>
+            </div>
 
             {/* Multiplier */}
-            <Input
-              label="Points Multiplier"
-              type="number"
-              value={streakMultiplier}
-              onChange={(e) => setStreakMultiplier(e.target.value)}
-              placeholder="2"
-              step="0.5"
-              min={1.5}
-              max={10}
-              hint={
-                type === 'visit_based'
+            <div>
+              <label className="block text-body-sm font-semibold text-ink mb-1.5">Points Multiplier</label>
+              <Input
+                type="number"
+                value={streakMultiplier}
+                onChange={(e) => setStreakMultiplier(e.target.value)}
+                placeholder="2"
+                step="0.5"
+                min={1.5}
+                max={10}
+              />
+              <p className="mt-1.5 text-xs text-ink-faint">
+                {type === 'visit_based'
                   ? `e.g. 2 = counts as 2 visits on the bonus ${streakPeriod} (rounded up)`
-                  : `e.g. 2 = double points on the bonus ${streakPeriod}`
-              }
-            />
+                  : `e.g. 2 = double points on the bonus ${streakPeriod}`}
+              </p>
+            </div>
 
             {/* Live preview */}
-            <div className="rounded-lg bg-orange-50 border border-orange-200 px-3 py-2.5 text-xs text-orange-800">
+            <div className="rounded-[11px] bg-reward-subtle border border-reward/40 px-3 py-2.5 text-xs text-reward-deep">
               🔥 After <strong>{streakDays || '?'} consecutive {streakPeriod}{Number(streakDays) !== 1 ? 's' : ''}</strong>,
               customer earns <strong>{streakMultiplier || '?'}× points</strong> on that {streakPeriod}
             </div>
@@ -330,7 +348,7 @@ export default function CampaignForm({ slug, existing }: CampaignFormProps) {
 
       {/* ── Error ────────────────────────────────────────────────────── */}
       {error && (
-        <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-status-error">
+        <div className="rounded-[11px] bg-bad-subtle px-4 py-3 text-sm text-bad">
           {error}
         </div>
       )}
@@ -342,10 +360,10 @@ export default function CampaignForm({ slug, existing }: CampaignFormProps) {
 
       {/* ── Status controls (edit only) ──────────────────────────────── */}
       {isEdit && existing.status !== 'ended' && (
-        <div className="flex gap-3 pt-2 border-t border-border-light">
+        <div className="flex gap-3 pt-2 border-t border-stroke">
           {existing.status === 'active' ? (
             <Button
-              variant="secondary"
+              intent="secondary"
               size="sm"
               loading={statusBusy}
               onClick={() => handleStatusChange('paused')}
@@ -355,7 +373,7 @@ export default function CampaignForm({ slug, existing }: CampaignFormProps) {
             </Button>
           ) : (
             <Button
-              variant="secondary"
+              intent="secondary"
               size="sm"
               loading={statusBusy}
               onClick={() => handleStatusChange('active')}
@@ -365,7 +383,7 @@ export default function CampaignForm({ slug, existing }: CampaignFormProps) {
             </Button>
           )}
           <Button
-            variant="danger"
+            intent="destructive"
             size="sm"
             loading={statusBusy}
             onClick={() => {
@@ -382,7 +400,7 @@ export default function CampaignForm({ slug, existing }: CampaignFormProps) {
 
       {/* ── Ended state ──────────────────────────────────────────────── */}
       {isEdit && existing.status === 'ended' && (
-        <div className="rounded-xl bg-gray-50 border border-gray-200 px-4 py-3 text-sm text-gray-500 text-center">
+        <div className="rounded-[11px] bg-surface-2 px-4 py-3 text-sm text-ink-faint text-center">
           This campaign has ended. Create a new one to start earning again.
         </div>
       )}

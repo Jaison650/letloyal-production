@@ -3,8 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
-import Input from '@/components/ui/Input';
-import Button from '@/components/ui/Button';
+import { Button, Input } from '@/components/ds';
 import { Upload, X, Plus, Trash2, Globe, Instagram, MapPin, Star, ArrowUp, ArrowDown } from 'lucide-react';
 import { clsx } from 'clsx';
 import { MENU_EMOJI_PRESETS, type NamedDial } from '@/lib/constants';
@@ -76,17 +75,17 @@ function ImageUpload({
 
   return (
     <div className="space-y-2">
-      <label className="form-label">{label}</label>
+      <label className="block text-body-sm font-semibold text-ink mb-1.5">{label}</label>
 
       {value ? (
-        <div className="relative group rounded-xl overflow-hidden border border-border-light bg-bg-muted">
+        <div className="relative group rounded-xl overflow-hidden border border-stroke bg-surface-2">
           <div className={clsx('relative w-full', aspectRatio)}>
             <Image src={value} alt={label} fill className="object-cover" />
           </div>
           <button
             type="button"
             onClick={() => onChange(null)}
-            className="absolute top-2 right-2 p-1.5 bg-white/90 hover:bg-white rounded-full shadow-sm text-status-error opacity-0 group-hover:opacity-100 transition-opacity"
+            className="absolute top-2 right-2 p-1.5 bg-surface-1/90 hover:bg-surface-1 rounded-full shadow-sm text-bad opacity-0 group-hover:opacity-100 transition-opacity"
           >
             <X size={14} />
           </button>
@@ -97,33 +96,33 @@ function ImageUpload({
           onClick={() => inputRef.current?.click()}
           disabled={uploading}
           className={clsx(
-            'w-full rounded-xl border-2 border-dashed border-border-light flex flex-col items-center justify-center gap-2 transition-colors cursor-pointer',
+            'w-full rounded-xl border-2 border-dashed border-stroke flex flex-col items-center justify-center gap-2 transition-colors cursor-pointer',
             aspectRatio,
             uploading
               ? 'opacity-60 cursor-not-allowed'
-              : 'hover:border-primary hover:bg-primary-light/30',
+              : 'hover:border-teal hover:bg-teal-subtle/30',
           )}
         >
           {uploading ? (
             <>
-              <svg className="animate-spin h-5 w-5 text-primary" viewBox="0 0 24 24" fill="none">
+              <svg className="animate-spin h-5 w-5 text-teal" viewBox="0 0 24 24" fill="none">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
               </svg>
-              <span className="text-xs text-text-light">Uploading…</span>
+              <span className="text-xs text-ink-faint">Uploading…</span>
             </>
           ) : (
             <>
-              <Upload size={20} className="text-text-light" />
-              <span className="text-xs text-text-light">Click to upload</span>
-              <span className="text-xs text-text-light opacity-60">PNG, JPG, WebP</span>
-              {hint && <span className="text-xs text-text-light opacity-60">{hint}</span>}
+              <Upload size={20} className="text-ink-faint" />
+              <span className="text-xs text-ink-faint">Click to upload</span>
+              <span className="text-xs text-ink-faint opacity-60">PNG, JPG, WebP</span>
+              {hint && <span className="text-xs text-ink-faint opacity-60">{hint}</span>}
             </>
           )}
         </button>
       )}
 
-      {error && <p className="text-xs text-status-error">{error}</p>}
+      {error && <p className="text-xs text-bad">{error}</p>}
 
       <input
         ref={inputRef}
@@ -191,7 +190,7 @@ export default function ProfileEditor({ slug, initialData }: ProfileEditorProps)
   return (
     <div className="max-w-xl space-y-6">
       {/* Tab bar */}
-      <div className="flex gap-1 p-1 bg-bg-muted rounded-xl">
+      <div className="flex gap-1 p-1 bg-surface-2 rounded-xl">
         {tabs.map((t) => (
           <button
             key={t.id}
@@ -200,8 +199,8 @@ export default function ProfileEditor({ slug, initialData }: ProfileEditorProps)
             className={clsx(
               'flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
               tab === t.id
-                ? 'bg-white shadow-sm text-text-dark'
-                : 'text-text-medium hover:text-text-dark',
+                ? 'bg-surface-1 shadow-sm text-ink'
+                : 'text-ink-sub hover:text-ink',
             )}
           >
             {t.label}
@@ -212,13 +211,15 @@ export default function ProfileEditor({ slug, initialData }: ProfileEditorProps)
       {/* ── Branding tab ─────────────────────────────────────────── */}
       {tab === 'branding' && (
         <div className="space-y-5">
-          <Input
-            label="Business Name"
-            value={form.business_name}
-            onChange={(e) => setField('business_name', e.target.value)}
-            placeholder="Your business name"
-            maxLength={120}
-          />
+          <div>
+            <label className="block text-body-sm font-semibold text-ink mb-1.5">Business Name</label>
+            <Input
+              value={form.business_name}
+              onChange={(e) => setField('business_name', e.target.value)}
+              placeholder="Your business name"
+              maxLength={120}
+            />
+          </div>
 
           <ImageUpload
             label="Logo"
@@ -243,45 +244,73 @@ export default function ProfileEditor({ slug, initialData }: ProfileEditorProps)
       {/* ── Contact & Social tab ──────────────────────────────────── */}
       {tab === 'contact' && (
         <div className="space-y-4">
-          <Input
-            label="Address"
-            value={form.address ?? ''}
-            onChange={(e) => setField('address', e.target.value || null)}
-            placeholder="123 Main St, City"
-            icon={<MapPin size={16} />}
-          />
-          <Input
-            label="Google Maps URL"
-            value={form.gmaps_url ?? ''}
-            onChange={(e) => setField('gmaps_url', e.target.value || null)}
-            placeholder="https://maps.google.com/..."
-            icon={<Globe size={16} />}
-          />
-          <Input
-            label="Instagram URL"
-            value={form.instagram_url ?? ''}
-            onChange={(e) => setField('instagram_url', e.target.value || null)}
-            placeholder="https://instagram.com/yourbusiness"
-            icon={<Instagram size={16} />}
-          />
-          <Input
-            label="Google Review URL"
-            value={form.google_review_url ?? ''}
-            onChange={(e) => setField('google_review_url', e.target.value || null)}
-            placeholder="https://g.page/r/..."
-            icon={<Star size={16} />}
-          />
+          <div>
+            <label className="block text-body-sm font-semibold text-ink mb-1.5">Address</label>
+            <div className="relative">
+              <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-faint">
+                <MapPin size={16} />
+              </div>
+              <Input
+                value={form.address ?? ''}
+                onChange={(e) => setField('address', e.target.value || null)}
+                placeholder="123 Main St, City"
+                className="pl-9"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-body-sm font-semibold text-ink mb-1.5">Google Maps URL</label>
+            <div className="relative">
+              <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-faint">
+                <Globe size={16} />
+              </div>
+              <Input
+                value={form.gmaps_url ?? ''}
+                onChange={(e) => setField('gmaps_url', e.target.value || null)}
+                placeholder="https://maps.google.com/..."
+                className="pl-9"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-body-sm font-semibold text-ink mb-1.5">Instagram URL</label>
+            <div className="relative">
+              <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-faint">
+                <Instagram size={16} />
+              </div>
+              <Input
+                value={form.instagram_url ?? ''}
+                onChange={(e) => setField('instagram_url', e.target.value || null)}
+                placeholder="https://instagram.com/yourbusiness"
+                className="pl-9"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-body-sm font-semibold text-ink mb-1.5">Google Review URL</label>
+            <div className="relative">
+              <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-faint">
+                <Star size={16} />
+              </div>
+              <Input
+                value={form.google_review_url ?? ''}
+                onChange={(e) => setField('google_review_url', e.target.value || null)}
+                placeholder="https://g.page/r/..."
+                className="pl-9"
+              />
+            </div>
+          </div>
         </div>
       )}
 
       {/* ── Location tab ─────────────────────────────────────────── */}
       {tab === 'location' && (
         <div className="space-y-4">
-          <p className="text-sm text-text-medium">
+          <p className="text-sm text-ink-sub">
             Pin your store on the map so customers can discover you nearby.
           </p>
           {form.latitude && form.longitude && (
-            <p className="text-xs text-primary font-medium">
+            <p className="text-xs text-teal font-medium">
               ✓ Location set ({form.latitude.toFixed(5)}, {form.longitude.toFixed(5)})
             </p>
           )}
@@ -297,7 +326,7 @@ export default function ProfileEditor({ slug, initialData }: ProfileEditorProps)
             <button
               type="button"
               onClick={() => { setForm(prev => ({ ...prev, latitude: null, longitude: null })); setSaved(false); }}
-              className="text-xs text-status-error hover:underline"
+              className="text-xs text-bad hover:underline"
             >
               Remove location pin
             </button>
@@ -308,7 +337,7 @@ export default function ProfileEditor({ slug, initialData }: ProfileEditorProps)
       {/* ── Menu Items tab ────────────────────────────────────────── */}
       {tab === 'speed_dials' && (
         <div className="space-y-4">
-          <p className="text-sm text-text-medium">
+          <p className="text-sm text-ink-sub">
             Set named menu items (name, price, and an emoji) shown as tiles on your QR screen.
             Customers see these too, so give each one a clear name — e.g. ☕ &quot;Cappuccino&quot; ₹150.
             Add up to 6.
@@ -316,19 +345,19 @@ export default function ProfileEditor({ slug, initialData }: ProfileEditorProps)
 
           <div className="space-y-2">
             {form.speed_dials.map((dial, i) => (
-              <div key={i} className="space-y-2 p-3 rounded-xl border border-border-light">
+              <div key={i} className="space-y-2 p-3 rounded-xl border border-stroke">
                 <div className="flex items-center gap-2">
                   <div className="relative">
                     <button
                       type="button"
                       onClick={() => setEmojiPickerFor(emojiPickerFor === i ? null : i)}
-                      className="w-9 h-9 flex items-center justify-center rounded-lg border border-border-light hover:border-primary text-lg transition-colors flex-shrink-0"
+                      className="w-9 h-9 flex items-center justify-center rounded-lg border border-stroke hover:border-teal text-lg transition-colors flex-shrink-0"
                       aria-label="Choose emoji"
                     >
                       {dial.emoji || '✚'}
                     </button>
                     {emojiPickerFor === i && (
-                      <div className="absolute z-10 top-full left-0 mt-1 p-2 grid grid-cols-8 gap-0.5 bg-white rounded-xl border border-border-light shadow-lg w-64 max-h-36 overflow-y-auto">
+                      <div className="absolute z-10 top-full left-0 mt-1 p-2 grid grid-cols-8 gap-0.5 bg-surface-1 rounded-xl border border-stroke shadow-lg w-64 max-h-36 overflow-y-auto">
                         {MENU_EMOJI_PRESETS.map(e => (
                           <button
                             key={e}
@@ -339,7 +368,7 @@ export default function ProfileEditor({ slug, initialData }: ProfileEditorProps)
                               setField('speed_dials', updated);
                               setEmojiPickerFor(null);
                             }}
-                            className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-bg-muted text-base"
+                            className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-surface-2 text-base"
                           >
                             {e}
                           </button>
@@ -347,7 +376,7 @@ export default function ProfileEditor({ slug, initialData }: ProfileEditorProps)
                       </div>
                     )}
                   </div>
-                  <input
+                  <Input
                     type="text"
                     value={dial.name}
                     maxLength={40}
@@ -357,14 +386,14 @@ export default function ProfileEditor({ slug, initialData }: ProfileEditorProps)
                       updated[i] = { ...updated[i], name: e.target.value };
                       setField('speed_dials', updated);
                     }}
-                    className="form-input flex-1 w-0 text-sm"
+                    className="flex-1 w-0 text-sm"
                   />
                   <div className="flex flex-col">
                     <button
                       type="button"
                       onClick={() => moveSpeedDial(i, -1)}
                       disabled={i === 0}
-                      className="p-0.5 rounded text-text-light hover:text-primary disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
+                      className="p-0.5 rounded text-ink-faint hover:text-teal disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
                       aria-label="Move up"
                     >
                       <ArrowUp size={14} />
@@ -373,7 +402,7 @@ export default function ProfileEditor({ slug, initialData }: ProfileEditorProps)
                       type="button"
                       onClick={() => moveSpeedDial(i, 1)}
                       disabled={i === form.speed_dials.length - 1}
-                      className="p-0.5 rounded text-text-light hover:text-primary disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
+                      className="p-0.5 rounded text-ink-faint hover:text-teal disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
                       aria-label="Move down"
                     >
                       <ArrowDown size={14} />
@@ -382,14 +411,14 @@ export default function ProfileEditor({ slug, initialData }: ProfileEditorProps)
                   <button
                     type="button"
                     onClick={() => setField('speed_dials', form.speed_dials.filter((_, j) => j !== i))}
-                    className="p-2 rounded-lg hover:bg-red-50 text-text-light hover:text-status-error transition-colors"
+                    className="p-2 rounded-lg hover:bg-bad-subtle text-ink-faint hover:text-bad transition-colors"
                   >
                     <Trash2 size={16} />
                   </button>
                 </div>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-light text-sm">₹</span>
-                  <input
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-faint text-sm">₹</span>
+                  <Input
                     type="number"
                     value={dial.price}
                     min={1}
@@ -399,7 +428,7 @@ export default function ProfileEditor({ slug, initialData }: ProfileEditorProps)
                       updated[i] = { ...updated[i], price: Math.max(1, parseFloat(e.target.value) || 1) };
                       setField('speed_dials', updated);
                     }}
-                    className="form-input text-sm py-1.5 w-full pl-7"
+                    className="text-sm py-1.5 w-full pl-7"
                   />
                 </div>
               </div>
@@ -410,7 +439,7 @@ export default function ProfileEditor({ slug, initialData }: ProfileEditorProps)
             <button
               type="button"
               onClick={() => setField('speed_dials', [...form.speed_dials, { name: '', price: 100, emoji: '' }])}
-              className="flex items-center gap-2 text-sm text-primary font-medium hover:underline"
+              className="flex items-center gap-2 text-sm text-teal font-medium hover:underline"
             >
               <Plus size={16} /> Add item
             </button>
@@ -420,7 +449,7 @@ export default function ProfileEditor({ slug, initialData }: ProfileEditorProps)
 
       {/* ── Save bar ──────────────────────────────────────────────── */}
       {error && (
-        <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-status-error">
+        <div className="rounded-[11px] bg-bad-subtle px-4 py-3 text-sm text-bad">
           {error}
         </div>
       )}
@@ -429,7 +458,7 @@ export default function ProfileEditor({ slug, initialData }: ProfileEditorProps)
         onClick={handleSave}
         loading={saving}
         fullWidth
-        variant={saved ? 'secondary' : 'primary'}
+        intent={saved ? 'secondary' : 'primary'}
       >
         {saved ? '✓ Saved' : 'Save Changes'}
       </Button>
