@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Image from 'next/image';
-import Button from '@/components/ui/Button';
+import { Button, Input } from '@/components/ds';
 import { RefreshCw, X, QrCode, IndianRupee, Pencil, Plus, Trash2, Check, ArrowUp, ArrowDown } from 'lucide-react';
 import { clsx } from 'clsx';
 import { MENU_EMOJI_PRESETS, type NamedDial } from '@/lib/constants';
@@ -267,24 +267,24 @@ export default function QRPanel({ slug, campaignType, speedDials: initialDials }
   // ── Edit form (used in both editing existing and adding new) ──────────
   function EditForm({ forNew }: { forNew: boolean }) {
     return (
-      <div className={clsx('px-3 py-3 space-y-2 bg-bg-muted', forNew ? 'rounded-xl border-2 border-primary' : 'border-t border-border-light')}>
+      <div className={clsx('px-3 py-3 space-y-2 bg-surface-2', forNew ? 'rounded-xl border-2 border-teal' : 'border-t border-stroke')}>
         <div className="flex gap-2">
           <div className="relative">
             <button
               type="button"
               onClick={() => setEmojiOpen(o => !o)}
-              className="w-11 h-11 rounded-xl border-2 border-border-light text-xl flex items-center justify-center hover:border-primary transition-colors bg-white flex-shrink-0"
+              className="w-11 h-11 rounded-xl border-2 border-stroke text-xl flex items-center justify-center hover:border-teal transition-colors bg-surface-1 flex-shrink-0"
             >
               {formEmoji || '✚'}
             </button>
             {emojiOpen && (
-              <div className="absolute top-12 left-0 z-30 bg-white border border-border-light rounded-2xl shadow-lg p-2 grid grid-cols-8 gap-0.5 w-64 max-h-36 overflow-y-auto">
+              <div className="absolute top-12 left-0 z-30 bg-surface-1 border border-stroke rounded-2xl shadow-lg p-2 grid grid-cols-8 gap-0.5 w-64 max-h-36 overflow-y-auto">
                 {MENU_EMOJI_PRESETS.map(e => (
                   <button
                     key={e}
                     type="button"
                     onClick={() => { setFormEmoji(e); setEmojiOpen(false); }}
-                    className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-bg-muted text-base"
+                    className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-surface-2 text-base"
                   >
                     {e}
                   </button>
@@ -292,39 +292,39 @@ export default function QRPanel({ slug, campaignType, speedDials: initialDials }
               </div>
             )}
           </div>
-          <input
+          <Input
             type="text"
             value={formName}
             onChange={e => setFormName(e.target.value)}
             placeholder="Item name"
             maxLength={40}
-            className="form-input flex-1 py-2 text-sm"
+            className="flex-1 py-2 text-sm"
             autoFocus
           />
         </div>
         <div className="relative">
-          <IndianRupee size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-light" />
-          <input
+          <IndianRupee size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-faint" />
+          <Input
             type="number"
             value={formPrice}
             onChange={e => setFormPrice(e.target.value)}
             placeholder="Price"
             min={0.01}
             step={0.01}
-            className="form-input pl-8 py-2 text-sm"
+            className="pl-8 py-2 text-sm"
           />
         </div>
         <div className="flex gap-2">
           <button
             onClick={cancelEditItem}
-            className="flex-1 py-2 text-sm text-text-medium border border-border-light rounded-xl hover:bg-border-light transition-colors"
+            className="flex-1 py-2 text-sm text-ink-sub border border-stroke rounded-xl hover:bg-surface-2 transition-colors"
           >
             Cancel
           </button>
           <button
             onClick={confirmEditItem}
             disabled={!formName.trim() || !formPrice || Number(formPrice) <= 0}
-            className="flex-1 py-2 text-sm font-semibold bg-primary text-white rounded-xl hover:bg-primary/90 transition-colors disabled:opacity-40 flex items-center justify-center gap-1"
+            className="flex-1 py-2 text-sm font-semibold bg-teal text-teal-fg rounded-xl hover:bg-teal-hover transition-colors disabled:opacity-40 flex items-center justify-center gap-1"
           >
             <Check size={13} />
             {forNew ? 'Add Item' : 'Save'}
@@ -341,11 +341,11 @@ export default function QRPanel({ slug, campaignType, speedDials: initialDials }
   if (state === 'scanned') {
     return (
       <div className="flex flex-col items-center justify-center py-16 gap-4">
-        <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center animate-bounce">
+        <div className="w-20 h-20 rounded-full bg-good-subtle flex items-center justify-center animate-bounce">
           <span className="text-4xl">✓</span>
         </div>
-        <p className="text-xl font-bold text-green-700">Scanned!</p>
-        {campaignType === 'visit_based' && dials.length === 0 && <p className="text-sm text-text-medium">Generating next QR…</p>}
+        <p className="text-xl font-bold text-good">Scanned!</p>
+        {campaignType === 'visit_based' && dials.length === 0 && <p className="text-sm text-ink-sub">Generating next QR…</p>}
       </div>
     );
   }
@@ -353,11 +353,11 @@ export default function QRPanel({ slug, campaignType, speedDials: initialDials }
   if (state === 'generating') {
     return (
       <div className="flex flex-col items-center justify-center py-16 gap-4">
-        <svg className="animate-spin h-10 w-10 text-primary" viewBox="0 0 24 24" fill="none">
+        <svg className="animate-spin h-10 w-10 text-teal" viewBox="0 0 24 24" fill="none">
           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
         </svg>
-        <p className="text-text-medium text-sm">Generating QR…</p>
+        <p className="text-ink-sub text-sm">Generating QR…</p>
       </div>
     );
   }
@@ -365,11 +365,11 @@ export default function QRPanel({ slug, campaignType, speedDials: initialDials }
   if (state === 'error') {
     return (
       <div className="flex flex-col items-center justify-center py-12 gap-4 text-center">
-        <div className="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center">
-          <X size={24} className="text-status-error" />
+        <div className="w-14 h-14 rounded-full bg-bad-subtle flex items-center justify-center">
+          <X size={24} className="text-bad" />
         </div>
-        <p className="text-status-error font-semibold">{errorMsg}</p>
-        <Button onClick={() => generateQR()} variant="secondary" size="sm"><RefreshCw size={14} /> Try Again</Button>
+        <p className="text-bad font-semibold">{errorMsg}</p>
+        <Button onClick={() => generateQR()} intent="secondary" size="sm"><RefreshCw size={14} /> Try Again</Button>
       </div>
     );
   }
@@ -377,11 +377,11 @@ export default function QRPanel({ slug, campaignType, speedDials: initialDials }
   if (state === 'expired') {
     return (
       <div className="flex flex-col items-center justify-center py-12 gap-4 text-center">
-        <div className="w-14 h-14 rounded-full bg-yellow-100 flex items-center justify-center">
-          <QrCode size={24} className="text-yellow-600" />
+        <div className="w-14 h-14 rounded-full bg-warn-subtle flex items-center justify-center">
+          <QrCode size={24} className="text-warn" />
         </div>
-        <p className="font-semibold text-text-dark">QR expired</p>
-        <p className="text-sm text-text-medium">This QR was not scanned in time.</p>
+        <p className="font-semibold text-ink">QR expired</p>
+        <p className="text-sm text-ink-sub">This QR was not scanned in time.</p>
         <Button
           onClick={() => campaignType === 'visit_based' && dials.length === 0 ? generateQR() : setState('idle')}
           size="sm"
@@ -396,7 +396,7 @@ export default function QRPanel({ slug, campaignType, speedDials: initialDials }
     return (
       <div className="flex flex-col items-center gap-5">
         {(activeQR.amountRupees || activeQR.itemName) && (
-          <div className="flex items-center gap-1.5 px-5 py-2 bg-primary text-white rounded-full text-lg font-bold shadow-btn">
+          <div className="flex items-center gap-1.5 px-5 py-2 bg-teal text-teal-fg rounded-full text-lg font-bold shadow-btn">
             {activeQR.itemName && (
               <span>{activeQR.itemName}{activeQR.quantity > 1 ? ` ×${activeQR.quantity}` : ''}</span>
             )}
@@ -409,17 +409,17 @@ export default function QRPanel({ slug, campaignType, speedDials: initialDials }
             )}
           </div>
         )}
-        <div className="relative rounded-2xl overflow-hidden shadow-lg border border-border-light bg-white p-3">
+        <div className="relative rounded-2xl overflow-hidden shadow-lg border border-stroke bg-surface-1 p-3">
           <Image src={activeQR.qrDataUrl} alt="Scan QR code" width={280} height={280} priority unoptimized />
         </div>
-        <div className="flex items-center gap-2 text-sm text-text-medium">
+        <div className="flex items-center gap-2 text-sm text-ink-sub">
           <span className="relative flex h-2.5 w-2.5">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
-            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500" />
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-good opacity-75" />
+            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-good" />
           </span>
           {campaignType === 'visit_based' ? 'Ready — show to customer to scan' : 'Waiting for customer to scan…'}
         </div>
-        <button onClick={revokeQR} className="flex items-center gap-1.5 text-sm text-text-light hover:text-status-error transition-colors">
+        <button onClick={revokeQR} className="flex items-center gap-1.5 text-sm text-ink-faint hover:text-bad transition-colors">
           <X size={14} />
           {campaignType === 'visit_based' ? 'Cancel & regenerate' : 'Cancel QR'}
         </button>
@@ -431,23 +431,23 @@ export default function QRPanel({ slug, campaignType, speedDials: initialDials }
   if (state === 'managing') {
     return (
       <div className="space-y-4">
-        <div className="flex items-center justify-between pb-4 border-b border-border-light">
+        <div className="flex items-center justify-between pb-4 border-b border-stroke">
           <button
             onClick={() => { setEditIdx(null); setEmojiOpen(false); setState('idle'); }}
-            className="text-sm text-text-medium hover:text-text-dark transition-colors"
+            className="text-sm text-ink-sub hover:text-ink transition-colors"
           >
             Back
           </button>
-          <p className="font-bold text-text-dark">Menu Items</p>
+          <p className="font-bold text-ink">Menu Items</p>
           <button
             onClick={saveManaged}
             disabled={saveStatus === 'saving'}
             className={clsx(
               'text-sm font-semibold px-3 py-1.5 rounded-lg transition-colors',
-              saveStatus === 'saving' && 'bg-primary/50 text-white cursor-not-allowed',
-              saveStatus === 'saved'  && 'bg-green-500 text-white',
-              saveStatus === 'error'  && 'bg-red-500 text-white',
-              saveStatus === 'idle'   && 'bg-primary text-white hover:bg-primary/90',
+              saveStatus === 'saving' && 'bg-teal/50 text-teal-fg cursor-not-allowed',
+              saveStatus === 'saved'  && 'bg-good-subtle text-good',
+              saveStatus === 'error'  && 'bg-bad-subtle text-bad',
+              saveStatus === 'idle'   && 'bg-teal text-teal-fg hover:bg-teal-hover',
             )}
           >
             {saveStatus === 'saving' ? 'Saving…' : saveStatus === 'saved' ? 'Saved!' : 'Save'}
@@ -459,7 +459,7 @@ export default function QRPanel({ slug, campaignType, speedDials: initialDials }
             const isEditing = editIdx === i;
             const palette = TILE_PALETTE[i % TILE_PALETTE.length];
             return (
-              <div key={i} className="rounded-xl border border-border-light overflow-visible">
+              <div key={i} className="rounded-xl border border-stroke overflow-visible">
                 <div className="flex items-center gap-3 px-3 py-2.5">
                   <div
                     className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
@@ -468,14 +468,14 @@ export default function QRPanel({ slug, campaignType, speedDials: initialDials }
                     {dial.emoji || '🛒'}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-text-dark truncate">{dial.name || '—'}</p>
-                    <p className="text-xs text-text-medium">{formatINR(dial.price)}</p>
+                    <p className="text-sm font-semibold text-ink truncate">{dial.name || '—'}</p>
+                    <p className="text-xs text-ink-sub">{formatINR(dial.price)}</p>
                   </div>
                   <div className="flex flex-col">
                     <button
                       onClick={() => moveItem(i, -1)}
                       disabled={i === 0}
-                      className="p-0.5 rounded text-text-light hover:text-primary disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
+                      className="p-0.5 rounded text-ink-faint hover:text-teal disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
                       aria-label="Move up"
                     >
                       <ArrowUp size={13} />
@@ -483,7 +483,7 @@ export default function QRPanel({ slug, campaignType, speedDials: initialDials }
                     <button
                       onClick={() => moveItem(i, 1)}
                       disabled={i === editDials.length - 1}
-                      className="p-0.5 rounded text-text-light hover:text-primary disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
+                      className="p-0.5 rounded text-ink-faint hover:text-teal disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
                       aria-label="Move down"
                     >
                       <ArrowDown size={13} />
@@ -492,13 +492,13 @@ export default function QRPanel({ slug, campaignType, speedDials: initialDials }
                   <div className="flex items-center gap-1">
                     <button
                       onClick={() => isEditing ? cancelEditItem() : startEditItem(i)}
-                      className="p-1.5 rounded-lg text-text-light hover:text-primary hover:bg-primary/10 transition-colors"
+                      className="p-1.5 rounded-lg text-ink-faint hover:text-teal hover:bg-teal-subtle transition-colors"
                     >
                       <Pencil size={14} />
                     </button>
                     <button
                       onClick={() => removeItem(i)}
-                      className="p-1.5 rounded-lg text-text-light hover:text-status-error hover:bg-red-50 transition-colors"
+                      className="p-1.5 rounded-lg text-ink-faint hover:text-bad hover:bg-bad-subtle transition-colors"
                     >
                       <Trash2 size={14} />
                     </button>
@@ -513,7 +513,7 @@ export default function QRPanel({ slug, campaignType, speedDials: initialDials }
         {editDials.length < MAX_DIALS && editIdx !== 'new' && (
           <button
             onClick={startAddItem}
-            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border-2 border-dashed border-border-light text-text-light hover:border-primary hover:text-primary transition-colors text-sm font-medium"
+            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border-2 border-dashed border-stroke text-ink-faint hover:border-teal hover:text-teal transition-colors text-sm font-medium"
           >
             <Plus size={14} /> Add item
           </button>
@@ -522,7 +522,7 @@ export default function QRPanel({ slug, campaignType, speedDials: initialDials }
         {editIdx === 'new' && <EditForm forNew={true} />}
 
         {saveStatus === 'error' && (
-          <p className="text-xs text-status-error text-center">Could not save — try again.</p>
+          <p className="text-xs text-bad text-center">Could not save — try again.</p>
         )}
       </div>
     );
@@ -534,11 +534,11 @@ export default function QRPanel({ slug, campaignType, speedDials: initialDials }
       {/* Named tile grid */}
       <div>
         <div className="flex items-center justify-between mb-3">
-          <p className="text-sm font-semibold text-text-dark">Menu Items</p>
+          <p className="text-sm font-semibold text-ink">Menu Items</p>
           {dials.length > 0 && (
             <button
               onClick={enterManaging}
-              className="flex items-center gap-1 text-xs text-primary hover:text-primary/70 transition-colors font-medium"
+              className="flex items-center gap-1 text-xs text-teal hover:text-teal/70 transition-colors font-medium"
             >
               <Pencil size={12} /> Manage
             </button>
@@ -581,7 +581,7 @@ export default function QRPanel({ slug, campaignType, speedDials: initialDials }
                       </button>
                     )}
                     {count > 0 && (
-                      <div className="absolute top-2 right-2 min-w-[1.25rem] h-5 rounded-full bg-primary text-white text-[11px] font-bold flex items-center justify-center px-1 z-10">
+                      <div className="absolute top-2 right-2 min-w-[1.25rem] h-5 rounded-full bg-teal text-teal-fg text-[11px] font-bold flex items-center justify-center px-1 z-10">
                         ×{count}
                       </div>
                     )}
@@ -605,7 +605,7 @@ export default function QRPanel({ slug, campaignType, speedDials: initialDials }
             {campaignType === 'spend_based' && cartQty() > 0 && (
               <button
                 onClick={() => { generateQR(cartTotal(), cartItemName(), cartSingleQty()); clearCart(); }}
-                className="w-full flex items-center justify-between py-4 px-5 rounded-2xl bg-primary text-white font-bold shadow-btn active:scale-95 transition-transform mt-3"
+                className="w-full flex items-center justify-between py-4 px-5 rounded-2xl bg-teal text-teal-fg font-bold shadow-btn active:scale-95 transition-transform mt-3"
               >
                 <span className="flex items-center gap-2 text-sm">
                   <QrCode size={16} />
@@ -618,11 +618,11 @@ export default function QRPanel({ slug, campaignType, speedDials: initialDials }
         ) : (
           <button
             onClick={enterManaging}
-            className="w-full flex flex-col items-center gap-2 py-8 rounded-xl border-2 border-dashed border-border-light hover:border-primary hover:bg-primary/5 transition-colors"
+            className="w-full flex flex-col items-center gap-2 py-8 rounded-xl border-2 border-dashed border-stroke hover:border-teal hover:bg-teal-subtle transition-colors"
           >
-            <Plus size={20} className="text-text-light" />
-            <p className="text-sm text-text-medium">No menu items yet</p>
-            <p className="text-xs font-semibold text-primary">Add item</p>
+            <Plus size={20} className="text-ink-faint" />
+            <p className="text-sm text-ink-sub">No menu items yet</p>
+            <p className="text-xs font-semibold text-teal">Add item</p>
           </button>
         )}
       </div>
@@ -631,7 +631,7 @@ export default function QRPanel({ slug, campaignType, speedDials: initialDials }
       {campaignType === 'visit_based' && dials.length > 0 && (
         <button
           onClick={() => generateQR()}
-          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 border-border-light text-sm font-medium text-text-medium hover:border-primary hover:text-primary transition-all"
+          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 border-stroke text-sm font-medium text-ink-sub hover:border-teal hover:text-teal transition-all"
         >
           <QrCode size={14} /> Generic visit QR
         </button>
@@ -640,18 +640,18 @@ export default function QRPanel({ slug, campaignType, speedDials: initialDials }
       {/* Custom amount (spend-based only) */}
       {campaignType === 'spend_based' && (
         <div>
-          <p className="text-sm font-semibold text-text-dark mb-2">Custom amount</p>
+          <p className="text-sm font-semibold text-ink mb-2">Custom amount</p>
           <div className="flex gap-2">
             <div className="relative flex-1">
-              <IndianRupee size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-light" />
-              <input
+              <IndianRupee size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-faint" />
+              <Input
                 type="number"
                 value={customAmt}
                 onChange={(e) => setCustomAmt(e.target.value)}
                 placeholder="Enter amount"
                 min={1}
                 step={1}
-                className="form-input pl-9"
+                className="pl-9"
                 onKeyDown={(e) => { if (e.key === 'Enter' && customAmt && Number(customAmt) > 0) generateQR(Number(customAmt)); }}
               />
             </div>
@@ -666,7 +666,7 @@ export default function QRPanel({ slug, campaignType, speedDials: initialDials }
         </div>
       )}
 
-      {errorMsg && <p className="text-sm text-status-error text-center">{errorMsg}</p>}
+      {errorMsg && <p className="text-sm text-bad text-center">{errorMsg}</p>}
     </div>
   );
 }
