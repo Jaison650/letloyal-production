@@ -20,6 +20,7 @@ import {
 import { clsx } from 'clsx';
 import Image from 'next/image';
 import { PoweredBy } from '@/components/ui/Logo';
+import { ThemeToggle } from '@/components/ds';
 
 interface NavItem {
   label: string;
@@ -111,15 +112,18 @@ export default function DashboardShell({ slug, businessName, logoUrl, children }
         })}
       </nav>
 
-      {/* Logout */}
+      {/* Logout + theme */}
       <div className="px-3 py-4 border-t border-stroke space-y-3">
-        <button
-          onClick={handleLogout}
-          className="flex items-center gap-3 w-full px-4 py-2.5 rounded-full text-body-sm font-semibold text-ink-sub hover:bg-bad-subtle hover:text-bad transition-colors"
-        >
-          <LogOut size={18} />
-          Sign Out
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-3 flex-1 px-4 py-2.5 rounded-full text-body-sm font-semibold text-ink-sub hover:bg-bad-subtle hover:text-bad transition-colors"
+          >
+            <LogOut size={18} />
+            Sign Out
+          </button>
+          <ThemeToggle />
+        </div>
         <div className="flex justify-center">
           <PoweredBy />
         </div>

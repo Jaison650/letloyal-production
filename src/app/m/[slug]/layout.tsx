@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import { getMerchantAuthFromCookies } from '@/lib/auth';
 import { queryOne } from '@/lib/db';
 import DashboardShell from '@/components/merchant/DashboardShell';
+import { ThemeProvider } from '@/components/ds';
 
 interface MerchantProfile {
   id:            string;
@@ -40,8 +41,10 @@ export default async function MerchantDashboardLayout({ children, params }: Layo
   }
 
   return (
-    <DashboardShell slug={slug} businessName={merchant.business_name} logoUrl={merchant.logo_url}>
-      {children}
-    </DashboardShell>
+    <ThemeProvider>
+      <DashboardShell slug={slug} businessName={merchant.business_name} logoUrl={merchant.logo_url}>
+        {children}
+      </DashboardShell>
+    </ThemeProvider>
   );
 }
