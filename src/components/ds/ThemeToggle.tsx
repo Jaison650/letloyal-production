@@ -11,12 +11,8 @@ export function ThemeToggle({ className }: { className?: string }) {
     setMounted(true);
   }, []);
 
-  const isDark =
-    mounted &&
-    (theme === 'dark' ||
-      (theme === 'system' &&
-        typeof window !== 'undefined' &&
-        window.matchMedia('(prefers-color-scheme: dark)').matches));
+  // Dark is the site default: anything except an explicit light choice renders dark.
+  const isDark = mounted && theme !== 'light';
 
   return (
     <button

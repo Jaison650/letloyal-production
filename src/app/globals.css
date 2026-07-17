@@ -10,79 +10,7 @@
     --accent: #5EEAD4;
     --brand-bg: #F8FAFC;
 
-    /* ── Teal & Honey tokens — light ─────────────────── */
-    --surface-page: #F4F6F2;
-    --surface-1: #FFFFFF;
-    --surface-2: #ECF0EA;
-    --border-default: #E0E6DD;
-    --border-strong: #C9D2C5;
-    --text-primary: #17201D;
-    --text-secondary: #5C6B64;
-    --text-tertiary: #85958D;
-
-    --accent-default: #0B7C6C;
-    --accent-hover: #0A5F53;
-    --accent-subtle: rgba(11, 124, 108, 0.09);
-    --accent-fg: #FFFFFF;
-
-    --reward: #F2B824;
-    --reward-deep: #8A6410;
-    --reward-subtle: #FBF0CE;
-    --reward-fg: #231A04;
-
-    --success: #1E7A4C;
-    --success-subtle: rgba(30, 122, 76, 0.10);
-    --warning: #96590E;
-    --warning-subtle: rgba(150, 89, 14, 0.11);
-    --error: #B3382E;
-    --error-subtle: rgba(179, 56, 46, 0.09);
-    --info: #2E6BD6;
-    --info-subtle: rgba(46, 107, 214, 0.10);
-
-    --section-dark: #0E1A17;
-    --ring: rgba(11, 124, 108, 0.25);
-    --shadow-card: 0 1px 2px rgba(23, 32, 29, 0.05), 0 8px 24px rgba(23, 32, 29, 0.06);
-  }
-
-  /* Dark theme — OS preference (unless user forced light) */
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme='light']) {
-      --surface-page: #0F1513;
-      --surface-1: #161E1B;
-      --surface-2: #1C2622;
-      --border-default: #25322D;
-      --border-strong: #37473F;
-      --text-primary: #EDF2EE;
-      --text-secondary: #9BABA2;
-      --text-tertiary: #647169;
-
-      --accent-default: #2CBFA9;
-      --accent-hover: #5EEAD4;
-      --accent-subtle: rgba(44, 191, 169, 0.13);
-      --accent-fg: #06231D;
-
-      --reward: #F2C230;
-      --reward-deep: #F5D269;
-      --reward-subtle: rgba(242, 194, 48, 0.14);
-      --reward-fg: #231A04;
-
-      --success: #4ADE94;
-      --success-subtle: rgba(74, 222, 148, 0.12);
-      --warning: #F0B25A;
-      --warning-subtle: rgba(240, 178, 90, 0.12);
-      --error: #F0716C;
-      --error-subtle: rgba(240, 113, 108, 0.12);
-      --info: #7AA7F0;
-      --info-subtle: rgba(122, 167, 240, 0.14);
-
-      --section-dark: #0A100E;
-      --ring: rgba(44, 191, 169, 0.35);
-      --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.5), 0 10px 30px rgba(0, 0, 0, 0.4);
-    }
-  }
-
-  /* Dark theme — explicit user toggle (always wins) */
-  :root[data-theme='dark'] {
+    /* ── Teal & Honey tokens — DARK is the default theme ── */
     --surface-page: #0F1513;
     --surface-1: #161E1B;
     --surface-2: #1C2622;
@@ -114,6 +42,41 @@
     --section-dark: #0A100E;
     --ring: rgba(44, 191, 169, 0.35);
     --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.5), 0 10px 30px rgba(0, 0, 0, 0.4);
+  }
+
+  /* Light theme — explicit user opt-in via toggle */
+  :root[data-theme='light'] {
+    --surface-page: #F4F6F2;
+    --surface-1: #FFFFFF;
+    --surface-2: #ECF0EA;
+    --border-default: #E0E6DD;
+    --border-strong: #C9D2C5;
+    --text-primary: #17201D;
+    --text-secondary: #5C6B64;
+    --text-tertiary: #85958D;
+
+    --accent-default: #0B7C6C;
+    --accent-hover: #0A5F53;
+    --accent-subtle: rgba(11, 124, 108, 0.09);
+    --accent-fg: #FFFFFF;
+
+    --reward: #F2B824;
+    --reward-deep: #8A6410;
+    --reward-subtle: #FBF0CE;
+    --reward-fg: #231A04;
+
+    --success: #1E7A4C;
+    --success-subtle: rgba(30, 122, 76, 0.10);
+    --warning: #96590E;
+    --warning-subtle: rgba(150, 89, 14, 0.11);
+    --error: #B3382E;
+    --error-subtle: rgba(179, 56, 46, 0.09);
+    --info: #2E6BD6;
+    --info-subtle: rgba(46, 107, 214, 0.10);
+
+    --section-dark: #0E1A17;
+    --ring: rgba(11, 124, 108, 0.25);
+    --shadow-card: 0 1px 2px rgba(23, 32, 29, 0.05), 0 8px 24px rgba(23, 32, 29, 0.06);
   }
 
   html {
