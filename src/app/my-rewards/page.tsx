@@ -339,7 +339,7 @@ function MyRewardsContent() {
 
   // ── Loading ────────────────────────────────────────────────────────────────
   if (phase === 'loading') {
-    return <div className="min-h-screen flex items-center justify-center bg-bg-muted"><Spinner /></div>;
+    return <div className="min-h-screen flex items-center justify-center bg-surface-page"><Spinner /></div>;
   }
 
   // ── Login / Register / Forgot ──────────────────────────────────────────────
@@ -369,9 +369,9 @@ function MyRewardsContent() {
   const unlocked    = cards.filter(c => c.reward_status === 'unlocked');
 
   return (
-    <main className="min-h-screen bg-bg-muted flex flex-col">
+    <main className="min-h-screen bg-surface-page flex flex-col">
       {/* Header */}
-      <header className="bg-primary sticky top-0 z-10 shadow-sm">
+      <header className="bg-section-dark sticky top-0 z-10 shadow-ds">
         <div className="max-w-lg mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Logo variant="dark" size={22} />

@@ -33,29 +33,29 @@ export default function InlineRedeemCode({ phone, slug, onCancel }: { phone: str
   const expired = secs === 0; const urgent = secs < 120 && !expired;
 
   return (
-    <div className="mt-3 rounded-xl bg-primary-light border border-primary/20 p-4 space-y-3">
-      <p className="text-xs font-semibold text-primary text-center uppercase tracking-widest">Show this code to the merchant</p>
+    <div className="mt-3 rounded-[11px] bg-reward-subtle border border-reward/40 p-4 space-y-3">
+      <p className="text-xs font-semibold text-reward-deep text-center uppercase tracking-widest">Show this code to the merchant</p>
       {loading ? <div className="flex justify-center py-4"><Spinner /></div>
-        : error ? <p className="text-center text-sm text-status-error py-2">{error}</p>
+        : error ? <p className="text-center text-sm text-bad py-2">{error}</p>
         : code ? (
           <>
             <div data-clarity-mask="true" className="flex items-center justify-center gap-1.5">
               {code.split('').map((d, i) => (
-                <span key={i} className="w-10 flex items-center justify-center text-2xl font-bold text-primary bg-white rounded-xl border-2 border-primary shadow-sm" style={{ height: 52 }}>{d}</span>
+                <span key={i} className="w-10 flex items-center justify-center font-display font-extrabold tracking-widest text-2xl text-reward-deep bg-surface-1 rounded-xl border-2 border-reward shadow-ds" style={{ height: 52 }}>{d}</span>
               ))}
             </div>
             <div className="flex items-center justify-center">
               <button onClick={() => { navigator.clipboard.writeText(code).catch(() => {}); setCopied(true); setTimeout(() => setCopied(false), 2000); }}
-                className="flex items-center gap-1 text-xs font-medium text-primary hover:underline">
+                className="flex items-center gap-1 text-xs font-medium text-reward-deep hover:underline">
                 {copied ? <Check size={12} /> : <Copy size={12} />}{copied ? 'Copied!' : 'Copy code'}
               </button>
             </div>
             {expired
-              ? <p className="text-xs text-center font-semibold text-status-error">Code expired</p>
-              : <p className={`text-xs text-center font-semibold tabular-nums ${urgent ? 'text-orange-500' : 'text-text-medium'}`}>Expires in {m}:{String(s).padStart(2, '0')}</p>}
+              ? <p className="text-xs text-center font-semibold text-bad">Code expired</p>
+              : <p className={`text-xs text-center font-semibold tabular-nums ${urgent ? 'text-warn' : 'text-ink-sub'}`}>Expires in {m}:{String(s).padStart(2, '0')}</p>}
           </>
         ) : null}
-      <button onClick={onCancel} className="w-full text-xs text-text-light hover:text-text-medium transition-colors text-center">Cancel Redemption</button>
+      <button onClick={onCancel} className="w-full text-xs text-ink-faint hover:text-ink-sub transition-colors text-center">Cancel Redemption</button>
     </div>
   );
 }

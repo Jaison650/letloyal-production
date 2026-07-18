@@ -20,14 +20,14 @@ export default function ActiveOffersBanner({ slug }: { slug: string }) {
 
   return (
     <div className="mt-3 space-y-2">
-      <p className="text-xs font-semibold text-amber-700 flex items-center gap-1">
+      <p className="text-xs font-semibold text-reward-deep flex items-center gap-1">
         <Tag size={11} /> Special Offers
       </p>
       {offers.map(o => (
-        <div key={o.id} className="rounded-xl bg-amber-50 border border-amber-200 px-3 py-2.5">
-          <p className="font-semibold text-amber-900 text-sm">{o.title}</p>
-          {o.description && <p className="text-xs text-amber-700 mt-0.5">{o.description}</p>}
-          <p className="text-xs text-amber-600 mt-1">
+        <div key={o.id} className="rounded-[11px] bg-reward-subtle border border-reward/40 px-3 py-2.5">
+          <p className="font-semibold text-reward-deep text-sm">{o.title}</p>
+          {o.description && <p className="text-xs text-reward-deep/80 mt-0.5">{o.description}</p>}
+          <p className="text-xs text-reward-deep/70 mt-1">
             Valid until {new Date(o.valid_until).toLocaleString('en-IN')}
           </p>
         </div>

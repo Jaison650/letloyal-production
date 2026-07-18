@@ -2,6 +2,7 @@
 
 import { Spinner } from './ui';
 import QRScanner from '@/components/QRScanner';
+import EarnResult from '../EarnResult';
 import type { Tab } from './types';
 
 interface ScanResult {
@@ -25,7 +26,7 @@ export default function ScanTab({
     <div className="space-y-4">
       {!scanResult && (
         <>
-          <p className="text-sm text-text-medium text-center">Point your camera at a LetLoyal store QR code.</p>
+          <p className="text-sm text-ink-sub text-center">Point your camera at a LetLoyal store QR code.</p>
           <QRScanner
             active={tab === 'scan'}
             onScan={handleQRScan}
@@ -34,15 +35,15 @@ export default function ScanTab({
           {scanLoading && (
             <div className="flex items-center justify-center gap-2 py-2">
               <Spinner sm />
-              <p className="text-sm text-text-medium">Processing…</p>
+              <p className="text-sm text-ink-sub">Processing…</p>
             </div>
           )}
           {scanError && (
-            <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-600 text-center">
+            <div className="rounded-[11px] bg-bad-subtle px-4 py-3 text-sm text-bad text-center">
               {scanError}
               <button
                 onClick={() => setScanError('')}
-                className="block mx-auto mt-2 text-red-400 hover:text-red-600 text-xs"
+                className="block mx-auto mt-2 text-bad/70 hover:text-bad text-xs"
               >
                 Try again
               </button>
@@ -51,18 +52,18 @@ export default function ScanTab({
         </>
       )}
       {scanResult && (
-        <div className="bg-white rounded-2xl border border-border-light p-8 text-center space-y-2">
-          <div className="text-5xl mb-3">{scanResult.reward_unlocked ? '🏆' : '🎉'}</div>
-          <p className="text-xl font-bold text-text-dark">+{scanResult.points_added} {scanResult.points_added === 1 ? 'stamp' : 'stamps'}!</p>
-          <p className="text-text-medium text-sm">{scanResult.business_name}</p>
-          {scanResult.reward_unlocked ? (
-            <p className="text-sm font-semibold text-primary mt-1">🎁 Reward unlocked: {scanResult.reward_description}</p>
-          ) : (
-            <p className="text-text-light text-sm mt-1">{scanResult.progress} / {scanResult.threshold} towards your reward</p>
-          )}
+        <div className="space-y-4">
+          <EarnResult
+            pointsAdded={scanResult.points_added}
+            progress={scanResult.progress}
+            threshold={scanResult.threshold}
+            rewardUnlocked={scanResult.reward_unlocked}
+            rewardDescription={scanResult.reward_description}
+            businessName={scanResult.business_name}
+          />
           <button
             onClick={() => { setScanResult(null); setScanError(''); }}
-            className="mt-6 w-full bg-primary hover:bg-primary/90 text-white font-semibold py-3 rounded-xl transition-colors"
+            className="w-full bg-teal hover:bg-teal-hover text-teal-fg font-semibold py-3 rounded-full transition-colors"
           >
             Scan another store
           </button>
