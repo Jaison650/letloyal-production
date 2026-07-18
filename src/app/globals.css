@@ -412,3 +412,28 @@
     margin: 0;
   }
 }
+
+/* ── Phase 3 gamification (transform/opacity only; reduced-motion disabled) ── */
+@keyframes ring-honey {
+  0%   { transform: scale(0.8); opacity: 0.55; }
+  70%, 100% { transform: scale(1.6); opacity: 0; }
+}
+.animate-ring-honey { animation: ring-honey 2.5s ease-out infinite; }
+
+@keyframes shimmer-x {
+  from { transform: translateX(-100%); }
+  to   { transform: translateX(100%); }
+}
+.animate-shimmer-x { animation: shimmer-x 1.8s ease-in-out infinite; }
+
+@keyframes pop-in {
+  0% { transform: scale(0.5); opacity: 0; }
+  70% { transform: scale(1.08); }
+  100% { transform: scale(1); opacity: 1; }
+}
+.animate-pop-in { animation: pop-in 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-ring-honey, .animate-shimmer-x, .animate-pop-in { animation: none; }
+  .animate-pop-in { opacity: 1; transform: none; }
+}
