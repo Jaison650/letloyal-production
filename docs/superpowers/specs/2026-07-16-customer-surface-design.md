@@ -24,6 +24,10 @@ The customer surface is the final light-legacy area and the most mobile-heavy (c
 
 ## Design
 
+### 0. Mobile-first is the primary requirement (founder directive)
+
+The customer surface is designed AT mobile size (360–414px), not shrunk to it: single-column layouts, touch targets ≥ 44px, primary actions in the thumb zone (bottom half), `text-[16px]` inputs (no iOS zoom), no hover-dependent affordances. Desktop is the adaptation (centered `max-w-md` column), not the design target. Every verification step runs at 375×812 first; desktop is a secondary check.
+
 ### 1. my-rewards split (Step A — mechanical extraction, zero class changes)
 
 `src/app/my-rewards/page.tsx` (client monolith) extracts by concern into `src/components/customer/`:
