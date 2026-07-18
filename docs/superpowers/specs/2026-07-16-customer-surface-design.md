@@ -13,7 +13,8 @@ The customer surface is the final light-legacy area and the most mobile-heavy (c
 1. `my-rewards` monolith split into section components (mechanical, zero visual change), then re-tokened.
 2. All customer screens token-driven → they adopt the site-wide dark default automatically.
 3. Wallet-style loyalty cards; honey strictly for unlocked/due rewards; scan confirmation keeps its celebration (canvas-confetti stays).
-4. Zero behaviour change in scan/earn, OTP redemption, registration, login, reset flows.
+4. Gamified earn + milestone moments (§4b): count-up, animated progress, goal-gradient countdown framing, milestone pop-ins — GPU-only animation, zero new dependencies, reduced-motion safe.
+5. Zero behaviour change in scan/earn data flows, OTP redemption, registration, login, reset (gamification is additive presentation on top of existing state transitions).
 
 ## Non-Goals
 
@@ -48,6 +49,31 @@ Applies to the extracted files + `ScanClient`, `/p/[slug]`, `/s/[slug]` page she
 
 - Presentation-only re-token of the scan/earn UI; the "+N points" confirmation moment uses reward tokens; canvas-confetti calls, QR/camera handling (`jsqr`), fetch sequence, and OTP redemption logic are byte-identical.
 - Strictest per-file scan: no changed lines matching `fetch\(|jsqr|getUserMedia|confetti|OTP|router\.|useState|useEffect` beyond pure className edits.
+
+### 4b. Gamification layer (frontend-only; no API/DB changes)
+
+Goal: make earning feel rewarding and make the next milestone feel urgent — the goal-gradient effect (motivation rises as the goal nears). Premium micro-interactions, not game clutter.
+
+**Earn moment (`ScanClient`, after a successful scan):**
+- Points **count-up ticker**: the awarded points animate `+1 → +N` (~600ms, ease-out), with a single scale-bounce on the chip.
+- Progress bar animates from the OLD value to the NEW value (spring ease, ~800ms) — the customer *watches* the bar move because of their visit.
+- **Proximity nudge**: when new progress ≥ 75% of threshold, a honey-glow copy block appears: "Only {remaining} more to unlock {reward}!" — remaining count in `font-display` honey, larger than the fraction.
+- Reward unlock keeps the existing canvas-confetti burst (unchanged), plus the bar/copy flip to reward tokens with a one-time shine sweep.
+
+**Milestone view (`MilestoneCard` + `CardDetailView`):**
+- Stamp nodes **pop in sequentially** on first view (staggered scale-in, 40ms apart, once per mount).
+- The **next unreached milestone pulses** with a soft honey glow (pure CSS keyframe, transform/opacity only, 2.5s cycle) — "this is your target".
+- Progress fill animates on mount from 0 → current (once). At ≥ 75%: remaining-gap segment gets a subtle honey shimmer and the copy switches to countdown framing ("2 visits to go").
+- On unlock state: node flips to honey with a spring pop + check; confetti fires only at the transition moment (session-guarded, never on every view).
+
+**Copy framing rule:** below 50% progress show achievement ("4 of 10 visits"); at ≥ 50% switch to countdown ("6 to go — Free Coffee is close"). Countdown framing is the urgency driver.
+
+**Performance guardrails (hard requirements):**
+- Animate ONLY `transform` and `opacity` (GPU-composited); never width/height/top/left on hot paths — progress bars animate via `transform: scaleX` on the fill inside an `overflow-hidden` track.
+- No new dependencies: framer-motion and canvas-confetti are already in the bundle; no Lottie/GIFs/video.
+- One-shot animations (mount or state-change), not loops — the only loop is the next-milestone CSS pulse.
+- `prefers-reduced-motion: reduce` disables all of it (framer `useReducedMotion` + CSS media query); content is fully readable with animations off.
+- No layout shift: animated elements occupy their final layout box from first paint.
 
 ### 5. Customer auth + reset
 
