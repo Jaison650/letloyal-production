@@ -56,17 +56,17 @@ export default function FeedbackForm({ merchantId, phoneNumber, googleReviewUrl,
   if (done) {
     return (
       <div className="space-y-3">
-        <div className="rounded-2xl border border-border-light bg-white px-5 py-5 text-center space-y-1.5">
+        <div className="rounded-[16px] border border-stroke bg-surface-1 px-5 py-5 text-center space-y-1.5">
           <p className="text-2xl">🙏</p>
-          <p className="font-bold text-text-dark">Thanks for sharing!</p>
-          <p className="text-xs text-text-light">Your thoughts help make every visit better.</p>
+          <p className="font-bold text-ink">Thanks for sharing!</p>
+          <p className="text-xs text-ink-faint">Your thoughts help make every visit better.</p>
         </div>
         {googleReviewUrl && (
           <a
             href={googleReviewUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2.5 w-full rounded-2xl border border-[#dadce0] bg-white px-5 py-3.5 shadow-sm hover:shadow transition-shadow"
+            className="flex items-center justify-center gap-2.5 w-full rounded-[16px] border border-stroke bg-surface-1 px-5 py-3.5 shadow-ds hover:shadow-lg transition-shadow"
           >
             {/* Google G logo */}
             <svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true">
@@ -76,8 +76,8 @@ export default function FeedbackForm({ merchantId, phoneNumber, googleReviewUrl,
               <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
             </svg>
             <div className="text-left">
-              <p className="text-sm font-semibold text-text-dark leading-tight">Loved your visit?</p>
-              <p className="text-xs text-text-medium">Leave us a Google Review ↗</p>
+              <p className="text-sm font-semibold text-ink leading-tight">Loved your visit?</p>
+              <p className="text-xs text-ink-sub">Leave us a Google Review ↗</p>
             </div>
           </a>
         )}
@@ -86,14 +86,14 @@ export default function FeedbackForm({ merchantId, phoneNumber, googleReviewUrl,
   }
 
   return (
-    <div className="rounded-2xl border border-border-light bg-white overflow-hidden">
+    <div className="rounded-[16px] border border-stroke bg-surface-1 overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between px-5 py-4 border-b border-border-light">
-        <p className="font-bold text-text-dark text-sm">How was your visit?</p>
+      <div className="flex items-center justify-between px-5 py-4 border-b border-stroke">
+        <p className="font-bold text-ink text-sm">How was your visit?</p>
         <button
           type="button"
           onClick={onDismiss}
-          className="p-1 rounded-lg hover:bg-bg-muted text-text-light hover:text-text-dark transition-colors"
+          className="p-1 rounded-lg hover:bg-surface-2 text-ink-faint hover:text-ink transition-colors"
           aria-label="Dismiss"
         >
           <X size={16} />
@@ -103,8 +103,8 @@ export default function FeedbackForm({ merchantId, phoneNumber, googleReviewUrl,
       <div className="px-5 py-4 space-y-4">
         {/* Star rating */}
         <div>
-          <p className="text-xs font-medium text-text-medium mb-2">
-            How was your experience? <span className="text-text-light">(optional)</span>
+          <p className="text-xs font-medium text-ink-sub mb-2">
+            How was your experience? <span className="text-ink-faint">(optional)</span>
           </p>
           <div className="flex gap-1">
             {[1, 2, 3, 4, 5].map((star) => (
@@ -122,8 +122,8 @@ export default function FeedbackForm({ merchantId, phoneNumber, googleReviewUrl,
                   className={clsx(
                     'transition-colors',
                     (hovered ?? rating ?? 0) >= star
-                      ? 'fill-amber-400 text-amber-400'
-                      : 'text-border-light',
+                      ? 'fill-reward text-reward'
+                      : 'text-stroke-strong',
                   )}
                 />
               </button>
@@ -139,9 +139,9 @@ export default function FeedbackForm({ merchantId, phoneNumber, googleReviewUrl,
             placeholder="Tell us what you thought…"
             rows={3}
             maxLength={500}
-            className="form-input resize-none w-full"
+            className="w-full rounded-[11px] border-[1.5px] border-stroke-strong bg-surface-1 text-ink placeholder:text-ink-faint px-4 py-3 resize-none focus:outline-none focus:border-teal focus:shadow-ring"
           />
-          <p className="text-xs text-text-light text-right mt-1">{message.length}/500</p>
+          <p className="text-xs text-ink-faint text-right mt-1">{message.length}/500</p>
         </div>
 
         {/* Anonymous checkbox */}
@@ -150,16 +150,16 @@ export default function FeedbackForm({ merchantId, phoneNumber, googleReviewUrl,
             type="checkbox"
             checked={isAnonymous}
             onChange={(e) => setIsAnonymous(e.target.checked)}
-            className="mt-0.5 h-4 w-4 rounded border-brand-border text-primary focus:ring-primary cursor-pointer flex-shrink-0"
+            className="mt-0.5 h-4 w-4 rounded border-stroke-strong text-teal focus:ring-teal cursor-pointer flex-shrink-0"
           />
           <div>
             <div className="flex items-center gap-1.5">
-              <EyeOff size={13} className={clsx('transition-colors', isAnonymous ? 'text-primary' : 'text-text-light')} />
-              <span className={clsx('text-sm font-medium transition-colors', isAnonymous ? 'text-primary' : 'text-text-medium group-hover:text-text-dark')}>
+              <EyeOff size={13} className={clsx('transition-colors', isAnonymous ? 'text-teal' : 'text-ink-faint')} />
+              <span className={clsx('text-sm font-medium transition-colors', isAnonymous ? 'text-teal' : 'text-ink-sub group-hover:text-ink')}>
                 Submit anonymously
               </span>
             </div>
-            <p className="text-xs text-text-light mt-0.5">
+            <p className="text-xs text-ink-faint mt-0.5">
               {isAnonymous
                 ? 'Your name and phone number will not be shared with the merchant.'
                 : 'Your name will be visible to the merchant.'}
@@ -169,7 +169,7 @@ export default function FeedbackForm({ merchantId, phoneNumber, googleReviewUrl,
 
         {/* Error */}
         {error && (
-          <p className="text-xs text-status-error">{error}</p>
+          <p className="text-xs text-bad">{error}</p>
         )}
 
         {/* Submit */}
@@ -177,7 +177,7 @@ export default function FeedbackForm({ merchantId, phoneNumber, googleReviewUrl,
           type="button"
           onClick={handleSubmit}
           disabled={submitting || !message.trim()}
-          className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed text-sm py-2.5"
+          className="w-full rounded-full bg-teal text-teal-fg font-bold text-sm py-3 hover:bg-teal-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
         >
           {submitting ? 'Submitting…' : 'Submit Feedback'}
         </button>

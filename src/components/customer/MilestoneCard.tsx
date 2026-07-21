@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect } from 'react';
-import ProgressBar from '@/components/ui/ProgressBar';
 import { Gift, Star } from 'lucide-react';
+import { CountUp, AnimatedProgress } from './motion';
 
 interface MilestoneCardProps {
   businessName:      string;
@@ -49,38 +49,40 @@ export default function MilestoneCard({
     });
   }, [rewardUnlocked]);
 
-  const pct     = Math.min(100, Math.round((progress / threshold) * 100));
   const remaining = Math.max(0, threshold - progress);
-  const unit    = campaignType === 'visit_based' ? 'stamp' : 'point';
+  const prev      = Math.max(0, progress - pointsAdded);
+  const unit      = campaignType === 'visit_based' ? 'stamp' : 'point';
+  const nearGoal  = threshold > 0 && progress / threshold >= 0.75;
 
   // ── Unlocked state ───────────────────────────────────────────────────
   if (rewardUnlocked) {
     return (
-      <div className="rounded-2xl overflow-hidden shadow-card border border-primary/20 bg-white">
-        {/* Header */}
-        <div className="bg-gradient-to-br from-primary to-teal-600 px-6 py-8 text-center text-white">
-          <div className="w-20 h-20 rounded-full bg-white/20 flex items-center justify-center mx-auto mb-3">
-            <Gift size={36} className="text-white" />
+      <div className="rounded-[16px] overflow-hidden shadow-ds border border-reward/40 bg-surface-1 animate-pop-in">
+        {/* Header — celebratory honey band */}
+        <div className="relative overflow-hidden bg-section-dark px-6 py-8 text-center">
+          <span aria-hidden className="pointer-events-none absolute inset-y-0 w-1/3 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shimmer-x" />
+          <div className="relative w-20 h-20 rounded-full bg-reward/20 flex items-center justify-center mx-auto mb-3">
+            <Gift size={36} className="text-[#F2C230]" />
           </div>
-          <h2 className="text-2xl font-extrabold mb-1">🎉 Reward Unlocked!</h2>
-          <p className="text-white/80 text-sm">{businessName}</p>
+          <h2 className="relative text-2xl font-display font-extrabold text-white mb-1">🎉 Reward Unlocked!</h2>
+          <p className="relative text-[#AEBDB5] text-sm">{businessName}</p>
         </div>
 
         {/* Reward */}
         <div className="px-6 py-6 text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary-light text-primary font-bold text-sm mb-4">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-reward-subtle text-reward-deep font-bold text-sm mb-4">
             <Star size={14} className="fill-current" />
             Your Reward
           </div>
-          <p className="text-xl font-bold text-text-dark mb-4">{rewardDescription}</p>
-          <div className="rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800 font-medium">
+          <p className="text-xl font-display font-bold text-ink mb-4">{rewardDescription}</p>
+          <div className="rounded-[11px] bg-reward-subtle border border-reward/40 px-4 py-3 text-sm text-reward-deep font-medium">
             Show this screen to the staff to claim your reward!
           </div>
         </div>
 
         {/* Points added badge */}
         <div className="px-6 pb-6 text-center">
-          <span className="text-xs text-text-light">
+          <span className="text-xs text-ink-faint">
             +{pointsAdded} {unit}{pointsAdded !== 1 ? 's' : ''} added · {progress}/{threshold} total
           </span>
         </div>
@@ -90,11 +92,11 @@ export default function MilestoneCard({
 
   // ── In-progress state ────────────────────────────────────────────────
   return (
-    <div className="rounded-2xl overflow-hidden shadow-card border border-border-light bg-white">
+    <div className="rounded-[16px] overflow-hidden shadow-ds border border-stroke bg-surface-1 animate-pop-in">
       {/* Header */}
-      <div className="bg-gradient-to-br from-primary to-teal-600 px-6 py-6 text-white">
-        <p className="text-white/70 text-xs font-medium mb-1 uppercase tracking-wide">{businessName}</p>
-        <h2 className="text-xl font-extrabold">Loyalty Card</h2>
+      <div className="bg-section-dark px-6 py-6">
+        <p className="text-[#AEBDB5] text-xs font-medium mb-1 uppercase tracking-wide">{businessName}</p>
+        <h2 className="text-xl font-display font-extrabold text-white">Loyalty Card</h2>
       </div>
 
       {/* Progress */}
@@ -102,35 +104,39 @@ export default function MilestoneCard({
 
         {/* Points added flash */}
         <div className="flex items-center justify-between">
-          <span className="text-text-medium text-sm">Progress</span>
-          <span className="inline-flex items-center gap-1 text-sm font-bold text-primary">
-            +{pointsAdded} {unit}{pointsAdded !== 1 ? 's' : ''} earned!
+          <span className="text-ink-sub text-sm">Progress</span>
+          <span className="inline-flex items-center gap-1 text-sm font-bold text-teal [font-variant-numeric:tabular-nums]">
+            <CountUp to={pointsAdded} /> {unit}{pointsAdded !== 1 ? 's' : ''} earned!
           </span>
         </div>
 
-        {/* Progress bar */}
-        <ProgressBar value={pct} height="lg" animate />
+        {/* Progress bar — animates old → new */}
+        <AnimatedProgress
+          fraction={threshold > 0 ? progress / threshold : 0}
+          from={threshold > 0 ? prev / threshold : 0}
+          rewardReady={nearGoal}
+        />
 
         {/* Progress counter */}
         <div className="flex items-baseline justify-between">
-          <span className="text-3xl font-extrabold text-text-dark">
+          <span className="text-3xl font-display font-extrabold text-ink [font-variant-numeric:tabular-nums]">
             {progress}
-            <span className="text-lg font-medium text-text-light">/{threshold}</span>
+            <span className="text-lg font-medium text-ink-faint">/{threshold}</span>
           </span>
-          <span className="text-sm text-text-medium">
+          <span className="text-sm text-ink-sub">
             {campaignType === 'visit_based' ? 'stamps' : 'points'}
           </span>
         </div>
 
-        {/* Reward description */}
-        <div className="rounded-xl bg-primary-light px-4 py-3">
+        {/* Reward description — goal-gradient countdown */}
+        <div className={`rounded-[11px] px-4 py-3 ${nearGoal ? 'bg-reward-subtle border border-reward/40' : 'bg-teal-subtle'}`}>
           <div className="flex items-start gap-2">
-            <Gift size={16} className="text-primary mt-0.5 flex-shrink-0" />
+            <Gift size={16} className={`mt-0.5 flex-shrink-0 ${nearGoal ? 'text-reward-deep' : 'text-teal'}`} />
             <div>
-              <p className="text-xs font-semibold text-primary mb-0.5">
-                {remaining} {unit}{remaining !== 1 ? 's' : ''} to go
+              <p className={`text-xs font-bold mb-0.5 ${nearGoal ? 'text-reward-deep' : 'text-teal'}`}>
+                Only {remaining} {unit}{remaining !== 1 ? 's' : ''} to go!
               </p>
-              <p className="text-xs text-primary/80">{rewardDescription}</p>
+              <p className={`text-xs ${nearGoal ? 'text-reward-deep/80' : 'text-teal/80'}`}>{rewardDescription}</p>
             </div>
           </div>
         </div>
