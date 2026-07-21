@@ -86,10 +86,10 @@ export default async function ScanPage({ params, searchParams }: PageProps) {
   const hasCampaign = !!campaign;
 
   return (
-    <div className="min-h-screen bg-bg-muted flex flex-col">
+    <div className="min-h-screen bg-surface-page flex flex-col">
 
       {/* ── Merchant branded header — NO LetLoyal branding ─────────── */}
-      <header className="bg-white shadow-sm">
+      <header className="bg-surface-1 shadow-ds border-b border-stroke">
 
         {/* Banner */}
         {merchant.banner_url && (
@@ -107,7 +107,7 @@ export default async function ScanPage({ params, searchParams }: PageProps) {
         {/* Logo + name row */}
         <div className="px-5 py-4 flex items-center gap-4">
           {merchant.logo_url && (
-            <div className="relative w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 border border-border-light shadow-sm">
+            <div className="relative w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 border border-stroke shadow-ds">
               <Image
                 src={merchant.logo_url}
                 alt={`${merchant.business_name} logo`}
@@ -117,11 +117,11 @@ export default async function ScanPage({ params, searchParams }: PageProps) {
             </div>
           )}
           <div className="min-w-0">
-            <h1 className="text-xl font-extrabold text-text-dark truncate">
+            <h1 className="text-xl font-display font-extrabold text-ink truncate">
               {merchant.business_name}
             </h1>
             {merchant.address && (
-              <p className="flex items-center gap-1 text-xs text-text-light mt-0.5 truncate">
+              <p className="flex items-center gap-1 text-xs text-ink-faint mt-0.5 truncate">
                 <MapPin size={11} className="flex-shrink-0" />
                 {merchant.address}
               </p>
@@ -137,7 +137,7 @@ export default async function ScanPage({ params, searchParams }: PageProps) {
                 href={merchant.gmaps_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-1.5 text-xs text-text-medium hover:text-primary transition-colors font-medium"
+                className="flex items-center gap-1.5 text-xs text-ink-sub hover:text-teal transition-colors font-medium"
               >
                 <MapPin size={13} /> Directions
               </a>
@@ -147,7 +147,7 @@ export default async function ScanPage({ params, searchParams }: PageProps) {
                 href={merchant.instagram_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-1.5 text-xs text-text-medium hover:text-primary transition-colors font-medium"
+                className="flex items-center gap-1.5 text-xs text-ink-sub hover:text-teal transition-colors font-medium"
               >
                 <Instagram size={13} /> Instagram
               </a>
@@ -157,7 +157,7 @@ export default async function ScanPage({ params, searchParams }: PageProps) {
                 href={merchant.google_review_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-1.5 text-xs text-text-medium hover:text-primary transition-colors font-medium"
+                className="flex items-center gap-1.5 text-xs text-ink-sub hover:text-teal transition-colors font-medium"
               >
                 <Star size={13} /> Review Us
               </a>
@@ -171,7 +171,7 @@ export default async function ScanPage({ params, searchParams }: PageProps) {
 
         {/* No active campaign */}
         {!hasCampaign && (
-          <div className="text-center py-10 text-text-medium">
+          <div className="text-center py-10 text-ink-sub">
             <p className="text-lg font-semibold mb-2">No active loyalty program</p>
             <p className="text-sm">Check back soon!</p>
           </div>
@@ -179,7 +179,7 @@ export default async function ScanPage({ params, searchParams }: PageProps) {
 
         {/* No token */}
         {hasCampaign && !hasToken && (
-          <div className="text-center py-10 text-text-medium">
+          <div className="text-center py-10 text-ink-sub">
             <p className="text-lg font-semibold mb-2">Invalid QR code</p>
             <p className="text-sm">Please ask the merchant to regenerate the QR code.</p>
           </div>

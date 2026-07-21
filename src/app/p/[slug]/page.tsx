@@ -78,10 +78,10 @@ export default async function MerchantProfilePage({ params }: PageProps) {
   const isVisit = campaign?.campaign_type === 'visit_based';
 
   return (
-    <div className="min-h-screen bg-bg-muted flex flex-col">
+    <div className="min-h-screen bg-surface-page flex flex-col">
 
       {/* ── Merchant branded header ─────────────────────────────────── */}
-      <header className="bg-white shadow-sm">
+      <header className="bg-surface-1 shadow-ds border-b border-stroke">
 
         {merchant.banner_url && (
           <div className="relative w-full h-36 overflow-hidden">
@@ -97,7 +97,7 @@ export default async function MerchantProfilePage({ params }: PageProps) {
 
         <div className="px-5 py-4 flex items-center gap-4">
           {merchant.logo_url && (
-            <div className="relative w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 border border-border-light shadow-sm">
+            <div className="relative w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 border border-stroke shadow-ds">
               <Image
                 src={merchant.logo_url}
                 alt={`${merchant.business_name} logo`}
@@ -107,11 +107,11 @@ export default async function MerchantProfilePage({ params }: PageProps) {
             </div>
           )}
           <div className="min-w-0">
-            <h1 className="text-xl font-extrabold text-text-dark truncate">
+            <h1 className="text-xl font-display font-extrabold text-ink truncate">
               {merchant.business_name}
             </h1>
             {merchant.address && (
-              <p className="flex items-center gap-1 text-xs text-text-light mt-0.5 truncate">
+              <p className="flex items-center gap-1 text-xs text-ink-faint mt-0.5 truncate">
                 <MapPin size={11} className="flex-shrink-0" />
                 {merchant.address}
               </p>
@@ -123,25 +123,25 @@ export default async function MerchantProfilePage({ params }: PageProps) {
           <div className="px-5 pb-4 flex flex-wrap gap-3">
             {merchant.gmaps_url && (
               <a href={merchant.gmaps_url} target="_blank" rel="noopener noreferrer"
-                className="flex items-center gap-1.5 text-xs text-text-medium hover:text-primary transition-colors font-medium">
+                className="flex items-center gap-1.5 text-xs text-ink-sub hover:text-teal transition-colors font-medium">
                 <MapPin size={13} /> Directions
               </a>
             )}
             {merchant.instagram_url && (
               <a href={merchant.instagram_url} target="_blank" rel="noopener noreferrer"
-                className="flex items-center gap-1.5 text-xs text-text-medium hover:text-primary transition-colors font-medium">
+                className="flex items-center gap-1.5 text-xs text-ink-sub hover:text-teal transition-colors font-medium">
                 <Instagram size={13} /> Instagram
               </a>
             )}
             {merchant.google_review_url && (
               <a href={merchant.google_review_url} target="_blank" rel="noopener noreferrer"
-                className="flex items-center gap-1.5 text-xs text-text-medium hover:text-primary transition-colors font-medium">
+                className="flex items-center gap-1.5 text-xs text-ink-sub hover:text-teal transition-colors font-medium">
                 <Star size={13} /> Review Us
               </a>
             )}
             {merchant.website_url && (
               <a href={merchant.website_url} target="_blank" rel="noopener noreferrer"
-                className="flex items-center gap-1.5 text-xs text-text-medium hover:text-primary transition-colors font-medium">
+                className="flex items-center gap-1.5 text-xs text-ink-sub hover:text-teal transition-colors font-medium">
                 <Globe size={13} /> Website
               </a>
             )}
@@ -153,7 +153,7 @@ export default async function MerchantProfilePage({ params }: PageProps) {
             <iframe
               title="Map"
               src={`https://www.openstreetmap.org/export/embed.html?bbox=${Number(merchant.longitude) - 0.006},${Number(merchant.latitude) - 0.006},${Number(merchant.longitude) + 0.006},${Number(merchant.latitude) + 0.006}&layer=mapnik&marker=${merchant.latitude},${merchant.longitude}`}
-              className="w-full h-40 rounded-xl border border-border-light"
+              className="w-full h-40 rounded-xl border border-stroke"
               loading="lazy"
             />
           </div>
@@ -164,35 +164,35 @@ export default async function MerchantProfilePage({ params }: PageProps) {
       <main className="flex-1 px-4 py-6 max-w-sm mx-auto w-full space-y-4">
 
         {!campaign ? (
-          <div className="text-center py-10 text-text-medium">
+          <div className="text-center py-10 text-ink-sub">
             <p className="text-lg font-semibold mb-1">No active loyalty program</p>
             <p className="text-sm">Check back soon!</p>
           </div>
         ) : (
           <>
             {/* ── Campaign card ──────────────────────────────────────── */}
-            <div className="bg-white rounded-2xl border border-border-light shadow-sm overflow-hidden">
-              <div className="bg-primary px-5 py-3 flex items-center justify-between">
-                <p className="text-white text-sm font-bold">Active Loyalty Program</p>
-                <span className="text-xs font-semibold bg-white/20 text-white px-2 py-0.5 rounded-full">
+            <div className="bg-surface-1 rounded-[16px] border border-stroke shadow-ds overflow-hidden">
+              <div className="bg-teal px-5 py-3 flex items-center justify-between">
+                <p className="text-teal-fg text-sm font-bold">Active Loyalty Program</p>
+                <span className="text-xs font-semibold bg-white/20 text-teal-fg px-2 py-0.5 rounded-full">
                   {isVisit ? 'Visit-based' : 'Spend-based'}
                 </span>
               </div>
 
               <div className="px-5 py-4 space-y-3">
                 <div className="flex items-start gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-primary-light flex items-center justify-center flex-shrink-0">
-                    <Gift size={18} className="text-primary" />
+                  <div className="w-9 h-9 rounded-xl bg-teal-subtle flex items-center justify-center flex-shrink-0">
+                    <Gift size={18} className="text-teal" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-xs font-semibold text-text-medium uppercase tracking-wide">Reward</p>
-                    <p className="font-bold text-text-dark text-sm mt-0.5">{campaign.reward_description}</p>
+                    <p className="text-xs font-semibold text-ink-sub uppercase tracking-wide">Reward</p>
+                    <p className="font-bold text-ink text-sm mt-0.5">{campaign.reward_description}</p>
                   </div>
                 </div>
 
-                <div className="bg-bg-muted rounded-xl px-4 py-3 text-center">
-                  <p className="text-2xl font-extrabold text-primary">{campaign.reward_threshold}</p>
-                  <p className="text-xs text-text-medium mt-0.5">
+                <div className="bg-surface-2 rounded-xl px-4 py-3 text-center">
+                  <p className="text-2xl font-display font-extrabold text-teal">{campaign.reward_threshold}</p>
+                  <p className="text-xs text-ink-sub mt-0.5">
                     {isVisit ? `visits to reward` : `points to reward`}
                   </p>
                 </div>
@@ -200,8 +200,8 @@ export default async function MerchantProfilePage({ params }: PageProps) {
             </div>
 
             {/* ── How it works ───────────────────────────────────────── */}
-            <div className="bg-white rounded-2xl border border-border-light shadow-sm px-5 py-4">
-              <p className="text-xs font-bold text-text-medium uppercase tracking-wide mb-3">How to earn</p>
+            <div className="bg-surface-1 rounded-[16px] border border-stroke shadow-ds px-5 py-4">
+              <p className="text-xs font-bold text-ink-sub uppercase tracking-wide mb-3">How to earn</p>
               <ol className="space-y-3">
                 {[
                   `Visit ${merchant.business_name}`,
@@ -211,8 +211,8 @@ export default async function MerchantProfilePage({ params }: PageProps) {
                     : `Earn points on every rupee spent — reach ${campaign.reward_threshold} points to unlock: ${campaign.reward_description}`,
                 ].map((step, i) => (
                   <li key={i} className="flex items-start gap-3">
-                    <CheckCircle size={16} className="text-primary flex-shrink-0 mt-0.5" />
-                    <span className="text-sm text-text-dark">{step}</span>
+                    <CheckCircle size={16} className="text-teal flex-shrink-0 mt-0.5" />
+                    <span className="text-sm text-ink">{step}</span>
                   </li>
                 ))}
               </ol>
@@ -221,7 +221,7 @@ export default async function MerchantProfilePage({ params }: PageProps) {
             {/* ── CTA ────────────────────────────────────────────────── */}
             <Link
               href="/my-rewards"
-              className="btn-primary w-full text-center block py-3 rounded-2xl font-bold text-sm"
+              className="w-full text-center block py-3.5 rounded-full bg-teal text-teal-fg hover:bg-teal-hover transition-colors font-bold text-sm"
             >
               View My Rewards
             </Link>
