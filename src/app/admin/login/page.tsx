@@ -46,9 +46,9 @@ function AdminLoginForm() {
   }
 
   return (
-    <div className="card">
-      <h1 className="text-xl font-bold text-text-dark mb-1">Admin Login</h1>
-      <p className="text-text-light text-sm mb-6">LetLoyal platform administration</p>
+    <div className="rounded-[16px] border border-stroke bg-surface-1 shadow-ds p-6">
+      <h1 className="text-xl font-display font-bold text-ink mb-1">Admin Login</h1>
+      <p className="text-ink-faint text-sm mb-6">LetLoyal platform administration</p>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <Input
@@ -71,7 +71,7 @@ function AdminLoginForm() {
         />
 
         {error && (
-          <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-status-error">
+          <div className="rounded-[11px] bg-bad-subtle px-4 py-3 text-sm text-bad font-semibold">
             {error}
           </div>
         )}
@@ -84,12 +84,12 @@ function AdminLoginForm() {
 
 export default function AdminLoginPage() {
   return (
-    <main className="min-h-screen flex items-center justify-center bg-bg-muted px-4 py-12">
+    <main className="min-h-screen flex items-center justify-center bg-surface-page px-4 py-12">
       <div className="w-full max-w-sm">
         <div className="flex justify-center mb-8">
           <Logo size={28} />
         </div>
-        <Suspense fallback={<div className="card"><p className="text-sm text-text-medium">Loading…</p></div>}>
+        <Suspense fallback={<div className="rounded-[16px] border border-stroke bg-surface-1 shadow-ds p-6"><p className="text-sm text-ink-sub">Loading…</p></div>}>
           <AdminLoginForm />
         </Suspense>
       </div>

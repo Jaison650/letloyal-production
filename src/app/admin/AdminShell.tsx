@@ -4,6 +4,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Logo from '@/components/ui/Logo';
 import { LayoutDashboard, Users, LogOut, CreditCard, Activity, KeyRound, ChevronDown, Eye, EyeOff } from 'lucide-react';
+import { ThemeToggle } from '@/components/ds';
 import { clsx } from 'clsx';
 import { useState, FormEvent } from 'react';
 
@@ -58,12 +59,12 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
   ];
 
   return (
-    <div className="flex h-screen bg-bg-muted overflow-hidden">
+    <div className="flex h-screen bg-surface-page overflow-hidden">
       {/* Sidebar */}
-      <aside className="w-56 bg-surface border-r border-border-light flex flex-col flex-shrink-0">
-        <div className="px-5 py-6 border-b border-border-light">
+      <aside className="w-56 bg-surface-1 border-r border-stroke flex flex-col flex-shrink-0">
+        <div className="px-5 py-6 border-b border-stroke">
           <Logo size={22} />
-          <p className="mt-1 text-xs font-semibold text-text-light">Admin</p>
+          <p className="mt-1 text-xs font-semibold text-ink-faint">Admin</p>
         </div>
 
         <nav className="flex-1 px-3 py-4 space-y-1">
@@ -74,10 +75,10 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
                 key={item.href}
                 href={item.href}
                 className={clsx(
-                  'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors',
+                  'flex items-center gap-3 px-4 py-2.5 rounded-full text-body-sm font-semibold transition-colors',
                   active
-                    ? 'bg-primary text-white'
-                    : 'text-text-medium hover:bg-primary-light hover:text-primary',
+                    ? 'bg-reward text-reward-fg font-bold'
+                    : 'text-ink-sub hover:bg-surface-2 hover:text-ink',
                 )}
               >
                 {item.icon}
@@ -87,11 +88,11 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
           })}
         </nav>
 
-        <div className="px-3 py-4 border-t border-border-light space-y-1">
+        <div className="px-3 py-4 border-t border-stroke space-y-1">
           {/* Change password */}
           <button
             onClick={() => { setShowPwForm(!showPwForm); setPwMsg(''); setPwErr(''); }}
-            className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-medium text-text-medium hover:bg-primary-light hover:text-primary transition-colors"
+            className="flex items-center gap-3 w-full px-4 py-2.5 rounded-full text-body-sm font-semibold text-ink-sub hover:bg-surface-2 hover:text-ink transition-colors"
           >
             <KeyRound size={18} />
             Change Password
@@ -107,13 +108,13 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
                   value={curPw}
                   onChange={(e) => setCurPw(e.target.value)}
                   required
-                  className="w-full text-xs px-3 py-2 pr-9 rounded-lg border border-border-light bg-bg-muted outline-none focus:border-primary transition-colors"
+                  className="w-full text-xs px-3 py-2 pr-9 rounded-lg border border-stroke-strong bg-surface-1 text-ink placeholder:text-ink-faint outline-none focus:border-teal focus:shadow-ring transition-colors"
                 />
                 <button
                   type="button"
                   tabIndex={-1}
                   onClick={() => setShowCurPw(v => !v)}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-text-light hover:text-text-medium"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-ink-faint hover:text-ink-sub"
                   aria-label={showCurPw ? 'Hide password' : 'Show password'}
                 >
                   {showCurPw ? <EyeOff size={14} /> : <Eye size={14} />}
@@ -126,36 +127,39 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
                   value={newPw}
                   onChange={(e) => setNewPw(e.target.value)}
                   required
-                  className="w-full text-xs px-3 py-2 pr-9 rounded-lg border border-border-light bg-bg-muted outline-none focus:border-primary transition-colors"
+                  className="w-full text-xs px-3 py-2 pr-9 rounded-lg border border-stroke-strong bg-surface-1 text-ink placeholder:text-ink-faint outline-none focus:border-teal focus:shadow-ring transition-colors"
                 />
                 <button
                   type="button"
                   tabIndex={-1}
                   onClick={() => setShowNewPw(v => !v)}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-text-light hover:text-text-medium"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-ink-faint hover:text-ink-sub"
                   aria-label={showNewPw ? 'Hide password' : 'Show password'}
                 >
                   {showNewPw ? <EyeOff size={14} /> : <Eye size={14} />}
                 </button>
               </div>
-              {pwErr && <p className="text-xs text-status-error">{pwErr}</p>}
-              {pwMsg && <p className="text-xs text-green-600">{pwMsg}</p>}
+              {pwErr && <p className="text-xs text-bad">{pwErr}</p>}
+              {pwMsg && <p className="text-xs text-good">{pwMsg}</p>}
               <button
                 type="submit"
                 disabled={pwSaving}
-                className="w-full text-xs font-semibold px-3 py-2 rounded-lg bg-primary text-white disabled:opacity-50 transition-opacity"
+                className="w-full text-xs font-bold px-3 py-2 rounded-full bg-teal text-teal-fg hover:bg-teal-hover disabled:opacity-50 transition-colors"
               >
                 {pwSaving ? 'Saving…' : 'Update Password'}
               </button>
             </form>
           )}
 
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-medium text-text-medium hover:bg-red-50 hover:text-status-error transition-colors"
-          >
-            <LogOut size={18} /> Sign Out
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-3 flex-1 px-4 py-2.5 rounded-full text-body-sm font-semibold text-ink-sub hover:bg-bad-subtle hover:text-bad transition-colors"
+            >
+              <LogOut size={18} /> Sign Out
+            </button>
+            <ThemeToggle />
+          </div>
         </div>
       </aside>
 
