@@ -14,10 +14,10 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     const base = 'inline-flex items-center justify-center gap-2 font-bold rounded-full transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]';
 
     const variants = {
-      primary: 'bg-accent text-text-dark shadow-btn hover:-translate-y-0.5 hover:shadow-btn-hover active:translate-y-0',
-      secondary: 'border-2 border-primary text-primary hover:bg-primary hover:text-white',
-      ghost: 'text-primary hover:bg-primary-light',
-      danger: 'bg-status-error text-white hover:opacity-90',
+      primary: 'bg-teal text-teal-fg hover:bg-teal-hover',
+      secondary: 'border border-stroke-strong bg-surface-1 text-ink hover:bg-surface-2',
+      ghost: 'text-teal hover:bg-teal-subtle',
+      danger: 'bg-bad-subtle text-bad hover:bg-bad hover:text-white',
     };
 
     const sizes = {

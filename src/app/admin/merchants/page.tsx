@@ -76,7 +76,7 @@ export default function AdminMerchantsPage() {
 
       {/* Create form */}
       {showForm && (
-        <div className="card mb-6 max-w-lg">
+        <div className="rounded-[16px] border border-stroke bg-surface-1 shadow-ds p-5 mb-6 max-w-lg">
           <h2 className="font-bold text-ink mb-4">New Merchant</h2>
           <form onSubmit={handleCreate} className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
@@ -114,7 +114,7 @@ export default function AdminMerchantsPage() {
       ) : (
         <div className="space-y-3">
           {merchants.map((m) => (
-            <div key={m.id} className="card flex items-center gap-4">
+            <div key={m.id} className="rounded-[16px] border border-stroke bg-surface-1 shadow-ds p-5 flex items-center gap-4">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-0.5">
                   <p className="font-bold text-ink truncate">{m.business_name}</p>

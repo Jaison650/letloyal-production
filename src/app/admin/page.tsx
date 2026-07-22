@@ -13,7 +13,7 @@ interface Stats {
 
 function StatCard({ label, value, icon }: { label: string; value: number | string; icon: React.ReactNode }) {
   return (
-    <div className="card flex items-center gap-4">
+    <div className="rounded-[16px] border border-stroke bg-surface-1 shadow-ds p-5 flex items-center gap-4">
       <div className="w-12 h-12 rounded-xl bg-teal-subtle flex items-center justify-center flex-shrink-0">
         {icon}
       </div>
@@ -53,7 +53,7 @@ export default function AdminDashboardPage() {
         <p className="text-bad text-sm">Failed to load stats.</p>
       )}
 
-      <div className="card max-w-sm">
+      <div className="rounded-[16px] border border-stroke bg-surface-1 shadow-ds p-5 max-w-sm">
         <h2 className="font-bold text-ink mb-2">Quick Actions</h2>
         <Link
           href="/admin/merchants"

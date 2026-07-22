@@ -54,7 +54,7 @@ export default function AdminServicesPage() {
                 { label: 'Customers',         value: data.db.customers },
                 { label: 'Visits',            value: data.db.visits },
               ].map((stat) => (
-                <div key={stat.label} className="card text-center">
+                <div key={stat.label} className="rounded-[16px] border border-stroke bg-surface-1 shadow-ds p-5 text-center">
                   <p className="text-3xl font-bold text-ink">{stat.value.toLocaleString()}</p>
                   <p className="text-xs text-ink-faint mt-1">{stat.label}</p>
                 </div>
@@ -65,7 +65,7 @@ export default function AdminServicesPage() {
           {/* Service status */}
           <div>
             <h2 className="text-sm font-semibold text-ink-sub uppercase tracking-wide mb-3">Integrations</h2>
-            <div className="card space-y-3">
+            <div className="rounded-[16px] border border-stroke bg-surface-1 shadow-ds p-5 space-y-3">
               {(
                 [
                   { key: 'smtp',         label: 'SMTP Email' },
@@ -95,7 +95,7 @@ export default function AdminServicesPage() {
           {/* Uptime */}
           <div>
             <h2 className="text-sm font-semibold text-ink-sub uppercase tracking-wide mb-3">Server</h2>
-            <div className="card flex items-center justify-between">
+            <div className="rounded-[16px] border border-stroke bg-surface-1 shadow-ds p-5 flex items-center justify-between">
               <span className="text-sm text-ink">Process Uptime</span>
               <span className="text-sm font-semibold text-ink">{formatUptime(data.uptime)}</span>
             </div>

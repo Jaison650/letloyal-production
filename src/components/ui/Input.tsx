@@ -17,13 +17,13 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
     return (
       <div className="w-full">
         {label && (
-          <label htmlFor={inputId} className="form-label">
+          <label htmlFor={inputId} className="block text-body-sm font-semibold text-ink mb-1.5">
             {label}
           </label>
         )}
         <div className="relative">
           {icon && (
-            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-text-light">
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-ink-faint">
               {icon}
             </div>
           )}
@@ -32,10 +32,10 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             id={inputId}
             type={isPassword && revealed ? 'text' : type}
             className={clsx(
-              'form-input',
+              'w-full rounded-[11px] border-[1.5px] border-stroke-strong bg-surface-1 text-ink placeholder:text-ink-faint px-4 py-3 transition-colors focus:outline-none focus:border-teal focus:shadow-ring',
               icon && 'pl-11',
               isPassword && 'pr-11',
-              error && 'border-status-error focus:border-status-error focus:shadow-[0_0_0_4px_rgba(211,47,47,0.1)]',
+              error && 'border-bad focus:border-bad',
               className
             )}
             {...props}
@@ -45,15 +45,15 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
               type="button"
               tabIndex={-1}
               onClick={() => setRevealed(v => !v)}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-text-light hover:text-text-medium"
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-ink-faint hover:text-ink-sub"
               aria-label={revealed ? 'Hide password' : 'Show password'}
             >
               {revealed ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
           )}
         </div>
-        {error && <p className="mt-1.5 text-xs text-status-error font-medium">{error}</p>}
-        {hint && !error && <p className="mt-1.5 text-xs text-text-light">{hint}</p>}
+        {error && <p className="mt-1.5 text-xs text-bad font-semibold">{error}</p>}
+        {hint && !error && <p className="mt-1.5 text-xs text-ink-faint">{hint}</p>}
       </div>
     );
   }

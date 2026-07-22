@@ -65,7 +65,7 @@ export default function AdminBillingPage() {
           <p className="font-semibold">No merchants yet</p>
         </div>
       ) : (
-        <div className="card overflow-x-auto">
+        <div className="rounded-[16px] border border-stroke bg-surface-1 shadow-ds p-5 overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-stroke text-left">
