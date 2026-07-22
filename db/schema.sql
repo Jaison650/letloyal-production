@@ -53,6 +53,7 @@ CREATE TABLE IF NOT EXISTS merchants (
   -- Branding (Cloudflare R2 URLs)
   logo_url            VARCHAR(500)              NULL,
   banner_url          VARCHAR(500)              NULL,
+  brand_color         VARCHAR(7)                NULL,     -- merchant identity accent; NULL = derived from slug (see src/lib/merchantColor.ts)
   -- Location + social
   address             VARCHAR(300)              NULL,
   website_url         VARCHAR(500)              NULL,

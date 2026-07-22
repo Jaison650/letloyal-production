@@ -25,6 +25,7 @@ export async function POST(req: NextRequest) {
       merchant_slug:      string;
       business_name:      string;
       logo_url:           string | null;
+      brand_color:        string | null;
       campaign_name:      string;
       campaign_type:      string;
       progress:           number;
@@ -38,6 +39,7 @@ export async function POST(req: NextRequest) {
         m.slug            AS merchant_slug,
         m.business_name,
         m.logo_url,
+        m.brand_color,
         c.name            AS campaign_name,
         c.campaign_type,
         cm.progress,

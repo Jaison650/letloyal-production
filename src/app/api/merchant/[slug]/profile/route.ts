@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireMerchant } from '@/lib/auth';
 import { queryOne, query } from '@/lib/db';
+import { isValidAccent } from '@/lib/merchantColor';
 import { MAX_URL_LENGTH, normalizeSpeedDials, type NamedDial } from '@/lib/constants';
 
 interface MerchantProfileRow {
@@ -38,7 +39,7 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
     requireMerchant(req, slug);
 
     const merchant = await queryOne<MerchantProfileRow>(
-      `SELECT id, slug, business_name, logo_url, banner_url, address,
+      `SELECT id, slug, business_name, logo_url, banner_url, brand_color, address,
               gmaps_url, instagram_url, google_review_url, speed_dials,
               latitude, longitude, status, created_at
          FROM merchants WHERE slug = ?`,
@@ -78,6 +79,7 @@ export async function PUT(req: NextRequest, { params }: RouteContext) {
       business_name,
       logo_url,
       banner_url,
+      brand_color,
       address,
       gmaps_url,
       instagram_url,
@@ -176,6 +178,18 @@ export async function PUT(req: NextRequest, { params }: RouteContext) {
     }
 
     // ── Validate and store lat/lng (null clears the pin) ─────────────
+    if (brand_color !== undefined) {
+      if (brand_color === null || brand_color === '') {
+        updates.push('brand_color = ?');
+        values.push(null);
+      } else if (isValidAccent(String(brand_color))) {
+        updates.push('brand_color = ?');
+        values.push(String(brand_color).toUpperCase());
+      } else {
+        return NextResponse.json({ error: 'Invalid brand colour.' }, { status: 400 });
+      }
+    }
+
     if (latitude !== undefined) {
       if (latitude === null) {
         updates.push('latitude = ?');

@@ -38,6 +38,7 @@ interface MerchantBranding {
   business_name:     string;
   logo_url:          string | null;
   banner_url:        string | null;
+  brand_color:       string | null;
   address:           string | null;
   gmaps_url:         string | null;
   instagram_url:     string | null;
@@ -61,7 +62,7 @@ export default async function MerchantProfilePage({ params }: PageProps) {
   const { slug } = await params;
 
   const merchant = await queryOne<MerchantBranding>(
-    `SELECT id, slug, business_name, logo_url, banner_url,
+    `SELECT id, slug, business_name, logo_url, banner_url, brand_color,
             address, gmaps_url, instagram_url, google_review_url, website_url,
             latitude, longitude
        FROM merchants WHERE slug = ? AND status = 'active'`,
@@ -79,7 +80,7 @@ export default async function MerchantProfilePage({ params }: PageProps) {
   const isVisit = campaign?.campaign_type === 'visit_based';
 
   return (
-    <div className="min-h-screen bg-surface-page flex flex-col" style={merchantAccentVars(merchant.slug)}>
+    <div className="min-h-screen bg-surface-page flex flex-col" style={merchantAccentVars(merchant.slug, merchant.brand_color)}>
 
       {/* ── Merchant branded header — identity colour wash ──────────── */}
       <header className="relative bg-surface-1 shadow-ds border-b border-stroke overflow-hidden">

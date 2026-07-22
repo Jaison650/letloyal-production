@@ -27,7 +27,7 @@ export default function LoyaltyCardItem({ card, phone }: { card: LoyaltyCard; ph
   return (
     <div
       className={`relative pl-4 rounded-[16px] border bg-surface-1 shadow-ds overflow-hidden ${isUnlocked ? 'border-reward/40' : 'border-stroke'}`}
-      style={merchantAccentVars(card.merchant_slug)}
+      style={merchantAccentVars(card.merchant_slug, card.brand_color)}
     >
       {/* Merchant identity — colour strip + soft glow, derived from the slug */}
       <span aria-hidden className="absolute inset-y-0 left-0 w-1" style={{ background: 'var(--m)' }} />

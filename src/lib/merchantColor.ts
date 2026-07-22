@@ -35,11 +35,24 @@ function hash(input: string): number {
   return h >>> 0;
 }
 
+/** True if a stored value is one of the sanctioned accents. */
+export function isValidAccent(value: string | null | undefined): boolean {
+  return !!value && (MERCHANT_ACCENTS as readonly string[]).includes(value.toUpperCase());
+}
+
 /**
- * Returns the merchant's identity colour for a given slug (or any stable key).
- * Falls back to the first accent for empty input.
+ * Returns the merchant's identity colour.
+ *
+ * A merchant-chosen `brandColor` wins, but only if it is one of the sanctioned
+ * accents — anything else (legacy value, hand-edited row, a colour that would
+ * collide with teal/honey) falls back to the slug-derived colour, so a bad DB
+ * value can never break a page or the colour semantics.
  */
-export function merchantAccent(key: string | null | undefined): string {
+export function merchantAccent(
+  key: string | null | undefined,
+  brandColor?: string | null,
+): string {
+  if (isValidAccent(brandColor)) return brandColor!.toUpperCase();
   if (!key) return MERCHANT_ACCENTS[0];
   return MERCHANT_ACCENTS[hash(key) % MERCHANT_ACCENTS.length];
 }
@@ -48,6 +61,9 @@ export function merchantAccent(key: string | null | undefined): string {
  * CSS custom properties to spread onto a wrapper element. Children then style
  * themselves with `var(--m)` / `color-mix(...)`, keeping the colour in one place.
  */
-export function merchantAccentVars(key: string | null | undefined): React.CSSProperties {
-  return { ['--m' as string]: merchantAccent(key) };
+export function merchantAccentVars(
+  key: string | null | undefined,
+  brandColor?: string | null,
+): React.CSSProperties {
+  return { ['--m' as string]: merchantAccent(key, brandColor) };
 }

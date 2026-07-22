@@ -10,6 +10,7 @@ interface MerchantProfile {
   business_name:     string;
   logo_url:          string | null;
   banner_url:        string | null;
+  brand_color:       string | null;
   address:           string | null;
   gmaps_url:         string | null;
   instagram_url:     string | null;
@@ -30,7 +31,7 @@ export default async function SettingsPage({ params }: PageProps) {
   if (!auth || auth.slug !== slug) redirect('/merchant/login');
 
   const merchant = await queryOne<MerchantProfile>(
-    `SELECT id, slug, business_name, logo_url, banner_url, address,
+    `SELECT id, slug, business_name, logo_url, banner_url, brand_color, address,
             gmaps_url, instagram_url, google_review_url, speed_dials,
             latitude, longitude
        FROM merchants WHERE slug = ?`,
@@ -43,6 +44,7 @@ export default async function SettingsPage({ params }: PageProps) {
     business_name:     merchant.business_name,
     logo_url:          merchant.logo_url,
     banner_url:        merchant.banner_url,
+    brand_color:       merchant.brand_color,
     address:           merchant.address,
     gmaps_url:         merchant.gmaps_url,
     instagram_url:     merchant.instagram_url,

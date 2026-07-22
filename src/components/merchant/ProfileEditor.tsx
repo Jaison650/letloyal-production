@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { MERCHANT_ACCENTS } from '@/lib/merchantColor';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import { Button, Input } from '@/components/ds';
@@ -14,6 +15,7 @@ interface ProfileData {
   business_name:     string;
   logo_url:          string | null;
   banner_url:        string | null;
+  brand_color:       string | null;
   address:           string | null;
   gmaps_url:         string | null;
   instagram_url:     string | null;
@@ -238,6 +240,55 @@ export default function ProfileEditor({ slug, initialData }: ProfileEditorProps)
             aspectRatio="h-36"
             hint="Recommended: 1200 × 400px (3:1 wide)"
           />
+
+          {/* ── Brand colour ─────────────────────────────────────────── */}
+          <div>
+            <label className="block text-body-sm font-semibold text-ink mb-1.5">Brand Colour</label>
+            <p className="text-caption text-ink-faint mb-3">
+              Used on your store page and on your customers&apos; loyalty cards. Leave on Auto and we&apos;ll
+              pick a colour for you.
+            </p>
+            <div className="flex flex-wrap gap-2.5">
+              <button
+                type="button"
+                onClick={() => setField('brand_color', null)}
+                aria-pressed={!form.brand_color}
+                title="Auto — chosen for you"
+                className={`h-10 px-4 rounded-full text-body-sm font-bold border transition-colors ${
+                  !form.brand_color
+                    ? 'border-teal bg-teal-subtle text-teal'
+                    : 'border-stroke-strong text-ink-sub hover:bg-surface-2'
+                }`}
+              >
+                Auto
+              </button>
+              {MERCHANT_ACCENTS.map((hex) => {
+                const active = form.brand_color?.toUpperCase() === hex;
+                return (
+                  <button
+                    key={hex}
+                    type="button"
+                    onClick={() => setField('brand_color', hex)}
+                    aria-pressed={active}
+                    aria-label={`Brand colour ${hex}`}
+                    title={hex}
+                    className="h-10 w-10 rounded-full transition-transform hover:scale-105"
+                    style={{
+                      background: `color-mix(in srgb, ${hex} 22%, transparent)`,
+                      border: `2px solid ${active ? hex : 'transparent'}`,
+                      boxShadow: active ? `0 0 0 3px color-mix(in srgb, ${hex} 25%, transparent)` : undefined,
+                    }}
+                  >
+                    <span
+                      aria-hidden
+                      className="block mx-auto h-4 w-4 rounded-full"
+                      style={{ background: hex }}
+                    />
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         </div>
       )}
 

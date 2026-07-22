@@ -42,6 +42,7 @@ interface MerchantBranding {
   business_name:     string;
   logo_url:          string | null;
   banner_url:        string | null;
+  brand_color:       string | null;
   address:           string | null;
   gmaps_url:         string | null;
   instagram_url:     string | null;
@@ -66,7 +67,7 @@ export default async function ScanPage({ params, searchParams }: PageProps) {
 
   // ── Load merchant branding ────────────────────────────────────────
   const merchant = await queryOne<MerchantBranding>(
-    `SELECT id, slug, business_name, logo_url, banner_url,
+    `SELECT id, slug, business_name, logo_url, banner_url, brand_color,
             address, gmaps_url, instagram_url, google_review_url
        FROM merchants WHERE slug = ? AND status = 'active'`,
     [slug],
@@ -87,7 +88,7 @@ export default async function ScanPage({ params, searchParams }: PageProps) {
   const hasCampaign = !!campaign;
 
   return (
-    <div className="min-h-screen bg-surface-page flex flex-col" style={merchantAccentVars(merchant.slug)}>
+    <div className="min-h-screen bg-surface-page flex flex-col" style={merchantAccentVars(merchant.slug, merchant.brand_color)}>
 
       {/* ── Merchant branded header — NO LetLoyal branding ─────────── */}
       <header className="relative bg-surface-1 shadow-ds border-b border-stroke overflow-hidden">
