@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { Gift } from 'lucide-react';
 import { Badge } from '@/components/ds';
-import { AnimatedProgress, progressCopy } from '../motion';
+import { AnimatedProgress } from '../motion';
 import { merchantAccentVars } from '@/lib/merchantColor';
 import { MerchantAvatar } from './ui';
 import InlineRedeemCode from './InlineRedeemCode';
@@ -21,7 +21,6 @@ export default function LoyaltyCardItem({ card, phone }: { card: LoyaltyCard; ph
   const fraction = isUnlocked ? 1 : (card.reward_threshold > 0 ? card.progress / card.reward_threshold : 0);
   const remaining = Math.max(0, card.reward_threshold - card.progress);
   const isSpend = card.campaign_type === 'spend_based';
-  const unit = isSpend ? 'point' : 'visit';
   // Goal-gradient: past 75% the card switches to honey urgency cues.
   const nearGoal = !isUnlocked && card.reward_threshold > 0 && fraction >= 0.75;
   return (
@@ -44,26 +43,35 @@ export default function LoyaltyCardItem({ card, phone }: { card: LoyaltyCard; ph
             <p className="text-xs text-ink-faint">{isSpend ? 'Spend-based' : 'Visit-based'} · {card.campaign_name}</p>
           </div>
         </Link>
-        {isUnlocked
-          ? <Badge intent="reward" className="flex-shrink-0">Ready!</Badge>
-          : nearGoal && <Badge intent="reward" dot={false} className="flex-shrink-0">{remaining} to go</Badge>}
+        {/* "N to go" lives in the milestone row below, so the header only flags unlocked. */}
+        {isUnlocked && <Badge intent="reward" className="flex-shrink-0">Ready!</Badge>}
       </div>
       <div className="relative px-4 pb-4">
         <p className="text-sm font-bold text-reward-deep flex items-center gap-1.5 mb-2">
           <Gift size={13} className="flex-shrink-0" />{card.reward_description}
         </p>
-        <div className="flex items-center justify-between mb-1.5">
-          {isUnlocked
-            ? <span className="text-xs font-semibold text-reward-deep tabular-nums">Reward earned</span>
-            : <span className="text-xs text-ink-sub tabular-nums">{card.progress} / {card.reward_threshold} {isSpend ? 'points' : 'visits'}</span>}
-          {isUnlocked
-            ? <span className="text-xs font-semibold text-reward-deep">Reward ready!</span>
-            : <span className="text-xs text-ink-faint">{remaining} more to go</span>}
+        {/* Milestone — the number is the hero of the card */}
+        <div className="flex items-baseline justify-between gap-2 mb-2">
+          {isUnlocked ? (
+            <span className="font-display text-lg font-extrabold text-reward-deep">Reward earned</span>
+          ) : (
+            <span className="font-display text-ink tabular-nums leading-none">
+              <span className="text-2xl font-extrabold">{card.progress.toLocaleString('en-IN')}</span>
+              <span className="text-sm font-bold text-ink-faint"> / {card.reward_threshold.toLocaleString('en-IN')}</span>
+              <span className="text-xs font-semibold text-ink-faint ml-1">{isSpend ? 'points' : 'visits'}</span>
+            </span>
+          )}
+          {isUnlocked ? (
+            <span className="text-sm font-extrabold text-reward-deep flex-shrink-0">Ready!</span>
+          ) : (
+            <span
+              className={`text-sm font-extrabold tabular-nums flex-shrink-0 ${nearGoal ? 'text-reward-deep' : 'text-ink-sub'}`}
+            >
+              {remaining.toLocaleString('en-IN')} to go
+            </span>
+          )}
         </div>
-        <AnimatedProgress fraction={fraction} rewardReady={isUnlocked} />
-        {!isUnlocked && (
-          <p className="mt-1.5 text-xs text-ink-faint">{progressCopy(card.progress, card.reward_threshold, unit, card.reward_description)}</p>
-        )}
+        <AnimatedProgress fraction={fraction} rewardReady={isUnlocked || nearGoal} />
         {isUnlocked && !showCode && (
           <button onClick={() => setShowCode(true)}
             className="mt-3 w-full bg-teal hover:bg-teal-hover text-teal-fg font-semibold py-2.5 rounded-full flex items-center justify-center gap-2 transition-colors">
