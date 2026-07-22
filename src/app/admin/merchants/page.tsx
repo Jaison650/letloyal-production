@@ -68,7 +68,7 @@ export default function AdminMerchantsPage() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-text-dark">Merchants</h1>
+        <h1 className="text-2xl font-bold text-ink">Merchants</h1>
         <Button size="sm" onClick={() => setShowForm(!showForm)}>
           <Plus size={16} /> {showForm ? 'Cancel' : 'Add Merchant'}
         </Button>
@@ -77,7 +77,7 @@ export default function AdminMerchantsPage() {
       {/* Create form */}
       {showForm && (
         <div className="card mb-6 max-w-lg">
-          <h2 className="font-bold text-text-dark mb-4">New Merchant</h2>
+          <h2 className="font-bold text-ink mb-4">New Merchant</h2>
           <form onSubmit={handleCreate} className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
               <Input label="Slug" value={fSlug} onChange={(e) => setFSlug(e.target.value)}
@@ -91,7 +91,7 @@ export default function AdminMerchantsPage() {
               onChange={(e) => setFPassword(e.target.value)} placeholder="Min 8 chars" required />
 
             {fError && (
-              <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-status-error">
+              <div className="rounded-xl bg-bad-subtle border border-red-200 px-4 py-3 text-sm text-bad">
                 {fError}
               </div>
             )}
@@ -103,11 +103,11 @@ export default function AdminMerchantsPage() {
 
       {/* Merchant table */}
       {loading ? (
-        <p className="text-text-medium text-sm">Loading…</p>
+        <p className="text-ink-sub text-sm">Loading…</p>
       ) : error ? (
-        <p className="text-status-error text-sm">{error}</p>
+        <p className="text-bad text-sm">{error}</p>
       ) : merchants.length === 0 ? (
-        <div className="text-center py-12 text-text-medium">
+        <div className="text-center py-12 text-ink-sub">
           <p className="font-semibold">No merchants yet</p>
           <p className="text-sm mt-1">Add your first merchant using the button above.</p>
         </div>
@@ -117,18 +117,18 @@ export default function AdminMerchantsPage() {
             <div key={m.id} className="card flex items-center gap-4">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-0.5">
-                  <p className="font-bold text-text-dark truncate">{m.business_name}</p>
+                  <p className="font-bold text-ink truncate">{m.business_name}</p>
                   <span className={clsx(
                     'text-xs font-semibold px-2 py-0.5 rounded-full flex-shrink-0',
-                    m.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500',
+                    m.status === 'active' ? 'bg-good-subtle text-good' : 'bg-surface-2 text-ink-faint',
                   )}>
                     {m.status}
                   </span>
                 </div>
-                <p className="text-xs text-text-light">{m.email} · /{m.slug}</p>
+                <p className="text-xs text-ink-faint">{m.email} · /{m.slug}</p>
               </div>
 
-              <div className="flex items-center gap-4 text-sm text-text-medium flex-shrink-0">
+              <div className="flex items-center gap-4 text-sm text-ink-sub flex-shrink-0">
                 <span className="flex items-center gap-1">
                   <Users size={13} /> {m.customer_count}
                 </span>
@@ -141,7 +141,7 @@ export default function AdminMerchantsPage() {
                 href={`/m/${m.slug}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-2 rounded-lg hover:bg-primary-light text-text-light hover:text-primary transition-colors flex-shrink-0"
+                className="p-2 rounded-lg hover:bg-teal-subtle text-ink-faint hover:text-teal transition-colors flex-shrink-0"
                 title="Open merchant dashboard"
               >
                 <ExternalLink size={16} />

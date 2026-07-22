@@ -34,20 +34,20 @@ export default function AdminServicesPage() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-text-dark">Services Health</h1>
-        <p className="text-sm text-text-light mt-1">DB counts, integration status, and server uptime.</p>
+        <h1 className="text-2xl font-bold text-ink">Services Health</h1>
+        <p className="text-sm text-ink-faint mt-1">DB counts, integration status, and server uptime.</p>
       </div>
 
       {loading ? (
-        <p className="text-text-medium text-sm">Loading…</p>
+        <p className="text-ink-sub text-sm">Loading…</p>
       ) : error ? (
-        <p className="text-status-error text-sm">{error}</p>
+        <p className="text-bad text-sm">{error}</p>
       ) : data ? (
         <div className="space-y-6">
 
           {/* DB stats */}
           <div>
-            <h2 className="text-sm font-semibold text-text-medium uppercase tracking-wide mb-3">Database</h2>
+            <h2 className="text-sm font-semibold text-ink-sub uppercase tracking-wide mb-3">Database</h2>
             <div className="grid grid-cols-3 gap-4">
               {[
                 { label: 'Active Merchants', value: data.db.merchants },
@@ -55,8 +55,8 @@ export default function AdminServicesPage() {
                 { label: 'Visits',            value: data.db.visits },
               ].map((stat) => (
                 <div key={stat.label} className="card text-center">
-                  <p className="text-3xl font-bold text-text-dark">{stat.value.toLocaleString()}</p>
-                  <p className="text-xs text-text-light mt-1">{stat.label}</p>
+                  <p className="text-3xl font-bold text-ink">{stat.value.toLocaleString()}</p>
+                  <p className="text-xs text-ink-faint mt-1">{stat.label}</p>
                 </div>
               ))}
             </div>
@@ -64,7 +64,7 @@ export default function AdminServicesPage() {
 
           {/* Service status */}
           <div>
-            <h2 className="text-sm font-semibold text-text-medium uppercase tracking-wide mb-3">Integrations</h2>
+            <h2 className="text-sm font-semibold text-ink-sub uppercase tracking-wide mb-3">Integrations</h2>
             <div className="card space-y-3">
               {(
                 [
@@ -77,11 +77,11 @@ export default function AdminServicesPage() {
                 const ok = data.services[key];
                 return (
                   <div key={key} className="flex items-center justify-between">
-                    <span className="text-sm text-text-dark">{label}</span>
+                    <span className="text-sm text-ink">{label}</span>
                     <span
                       className={clsx(
                         'text-xs font-semibold px-2.5 py-1 rounded-full',
-                        ok ? 'bg-green-100 text-green-700' : 'bg-red-100 text-status-error',
+                        ok ? 'bg-good-subtle text-good' : 'bg-bad-subtle text-bad',
                       )}
                     >
                       {ok ? 'Configured' : 'Missing'}
@@ -94,10 +94,10 @@ export default function AdminServicesPage() {
 
           {/* Uptime */}
           <div>
-            <h2 className="text-sm font-semibold text-text-medium uppercase tracking-wide mb-3">Server</h2>
+            <h2 className="text-sm font-semibold text-ink-sub uppercase tracking-wide mb-3">Server</h2>
             <div className="card flex items-center justify-between">
-              <span className="text-sm text-text-dark">Process Uptime</span>
-              <span className="text-sm font-semibold text-text-dark">{formatUptime(data.uptime)}</span>
+              <span className="text-sm text-ink">Process Uptime</span>
+              <span className="text-sm font-semibold text-ink">{formatUptime(data.uptime)}</span>
             </div>
           </div>
 

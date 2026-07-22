@@ -46,41 +46,41 @@ export default function AdminBillingPage() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-text-dark">Billing</h1>
-        <p className="text-sm text-text-light mt-1">Manage merchant plans and billing notes.</p>
+        <h1 className="text-2xl font-bold text-ink">Billing</h1>
+        <p className="text-sm text-ink-faint mt-1">Manage merchant plans and billing notes.</p>
       </div>
       {patchError && (
-        <div className="mb-4 rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-600 flex items-center justify-between">
+        <div className="mb-4 rounded-xl bg-bad-subtle border border-red-200 px-4 py-3 text-sm text-bad flex items-center justify-between">
           <span>{patchError}</span>
-          <button onClick={() => setPatchError('')} className="ml-4 text-red-400 hover:text-red-600">✕</button>
+          <button onClick={() => setPatchError('')} className="ml-4 text-bad hover:text-bad">✕</button>
         </div>
       )}
 
       {loading ? (
-        <p className="text-text-medium text-sm">Loading…</p>
+        <p className="text-ink-sub text-sm">Loading…</p>
       ) : error ? (
-        <p className="text-status-error text-sm">{error}</p>
+        <p className="text-bad text-sm">{error}</p>
       ) : merchants.length === 0 ? (
-        <div className="text-center py-12 text-text-medium">
+        <div className="text-center py-12 text-ink-sub">
           <p className="font-semibold">No merchants yet</p>
         </div>
       ) : (
         <div className="card overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-border-light text-left">
-                <th className="pb-3 pr-4 font-semibold text-text-medium">Merchant</th>
-                <th className="pb-3 pr-4 font-semibold text-text-medium">Status</th>
-                <th className="pb-3 pr-4 font-semibold text-text-medium">Plan</th>
-                <th className="pb-3 font-semibold text-text-medium">Billing Note</th>
+              <tr className="border-b border-stroke text-left">
+                <th className="pb-3 pr-4 font-semibold text-ink-sub">Merchant</th>
+                <th className="pb-3 pr-4 font-semibold text-ink-sub">Status</th>
+                <th className="pb-3 pr-4 font-semibold text-ink-sub">Plan</th>
+                <th className="pb-3 font-semibold text-ink-sub">Billing Note</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border-light">
               {merchants.map((m) => (
                 <tr key={m.id}>
                   <td className="py-3 pr-4">
-                    <p className="font-semibold text-text-dark">{m.business_name}</p>
-                    <p className="text-xs text-text-light">{m.email}</p>
+                    <p className="font-semibold text-ink">{m.business_name}</p>
+                    <p className="text-xs text-ink-faint">{m.email}</p>
                   </td>
 
                   <td className="py-3 pr-4">
@@ -94,8 +94,8 @@ export default function AdminBillingPage() {
                       className={clsx(
                         'text-xs font-semibold px-2 py-1 rounded-full border-0 outline-none cursor-pointer',
                         m.status === 'active'
-                          ? 'bg-green-100 text-green-700'
-                          : 'bg-gray-100 text-gray-500',
+                          ? 'bg-good-subtle text-good'
+                          : 'bg-surface-2 text-ink-faint',
                       )}
                     >
                       <option value="active">active</option>
@@ -111,7 +111,7 @@ export default function AdminBillingPage() {
                         updateLocal(m.id, { plan });
                         patchMerchant(m.id, { plan }).then(e => { if (e) setPatchError(e); });
                       }}
-                      className="text-xs font-medium px-2 py-1 rounded-lg border border-border-light bg-surface outline-none cursor-pointer"
+                      className="text-xs font-medium px-2 py-1 rounded-lg border border-stroke bg-surface outline-none cursor-pointer"
                     >
                       <option value="free">free</option>
                       <option value="starter">starter</option>
@@ -129,7 +129,7 @@ export default function AdminBillingPage() {
                         updateLocal(m.id, { billing_note });
                         patchMerchant(m.id, { billing_note }).then(e => { if (e) setPatchError(e); });
                       }}
-                      className="w-full text-xs px-2 py-1 rounded-lg border border-border-light bg-surface outline-none focus:border-primary transition-colors"
+                      className="w-full text-xs px-2 py-1 rounded-lg border border-stroke bg-surface outline-none focus:border-primary transition-colors"
                     />
                   </td>
                 </tr>
