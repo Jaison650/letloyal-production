@@ -12,13 +12,29 @@ export function Spinner({ sm }: { sm?: boolean }) {
   );
 }
 
-export function MerchantAvatar({ logo_url, name, size = 44 }: { logo_url: string | null; name: string; size?: number }) {
+/**
+ * Merchant logo, or a monogram tile tinted with the merchant's identity colour.
+ * `accent` accepts any CSS colour — callers pass `var(--m)` from merchantAccentVars.
+ */
+export function MerchantAvatar({
+  logo_url,
+  name,
+  size = 44,
+  accent = 'var(--accent-default)',
+}: { logo_url: string | null; name: string; size?: number; accent?: string }) {
   return (
-    <div className="rounded-xl overflow-hidden bg-teal-subtle flex items-center justify-center flex-shrink-0"
-      style={{ width: size, height: size }}>
+    <div
+      className="rounded-xl overflow-hidden flex items-center justify-center flex-shrink-0"
+      style={{
+        width: size,
+        height: size,
+        background: logo_url ? undefined : `color-mix(in srgb, ${accent} 20%, transparent)`,
+        border: logo_url ? undefined : `1px solid color-mix(in srgb, ${accent} 32%, transparent)`,
+      }}
+    >
       {logo_url
         ? <Image src={logo_url} alt={name} width={size} height={size} className="object-cover w-full h-full" />
-        : <span className="font-bold text-teal" style={{ fontSize: size * 0.4 }}>{name[0]}</span>}
+        : <span className="font-display font-extrabold" style={{ fontSize: size * 0.4, color: accent }}>{name[0]?.toUpperCase()}</span>}
     </div>
   );
 }

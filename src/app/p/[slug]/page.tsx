@@ -4,7 +4,8 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { queryOne } from '@/lib/db';
 import { PoweredBy } from '@/components/ui/Logo';
-import { MapPin, Instagram, Star, Globe, Gift, CheckCircle } from 'lucide-react';
+import { MapPin, Instagram, Star, Globe, Gift } from 'lucide-react';
+import { merchantAccentVars } from '@/lib/merchantColor';
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://letloyal.in';
 
@@ -78,10 +79,20 @@ export default async function MerchantProfilePage({ params }: PageProps) {
   const isVisit = campaign?.campaign_type === 'visit_based';
 
   return (
-    <div className="min-h-screen bg-surface-page flex flex-col">
+    <div className="min-h-screen bg-surface-page flex flex-col" style={merchantAccentVars(merchant.slug)}>
 
-      {/* ── Merchant branded header ─────────────────────────────────── */}
-      <header className="bg-surface-1 shadow-ds border-b border-stroke">
+      {/* ── Merchant branded header — identity colour wash ──────────── */}
+      <header className="relative bg-surface-1 shadow-ds border-b border-stroke overflow-hidden">
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
+          style={{ background: 'linear-gradient(135deg, var(--m) 0%, transparent 62%)', opacity: 0.16 }}
+        />
+        <span
+          aria-hidden
+          className="pointer-events-none absolute -top-16 -right-10 w-52 h-52 rounded-full blur-3xl"
+          style={{ background: 'var(--m)', opacity: 0.13 }}
+        />
 
         {merchant.banner_url && (
           <div className="relative w-full h-36 overflow-hidden">
@@ -95,8 +106,8 @@ export default async function MerchantProfilePage({ params }: PageProps) {
           </div>
         )}
 
-        <div className="px-5 py-4 flex items-center gap-4">
-          {merchant.logo_url && (
+        <div className="relative px-5 py-4 flex items-center gap-4">
+          {merchant.logo_url ? (
             <div className="relative w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 border border-stroke shadow-ds">
               <Image
                 src={merchant.logo_url}
@@ -104,6 +115,18 @@ export default async function MerchantProfilePage({ params }: PageProps) {
                 fill
                 className="object-cover"
               />
+            </div>
+          ) : (
+            <div
+              className="w-14 h-14 rounded-xl flex-shrink-0 flex items-center justify-center font-display font-extrabold text-xl"
+              style={{
+                background: 'color-mix(in srgb, var(--m) 20%, transparent)',
+                color: 'var(--m)',
+                border: '1px solid color-mix(in srgb, var(--m) 34%, transparent)',
+              }}
+              aria-hidden
+            >
+              {merchant.business_name.charAt(0).toUpperCase()}
             </div>
           )}
           <div className="min-w-0">
@@ -170,32 +193,38 @@ export default async function MerchantProfilePage({ params }: PageProps) {
           </div>
         ) : (
           <>
-            {/* ── Campaign card ──────────────────────────────────────── */}
-            <div className="bg-surface-1 rounded-[16px] border border-stroke shadow-ds overflow-hidden">
-              <div className="bg-teal px-5 py-3 flex items-center justify-between">
-                <p className="text-teal-fg text-sm font-bold">Active Loyalty Program</p>
-                <span className="text-xs font-semibold bg-white/20 text-teal-fg px-2 py-0.5 rounded-full">
-                  {isVisit ? 'Visit-based' : 'Spend-based'}
-                </span>
-              </div>
+            {/* ── Programme chip — merchant identity, not a heavy band ── */}
+            <span
+              className="inline-flex items-center gap-2 text-[10.5px] font-bold uppercase tracking-[0.05em] px-3 py-1.5 rounded-full"
+              style={{
+                background: 'color-mix(in srgb, var(--m) 15%, transparent)',
+                color: 'var(--m)',
+                border: '1px solid color-mix(in srgb, var(--m) 30%, transparent)',
+              }}
+            >
+              ● Active loyalty program · {isVisit ? 'Visit-based' : 'Spend-based'}
+            </span>
 
-              <div className="px-5 py-4 space-y-3">
-                <div className="flex items-start gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-teal-subtle flex items-center justify-center flex-shrink-0">
-                    <Gift size={18} className="text-teal" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-xs font-semibold text-ink-sub uppercase tracking-wide">Reward</p>
-                    <p className="font-bold text-ink text-sm mt-0.5">{campaign.reward_description}</p>
-                  </div>
+            {/* ── Reward panel — honey is the reward metal ───────────── */}
+            <div className="rounded-[16px] border border-reward/30 bg-reward-subtle px-4 py-4">
+              <div className="flex items-start gap-3">
+                <div className="w-[30px] h-[30px] rounded-[9px] bg-reward/15 flex items-center justify-center flex-shrink-0">
+                  <Gift size={16} className="text-reward" />
                 </div>
-
-                <div className="bg-surface-2 rounded-xl px-4 py-3 text-center">
-                  <p className="text-2xl font-display font-extrabold text-teal">{campaign.reward_threshold}</p>
-                  <p className="text-xs text-ink-sub mt-0.5">
-                    {isVisit ? `visits to reward` : `points to reward`}
+                <div className="min-w-0 flex-1">
+                  <p className="text-[9.5px] font-extrabold uppercase tracking-[0.13em] text-reward-deep/75">Your reward</p>
+                  <p className="font-display font-extrabold text-reward-deep text-[17px] leading-tight mt-1">
+                    {campaign.reward_description}
                   </p>
                 </div>
+              </div>
+              <div className="flex items-baseline gap-2 mt-3 pt-3 border-t border-reward/20">
+                <span className="font-display font-extrabold text-2xl text-reward [font-variant-numeric:tabular-nums]">
+                  {campaign.reward_threshold.toLocaleString('en-IN')}
+                </span>
+                <span className="text-xs text-ink-sub">
+                  {isVisit ? 'visits to unlock' : 'points to unlock'}
+                </span>
               </div>
             </div>
 
@@ -211,8 +240,17 @@ export default async function MerchantProfilePage({ params }: PageProps) {
                     : `Earn points on every rupee spent — reach ${campaign.reward_threshold} points to unlock: ${campaign.reward_description}`,
                 ].map((step, i) => (
                   <li key={i} className="flex items-start gap-3">
-                    <CheckCircle size={16} className="text-teal flex-shrink-0 mt-0.5" />
-                    <span className="text-sm text-ink">{step}</span>
+                    <span
+                      className="w-[18px] h-[18px] rounded-full flex-shrink-0 flex items-center justify-center text-[9.5px] font-extrabold mt-0.5"
+                      style={{
+                        background: 'color-mix(in srgb, var(--m) 18%, transparent)',
+                        color: 'var(--m)',
+                      }}
+                      aria-hidden
+                    >
+                      {i + 1}
+                    </span>
+                    <span className="text-sm text-ink-sub">{step}</span>
                   </li>
                 ))}
               </ol>

@@ -5,6 +5,7 @@ import { queryOne } from '@/lib/db';
 import { PoweredBy } from '@/components/ui/Logo';
 import ScanClient from '@/components/customer/ScanClient';
 import { MapPin, Instagram, Star } from 'lucide-react';
+import { merchantAccentVars } from '@/lib/merchantColor';
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://letloyal.in';
 
@@ -86,10 +87,12 @@ export default async function ScanPage({ params, searchParams }: PageProps) {
   const hasCampaign = !!campaign;
 
   return (
-    <div className="min-h-screen bg-surface-page flex flex-col">
+    <div className="min-h-screen bg-surface-page flex flex-col" style={merchantAccentVars(merchant.slug)}>
 
       {/* ── Merchant branded header — NO LetLoyal branding ─────────── */}
-      <header className="bg-surface-1 shadow-ds border-b border-stroke">
+      <header className="relative bg-surface-1 shadow-ds border-b border-stroke overflow-hidden">
+        <span aria-hidden className="pointer-events-none absolute inset-0" style={{ background: 'linear-gradient(135deg, var(--m) 0%, transparent 62%)', opacity: 0.16 }} />
+        <span aria-hidden className="pointer-events-none absolute -top-16 -right-10 w-52 h-52 rounded-full blur-3xl" style={{ background: 'var(--m)', opacity: 0.13 }} />
 
         {/* Banner */}
         {merchant.banner_url && (
@@ -105,7 +108,7 @@ export default async function ScanPage({ params, searchParams }: PageProps) {
         )}
 
         {/* Logo + name row */}
-        <div className="px-5 py-4 flex items-center gap-4">
+        <div className="relative px-5 py-4 flex items-center gap-4">
           {merchant.logo_url && (
             <div className="relative w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 border border-stroke shadow-ds">
               <Image
